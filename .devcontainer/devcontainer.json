@@ -1,0 +1,39 @@
+{
+  "name": "Bloomsbury Network Mapper",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "remoteEnv": {
+    "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  },
+  "forwardPorts": [3000, 5173, 8000],
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind,consistency=cached"
+  ],
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["anthropic.claude-code", "dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
+      "settings": {
+        "workbench.colorCustomizations": {
+          "titleBar.activeBackground": "#7c2d12",
+          "titleBar.activeForeground": "#ffffff",
+          "titleBar.inactiveBackground": "#5b1f0c",
+          "statusBar.background": "#f97316",
+          "statusBar.foreground": "#ffffff",
+          "statusBar.noFolderBackground": "#f97316",
+          "activityBar.background": "#7c2d12",
+          "activityBar.foreground": "#fdba74",
+          "activityBar.inactiveForeground": "#fed7aa",
+          "sideBar.background": "#2d1106",
+          "sideBarTitle.foreground": "#fdba74"
+        }
+      }
+    }
+  }
+}
