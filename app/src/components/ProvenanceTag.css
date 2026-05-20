@@ -1,0 +1,7 @@
+.provenance-tag {
+  display: inline;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 400;
+  letter-spacing: 0;
+}

@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seed Intelligence Pipeline — Bloomsbury Football Foundation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pitch-black:    #0d0c0a;
+    --deep-charcoal:  #1a1916;
+    --mid-charcoal:   #2e2c27;
+    --surface-warm:   #f5f3ef;
+    --surface-raised: #fafaf8;
+    --border-subtle:  #e5e2dc;
+    --border-mid:     #c8c4bb;
+    --gold-accent:    #b8920f;
+    --gold-light:     #d4ad2a;
+    --text-primary:   #0d0c0a;
+    --text-secondary: #55524a;
+    --text-muted:     #7a776e;
+    --green:          #2d7a3a;
+    --green-bg:       #e8f5ea;
+    --amber:          #9a6f09;
+    --amber-bg:       #fef3d0;
+    --red:            #b03030;
+    --red-bg:         #fde8e8;
+    --blue:           #1a5fb4;
+    --blue-bg:        #e0ecf8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--surface-warm);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* --- Nav --- */
+  .topnav {
+    background: var(--pitch-black);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topnav .logo {
+    color: var(--gold-accent);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+  }
+  .topnav .sep { color: var(--mid-charcoal); }
+  .topnav .page-title {
+    color: #b0ada5;
+    font-weight: 500;
+    font-size: 14px;
+  }
+  .topnav-links {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+  }
+  .topnav-links a {
+    color: #b0ada5;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .topnav-links a:hover { background: var(--deep-charcoal); color: #fff; }
+  .topnav-links a.active { background: var(--deep-charcoal); color: var(--gold-accent); }
+
+  /* --- Layout --- */
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* --- Typography --- */
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+  }
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border-subtle);
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 24px 0 12px;
+  }
+  p { margin-bottom: 12px; color: var(--text-secondary); }
+  p.lead { font-size: 16px; color: var(--text-primary); }
+
+  /* --- Section anchors --- */
+  section { scroll-margin-top: 72px; }
+
+  /* --- Cards --- */
+  .card {
+    background: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .card-header .phase-num {
+    background: var(--pitch-black);
+    color: var(--gold-accent);
+    font-weight: 700;
+    font-size: 11px;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .card-header .phase-label {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .card-header .phase-time {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --- Stat rows --- */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .stat {
+    background: var(--surface-warm);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    padding: 12px 16px;
+    text-align: center;
+  }
+  .stat .value {
+    font-size: 24px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+  }
+
+  /* --- Colour accents --- */
+  .gold { color: var(--gold-accent); }
+  .green { color: var(--green); }
+  .amber { color: var(--amber); }
+  .red { color: var(--red); }
+  .blue { color: var(--blue); }
+
+  /* --- Badge --- */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge-gold { background: #f5ecd0; color: var(--gold-accent); }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); }
+
+  /* --- Table --- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 12px 0;
+  }
+  thead th {
+    background: var(--surface-warm);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-mid);
+  }
+  tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* --- Score bar --- */
+  .score-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .score-bar .bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border-subtle);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .score-bar .bar .fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+  .score-bar .num {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    min-width: 40px;
+    text-align: right;
+  }
+
+  /* --- Flow diagram --- */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 24px 0;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .flow-step {
+    background: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 10px 16px;
+    text-align: center;
+    min-width: 120px;
+    flex-shrink: 0;
+  }
+  .flow-step .step-num {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gold-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .flow-step .step-label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  .flow-arrow {
+    color: var(--border-mid);
+    font-size: 18px;
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+
+  /* --- Code / data block --- */
+  .data-block {
+    background: var(--pitch-black);
+    color: #c8c4bb;
+    border-radius: 6px;
+    padding: 16px 20px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .data-block .key { color: var(--gold-light); }
+  .data-block .val { color: #e0ddd6; }
+  .data-block .comment { color: #7a776e; }
+  .data-block .highlight { color: var(--gold-accent); font-weight: 600; }
+
+  /* --- Callout --- */
+  .callout {
+    border-left: 3px solid var(--gold-accent);
+    background: #faf8f2;
+    padding: 16px 20px;
+    border-radius: 0 6px 6px 0;
+    margin: 16px 0;
+  }
+  .callout.info { border-left-color: var(--blue); background: #f0f5fb; }
+  .callout.warn { border-left-color: var(--amber); background: #fdf8ec; }
+  .callout.success { border-left-color: var(--green); background: #f0f8f1; }
+  .callout strong { font-weight: 600; }
+
+  /* --- Divider --- */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: 32px 0;
+  }
+
+  /* --- Lists --- */
+  ul, ol { margin: 8px 0 12px 20px; color: var(--text-secondary); }
+  li { margin-bottom: 4px; }
+
+  /* --- Footer --- */
+  .footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .footer .brand { color: var(--gold-accent); font-weight: 600; }
+
+  /* --- Print --- */
+  @media print {
+    .topnav { position: static; }
+    body { font-size: 11px; }
+    .container { max-width: 100%; padding: 16px; }
+    .card { break-inside: avoid; }
+  }
+
+  /* --- Manual section --- */
+  .manual-step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+  }
+  .manual-step .step-circle {
+    width: 32px;
+    height: 32px;
+    background: var(--pitch-black);
+    color: var(--gold-accent);
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .manual-step .step-content { flex: 1; }
+  .manual-step .step-content h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .manual-step .step-content p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="topnav">
+  <span class="logo">BFF</span>
+  <span class="sep">/</span>
+  <span class="page-title">Seed Intelligence Pipeline</span>
+  <div class="topnav-links">
+    <a href="#overview" class="active">Overview</a>
+    <a href="#network">Network Map</a>
+    <a href="#simulation">Results</a>
+    <a href="#learnings">Learnings</a>
+    <a href="#manual">Manual</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: OVERVIEW                                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="overview">
+  <h1>Seed Intelligence Pipeline</h1>
+  <p class="subtitle">How BFF discovers new potential donors through the networks of people it already knows</p>
+
+  <p class="lead">The Seed Intelligence Pipeline starts from BFF's existing contacts &mdash; supporters, friends, and known donors (your "seeds") &mdash; and maps outward through their professional networks to discover <strong>who they can introduce you to</strong> for new donations. Every recommendation answers the question: "Which of our people knows someone worth approaching, and how warm is that path?"</p>
+
+  <p>The system takes your spreadsheets of known contacts, researches each person's public profile, maps who they sit on boards with, co-invest with, and co-chair charities alongside, then scores every discovered introduction route by value and reliability.</p>
+
+  <!-- Pipeline overview diagram -->
+  <div class="flow">
+    <div class="flow-step">
+      <div class="step-num">Phase 1</div>
+      <div class="step-label">Import</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">
+      <div class="step-num">Phase 2</div>
+      <div class="step-label">Bootstrap</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">
+      <div class="step-num">Phase 3</div>
+      <div class="step-label">Augment</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">
+      <div class="step-num">Phase 4</div>
+      <div class="step-label">Network Map</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">
+      <div class="step-num">Phase 5</div>
+      <div class="step-label">Stage &amp; Validate</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">
+      <div class="step-num">Phase 6</div>
+      <div class="step-label">Cross-Reference</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">
+      <div class="step-num">Phase 7</div>
+      <div class="step-label">Score &amp; Rank</div>
+    </div>
+  </div>
+
+  <h3>What each phase does</h3>
+  <table>
+    <thead>
+      <tr><th>Phase</th><th>Input</th><th>What happens</th><th>Output</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Import</strong></td>
+        <td>XLSX spreadsheet of your contacts</td>
+        <td>Parses your supporter/donor lists, normalises names, strips titles/honours, detects format, validates fields</td>
+        <td>Structured seed records</td>
+      </tr>
+      <tr>
+        <td><strong>2. Bootstrap</strong></td>
+        <td>Seed records</td>
+        <td>Fuzzy-matches each of your contacts against the existing database. Creates person records, seeds, and captures any "introduced by" relationships already declared in the spreadsheet</td>
+        <td>Your contacts in the system + declared relationships</td>
+      </tr>
+      <tr>
+        <td><strong>3. Research</strong></td>
+        <td>Your seeds</td>
+        <td>For each of your contacts: searches Companies House, Charity Commission, then runs AI deep research. Builds a profile of their boards, trusteeships, wealth signals, and cause alignment</td>
+        <td>Rich profiles of your contacts</td>
+      </tr>
+      <tr>
+        <td><strong>4. Network Map</strong></td>
+        <td>Research profiles</td>
+        <td>The key discovery phase: AI maps <strong>who each of your contacts knows</strong> &mdash; board colleagues, co-trustees, business partners, philanthropic peers. These are the potential donors your seeds can introduce you to</td>
+        <td>Discovered potential donors + connection paths</td>
+      </tr>
+      <tr>
+        <td><strong>5. Stage &amp; Validate</strong></td>
+        <td>Discovered people</td>
+        <td>Validates each newly-discovered person. Are they already in the database? Is this "Sir Peter Lampl" the same as "Peter Lampl"? Auto-merges certainties, flags ambiguous cases for human review</td>
+        <td>Clean, deduplicated potential donor list</td>
+      </tr>
+      <tr>
+        <td><strong>6. Cross-Reference</strong></td>
+        <td>All people</td>
+        <td>Checks everyone against BFF's 20,444 Charity Commission filings. If a discovered donor also appears as a trustee in the corpus, that's additional evidence strengthening the introduction path</td>
+        <td>Corpus-backed introduction evidence</td>
+      </tr>
+      <tr>
+        <td><strong>7. Score &amp; Rank</strong></td>
+        <td>All introduction routes</td>
+        <td>For every path from "your contact" &rarr; "potential donor", scores: how warm is this introduction? How aligned with BFF's mission? How wealthy? How reliable is the evidence? Ranks the best opportunities</td>
+        <td>Prioritised list: who to ask, for an intro to whom</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="stats-grid">
+    <div class="stat">
+      <div class="value gold">349</div>
+      <div class="label">Your contacts (seeds)</div>
+    </div>
+    <div class="stat">
+      <div class="value">5</div>
+      <div class="label">Public data sources</div>
+    </div>
+    <div class="stat">
+      <div class="value">20,444</div>
+      <div class="label">Corpus documents</div>
+    </div>
+    <div class="stat">
+      <div class="value green">~$0.28</div>
+      <div class="label">Cost per seed</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Key principle:</strong> Every recommendation traces back to evidence. The system never guesses &mdash; every score links to a specific public record, filing, or declared relationship. The output is always: "Ask [your contact] to introduce you to [potential donor] because [evidence]."
+  </div>
+
+  <!-- ═══════════════════════════════ -->
+  <!-- NETWORK DIAGRAM                -->
+  <!-- ═══════════════════════════════ -->
+  <h2 id="network" style="margin-top:48px">Introduction Network: Who Can Introduce You to Whom?</h2>
+  <p>This diagram shows the 8 simulated seeds (your contacts, in <strong style="color:var(--gold-accent)">gold</strong>) and the potential donors they can introduce BFF to (in <strong style="color:var(--blue)">blue</strong>). Lines represent introduction pathways; line style indicates warmth tier.</p>
+
+  <div style="margin:24px 0; overflow-x:auto;">
+  <svg viewBox="0 0 960 680" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:960px;font-family:'Inter',system-ui,sans-serif;background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:6px;">
+
+    <!-- Legend -->
+    <g transform="translate(20,16)">
+      <rect width="920" height="36" rx="4" fill="#f5f3ef" stroke="#e5e2dc"/>
+      <circle cx="20" cy="18" r="7" fill="#b8920f"/>
+      <text x="34" y="22" font-size="11" fill="#55524a" font-weight="500">Your contact (seed)</text>
+      <circle cx="175" cy="18" r="7" fill="#1a5fb4"/>
+      <text x="189" y="22" font-size="11" fill="#55524a" font-weight="500">Potential donor</text>
+      <line x1="310" y1="18" x2="345" y2="18" stroke="#2d7a3a" stroke-width="2.5"/>
+      <text x="352" y="22" font-size="11" fill="#55524a" font-weight="500">T1 Declared</text>
+      <line x1="440" y1="18" x2="475" y2="18" stroke="#1a5fb4" stroke-width="2" stroke-dasharray="6,3"/>
+      <text x="482" y="22" font-size="11" fill="#55524a" font-weight="500">T2 Network</text>
+      <line x1="570" y1="18" x2="605" y2="18" stroke="#9a6f09" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <text x="612" y="22" font-size="11" fill="#55524a" font-weight="500">T3 Corpus</text>
+      <rect x="700" y="8" width="52" height="20" rx="3" fill="#fde8e8" stroke="none"/>
+      <text x="710" y="22" font-size="10" fill="#b03030" font-weight="600">No routes</text>
+      <text x="770" y="22" font-size="11" fill="#55524a" font-weight="500">= needs manual path</text>
+    </g>
+
+    <!-- BFF Centre -->
+    <g transform="translate(480,350)">
+      <circle r="32" fill="#0d0c0a" stroke="#b8920f" stroke-width="2.5"/>
+      <text y="1" text-anchor="middle" font-size="13" font-weight="700" fill="#b8920f">BFF</text>
+      <text y="14" text-anchor="middle" font-size="8" fill="#7a776e">Centre</text>
+    </g>
+
+    <!-- === YOUR SEEDS (gold, arranged around left/centre) === -->
+
+    <!-- Avi Goldberg — seed, top-left -->
+    <g transform="translate(140,140)">
+      <circle r="22" fill="#b8920f" stroke="#0d0c0a" stroke-width="1.5"/>
+      <text y="1" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Avi</text>
+      <text y="10" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Goldberg</text>
+      <text y="34" text-anchor="middle" font-size="9" fill="#55524a" font-style="italic">supporter</text>
+    </g>
+    <!-- Avi -> BFF -->
+    <line x1="162" y1="140" x2="448" y2="345" stroke="#c8c4bb" stroke-width="1" stroke-dasharray="2,4"/>
+
+    <!-- Jeff Shear — seed, left -->
+    <g transform="translate(100,280)">
+      <circle r="22" fill="#b8920f" stroke="#0d0c0a" stroke-width="1.5"/>
+      <text y="1" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Jeff</text>
+      <text y="10" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Shear</text>
+      <text y="34" text-anchor="middle" font-size="9" fill="#55524a" font-style="italic">supporter</text>
+    </g>
+    <line x1="122" y1="280" x2="448" y2="345" stroke="#c8c4bb" stroke-width="1" stroke-dasharray="2,4"/>
+
+    <!-- Rob Perrins — seed, bottom-left -->
+    <g transform="translate(120,460)">
+      <circle r="22" fill="#b8920f" stroke="#0d0c0a" stroke-width="1.5"/>
+      <text y="1" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Rob</text>
+      <text y="10" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Perrins</text>
+      <text y="34" text-anchor="middle" font-size="9" fill="#55524a" font-style="italic">supporter</text>
+    </g>
+    <line x1="142" y1="460" x2="448" y2="355" stroke="#c8c4bb" stroke-width="1" stroke-dasharray="2,4"/>
+
+    <!-- Gary Lubner — seed, bottom-centre -->
+    <g transform="translate(300,550)">
+      <circle r="22" fill="#b8920f" stroke="#0d0c0a" stroke-width="1.5"/>
+      <text y="1" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Gary</text>
+      <text y="10" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Lubner</text>
+      <text y="34" text-anchor="middle" font-size="9" fill="#55524a" font-style="italic">supporter</text>
+    </g>
+    <line x1="320" y1="545" x2="470" y2="375" stroke="#c8c4bb" stroke-width="1" stroke-dasharray="2,4"/>
+
+    <!-- Piers Clanford — seed, bottom-right-ish -->
+    <g transform="translate(580,560)">
+      <circle r="22" fill="#b8920f" stroke="#0d0c0a" stroke-width="1.5"/>
+      <text y="1" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Piers</text>
+      <text y="10" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Clanford</text>
+      <text y="34" text-anchor="middle" font-size="9" fill="#55524a" font-style="italic">supporter</text>
+    </g>
+    <line x1="575" y1="540" x2="495" y2="375" stroke="#c8c4bb" stroke-width="1" stroke-dasharray="2,4"/>
+
+    <!-- Richard Couzens — seed, far-bottom-right (no routes) -->
+    <g transform="translate(780,540)">
+      <circle r="22" fill="#b8920f" stroke="#0d0c0a" stroke-width="1.5" opacity="0.5"/>
+      <text y="1" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Richard</text>
+      <text y="10" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Couzens</text>
+      <rect x="-28" y="22" width="56" height="16" rx="8" fill="#fde8e8"/>
+      <text y="34" text-anchor="middle" font-size="8" font-weight="600" fill="#b03030">No routes</text>
+    </g>
+    <line x1="765" y1="525" x2="510" y2="365" stroke="#c8c4bb" stroke-width="1" stroke-dasharray="2,4"/>
+
+    <!-- Lance Uggla — seed, far right (no routes) -->
+    <g transform="translate(860,340)">
+      <circle r="22" fill="#b8920f" stroke="#0d0c0a" stroke-width="1.5" opacity="0.5"/>
+      <text y="1" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Lance</text>
+      <text y="10" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Uggla</text>
+      <rect x="-28" y="22" width="56" height="16" rx="8" fill="#fde8e8"/>
+      <text y="34" text-anchor="middle" font-size="8" font-weight="600" fill="#b03030">No routes</text>
+    </g>
+    <line x1="838" y1="340" x2="512" y2="350" stroke="#c8c4bb" stroke-width="1" stroke-dasharray="2,4"/>
+
+    <!-- === POTENTIAL DONORS (blue, arranged on right/top) === -->
+
+    <!-- James Reed — discovered via Avi Goldberg (T1 declared) -->
+    <g transform="translate(340,80)">
+      <circle r="24" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1.5"/>
+      <text y="-2" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fff">James</text>
+      <text y="8" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fff">Reed</text>
+      <text y="38" text-anchor="middle" font-size="9" fill="#1a5fb4" font-weight="600">0.743 / 0.968</text>
+    </g>
+    <!-- Avi Goldberg -> James Reed (T1 declared, green solid) -->
+    <line x1="155" y1="122" x2="322" y2="96" stroke="#2d7a3a" stroke-width="2.5"/>
+
+    <!-- Hayley Ronson — discovered via Jeff Shear (T1 declared) -->
+    <g transform="translate(240,200)">
+      <circle r="24" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1.5"/>
+      <text y="-2" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fff">Hayley</text>
+      <text y="8" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fff">Ronson</text>
+      <text y="38" text-anchor="middle" font-size="9" fill="#1a5fb4" font-weight="600">0.640 / 0.907</text>
+    </g>
+    <!-- Jeff Shear -> Hayley Ronson (T1 declared) -->
+    <line x1="118" y1="268" x2="222" y2="218" stroke="#2d7a3a" stroke-width="2.5"/>
+
+    <!-- Gerald Ronson — discovered via Hayley Ronson network (T2) + corpus (T3) -->
+    <g transform="translate(380,190)">
+      <circle r="20" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/>
+      <text y="-2" text-anchor="middle" font-size="8" font-weight="600" fill="#fff">Gerald</text>
+      <text y="8" text-anchor="middle" font-size="8" font-weight="600" fill="#fff">Ronson</text>
+      <text y="32" text-anchor="middle" font-size="8" fill="#9a6f09">corpus: 4 filings</text>
+    </g>
+    <!-- Hayley -> Gerald (T2 network) -->
+    <line x1="262" y1="192" x2="360" y2="190" stroke="#1a5fb4" stroke-width="2" stroke-dasharray="6,3"/>
+
+    <!-- Sir Harvey McGrath — discovered via Lloyd Dorfman network (T2) -->
+    <g transform="translate(620,100)">
+      <circle r="24" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1.5"/>
+      <text y="-2" text-anchor="middle" font-size="7.5" font-weight="600" fill="#fff">Sir Harvey</text>
+      <text y="8" text-anchor="middle" font-size="7.5" font-weight="600" fill="#fff">McGrath</text>
+      <text y="38" text-anchor="middle" font-size="9" fill="#1a5fb4" font-weight="600">0.728 / 0.780</text>
+    </g>
+
+    <!-- Lloyd Dorfman — seed, top-right (researched, discovered McGrath) -->
+    <g transform="translate(780,170)">
+      <circle r="22" fill="#b8920f" stroke="#0d0c0a" stroke-width="1.5"/>
+      <text y="1" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Lloyd</text>
+      <text y="10" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Dorfman</text>
+      <text y="34" text-anchor="middle" font-size="9" fill="#55524a" font-style="italic">HNW seed</text>
+    </g>
+    <line x1="760" y1="170" x2="510" y2="340" stroke="#c8c4bb" stroke-width="1" stroke-dasharray="2,4"/>
+    <!-- Lloyd -> Sir Harvey (T2 network) -->
+    <line x1="760" y1="160" x2="644" y2="118" stroke="#1a5fb4" stroke-width="2" stroke-dasharray="6,3"/>
+
+    <!-- Dame Vivian Hunt — via Dorfman (T2) -->
+    <g transform="translate(700,80)">
+      <circle r="18" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/>
+      <text y="-1" text-anchor="middle" font-size="7" font-weight="600" fill="#fff">Dame Vivian</text>
+      <text y="8" text-anchor="middle" font-size="7" font-weight="600" fill="#fff">Hunt</text>
+    </g>
+    <line x1="770" y1="152" x2="710" y2="96" stroke="#1a5fb4" stroke-width="1.5" stroke-dasharray="6,3"/>
+
+    <!-- Evan Spiegel — discovered via Michael Lynton (T2 network) -->
+    <g transform="translate(560,240)">
+      <circle r="20" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/>
+      <text y="-2" text-anchor="middle" font-size="8" font-weight="600" fill="#fff">Evan</text>
+      <text y="8" text-anchor="middle" font-size="8" font-weight="600" fill="#fff">Spiegel</text>
+      <text y="32" text-anchor="middle" font-size="9" fill="#1a5fb4" font-weight="600">0.573 / 0.780</text>
+    </g>
+
+    <!-- Michael Lynton — seed, mid-right -->
+    <g transform="translate(700,270)">
+      <circle r="22" fill="#b8920f" stroke="#0d0c0a" stroke-width="1.5"/>
+      <text y="1" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Michael</text>
+      <text y="10" text-anchor="middle" font-size="8" font-weight="600" fill="#0d0c0a">Lynton</text>
+      <text y="34" text-anchor="middle" font-size="9" fill="#55524a" font-style="italic">HNW seed</text>
+    </g>
+    <line x1="680" y1="270" x2="512" y2="342" stroke="#c8c4bb" stroke-width="1" stroke-dasharray="2,4"/>
+    <!-- Lynton -> Spiegel (T2) -->
+    <line x1="680" y1="262" x2="578" y2="248" stroke="#1a5fb4" stroke-width="2" stroke-dasharray="6,3"/>
+
+    <!-- Ronald Lubner — discovered via Gary Lubner (T2 network) -->
+    <g transform="translate(200,480)">
+      <circle r="20" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/>
+      <text y="-2" text-anchor="middle" font-size="8" font-weight="600" fill="#fff">Ronald</text>
+      <text y="8" text-anchor="middle" font-size="8" font-weight="600" fill="#fff">Lubner</text>
+      <text y="32" text-anchor="middle" font-size="9" fill="#1a5fb4" font-weight="600">0.648 / 0.780</text>
+    </g>
+    <!-- Gary -> Ronald (T2 network) -->
+    <line x1="283" y1="540" x2="216" y2="498" stroke="#1a5fb4" stroke-width="2" stroke-dasharray="6,3"/>
+
+    <!-- Michael de Giorgio — via Gary Lubner (T2) -->
+    <g transform="translate(420,600)">
+      <circle r="18" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/>
+      <text y="-1" text-anchor="middle" font-size="7" font-weight="600" fill="#fff">M. de</text>
+      <text y="8" text-anchor="middle" font-size="7" font-weight="600" fill="#fff">Giorgio</text>
+    </g>
+    <line x1="318" y1="558" x2="404" y2="592" stroke="#1a5fb4" stroke-width="1.5" stroke-dasharray="6,3"/>
+
+    <!-- Karl Sheridan — via Piers Clanford (T2 network) -->
+    <g transform="translate(480,480)">
+      <circle r="18" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/>
+      <text y="-1" text-anchor="middle" font-size="7.5" font-weight="600" fill="#fff">Karl</text>
+      <text y="8" text-anchor="middle" font-size="7.5" font-weight="600" fill="#fff">Sheridan</text>
+    </g>
+    <!-- Piers -> Karl (T2 network) -->
+    <line x1="562" y1="548" x2="494" y2="496" stroke="#1a5fb4" stroke-width="1.5" stroke-dasharray="6,3"/>
+
+    <!-- Piers -> Rob Perrins (T1 declared — Perrins introduced Clanford) -->
+    <line x1="558" y1="555" x2="140" y2="465" stroke="#2d7a3a" stroke-width="2.5"/>
+
+    <!-- Sir Peter Lampl — via Dorfman network (T2), corpus (T3) -->
+    <g transform="translate(510,150)">
+      <circle r="18" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/>
+      <text y="-1" text-anchor="middle" font-size="7" font-weight="600" fill="#fff">Sir Peter</text>
+      <text y="8" text-anchor="middle" font-size="7" font-weight="600" fill="#fff">Lampl</text>
+    </g>
+    <line x1="775" y1="152" x2="526" y2="152" stroke="#9a6f09" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+    <!-- Alec Reed — discovered via James Reed network, corpus -->
+    <g transform="translate(260,120)">
+      <circle r="16" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/>
+      <text y="-1" text-anchor="middle" font-size="7" font-weight="600" fill="#fff">Alec</text>
+      <text y="8" text-anchor="middle" font-size="7" font-weight="600" fill="#fff">Reed</text>
+    </g>
+    <line x1="330" y1="92" x2="272" y2="108" stroke="#9a6f09" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+  </svg>
+  </div>
+
+  <div class="callout">
+    <strong>How to read this diagram:</strong> Gold circles are your existing contacts (seeds). Blue circles are people they can introduce you to. <strong style="color:var(--green)">Solid green lines</strong> = declared introductions (highest confidence, from spreadsheet). <strong style="color:var(--blue)">Dashed blue lines</strong> = discovered via network mapping (board colleagues, co-trustees). <strong style="color:var(--amber)">Dotted amber lines</strong> = corroborated via Charity Commission filings. Faded gold circles with red badges = seeds where the pipeline found no introduction routes (need manual paths).
+  </div>
+
+</section>
+
+<hr>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: DEMO TRACE                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="demo">
+  <h2>Live Demo: Discovering James Reed as a Potential Donor</h2>
+  <p>This section traces how the pipeline identifies <strong>James Reed</strong> (Chair of Reed Group, founder of The Reed Foundation) as a potential donor that BFF's existing contact <strong>Avi Goldberg</strong> can introduce you to. It walks through all seven phases showing the actual data transformations and scores.</p>
+
+  <div class="callout info">
+    <strong>About this demo:</strong> Avi Goldberg is one of BFF's MASTER supporters (row 180). His spreadsheet entry declares he can introduce James Reed (HNW target, row 51, affiliated with The Reed Foundation). The pipeline researches Reed, maps his network, and scores the strength of this introduction path.
+  </div>
+
+  <!-- Phase 1: Import -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num">1</span>
+      <span class="phase-label">Seed Import</span>
+      <span class="phase-time">~200ms</span>
+    </div>
+    <p>The XLSX parser detects HNW format (tier column before first_name), skips Salesforce metadata rows, and extracts structured fields.</p>
+    <div class="data-block">
+<span class="comment">// Parsed from HNW spreadsheet, row 51</span>
+{
+  <span class="key">"row_number"</span>: <span class="val">51</span>,
+  <span class="key">"first_name"</span>: <span class="val">"James"</span>,
+  <span class="key">"last_name"</span>: <span class="val">"Reed"</span>,
+  <span class="key">"tier"</span>: <span class="val">"A"</span>,
+  <span class="key">"primary_affiliation"</span>: <span class="val">"The Reed Foundation"</span>,
+  <span class="key">"introduced_by_raw"</span>: <span class="val">"Avi Goldberg (household)"</span>,
+  <span class="key">"funder_type"</span>: <span class="val">"High-net-worth"</span>,
+  <span class="key">"sub_type"</span>: <span class="val">"Target donor"</span>
+}
+    </div>
+  </div>
+
+  <!-- Phase 2: Bootstrap -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num">2</span>
+      <span class="phase-label">Bootstrap</span>
+      <span class="phase-time">~350ms</span>
+    </div>
+    <p>The bootstrap phase normalises the name, searches the existing database via trigram similarity, creates the entity record, and resolves the "introduced by" field.</p>
+
+    <h3>Name normalisation</h3>
+    <div class="data-block">
+<span class="key">Input:</span>  <span class="val">"James Reed"</span>
+<span class="key">Normalised:</span> <span class="val">"james reed"</span>  <span class="comment">// lowercase, no titles to strip</span>
+    </div>
+
+    <h3>Trigram match against existing entities</h3>
+    <table>
+      <thead>
+        <tr><th>Candidate</th><th>Trigram similarity</th><th>Decision</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>James Reed (corpus)</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:100%;background:var(--green)"></div></div><span class="num green">1.000</span></div></td>
+          <td><span class="badge badge-green">Auto-link</span></td>
+        </tr>
+        <tr>
+          <td>James Rees</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:62%;background:var(--amber)"></div></div><span class="num">0.615</span></div></td>
+          <td><span class="badge badge-amber">Below threshold</span></td>
+        </tr>
+        <tr>
+          <td>James Reid</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:55%;background:var(--amber)"></div></div><span class="num">0.545</span></div></td>
+          <td><span class="badge badge-amber">Below threshold</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout success">
+      <strong>Result:</strong> Exact match found (similarity 1.000 &ge; 0.95 threshold). James Reed is linked to the existing corpus entity rather than creating a duplicate. If no match existed, a new entity would be created with <code>source='seed_import'</code>.
+    </div>
+
+    <h3>Introducer resolution</h3>
+    <div class="data-block">
+<span class="key">Raw input:</span>   <span class="val">"Avi Goldberg (household)"</span>
+<span class="key">Parsed name:</span> <span class="val">"Avi Goldberg"</span>  <span class="comment">// stripped parenthetical note</span>
+<span class="key">Match:</span>       <span class="highlight">Found in MASTER supporters (row 180)</span>
+<span class="key">Route type:</span>  <span class="val">"spreadsheet_declared"</span>
+<span class="key">Warmth tier:</span> <span class="highlight">1 (direct &mdash; declared by spreadsheet)</span>
+    </div>
+
+    <p>An introduction route is created: Avi Goldberg (known supporter) can introduce James Reed (HNW target). Warmth tier 1 = highest confidence, since the relationship was explicitly declared in the spreadsheet.</p>
+  </div>
+
+  <!-- Phase 3: Research -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num">3</span>
+      <span class="phase-label">Augmentation: Research</span>
+      <span class="phase-time">~45s</span>
+    </div>
+    <p>The AI research agent searches public sources to build a comprehensive profile. This uses BFF's HNW Research Prompt (521 lines) as the system prompt with web search capabilities.</p>
+
+    <h3>Sources consulted</h3>
+    <table>
+      <thead>
+        <tr><th>Source</th><th>Records found</th><th>Key findings</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-blue">Companies House</span></td>
+          <td>14 appointments</td>
+          <td>Chair of Reed Global Ltd, Director of multiple Reed entities. Active since 1992.</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">Charity Commission</span></td>
+          <td>3 trusteeships</td>
+          <td>Trustee of The Reed Foundation (reg. 1069971), The Big Give (1136547), Reed's School Foundation</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">Public sources</span></td>
+          <td>8 signals</td>
+          <td>Author of "Put Your Mindset to Work" and "The 7 Things That Make or Break a Leader". Sunday Times Rich List. Known for youth employment and social mobility philanthropy.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Enrichment signals stored</h3>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="value">25</div>
+        <div class="label">Total signals</div>
+      </div>
+      <div class="stat">
+        <div class="value">14</div>
+        <div class="label">Company appointments</div>
+      </div>
+      <div class="stat">
+        <div class="value">3</div>
+        <div class="label">Charity trusteeships</div>
+      </div>
+      <div class="stat">
+        <div class="value green">$0.14</div>
+        <div class="label">Estimated cost</div>
+      </div>
+    </div>
+
+    <div class="data-block">
+<span class="comment">// Augmentation run record</span>
+{
+  <span class="key">"phase"</span>: <span class="val">"research"</span>,
+  <span class="key">"model"</span>: <span class="val">"claude-sonnet-4-20250514"</span>,
+  <span class="key">"prompt_version"</span>: <span class="val">"sha256:a8f3c2..."</span>,
+  <span class="key">"input_tokens"</span>: <span class="val">12,480</span>,
+  <span class="key">"output_tokens"</span>: <span class="val">4,820</span>,
+  <span class="key">"estimated_cost_usd"</span>: <span class="highlight">0.1098</span>,
+  <span class="key">"status"</span>: <span class="val">"completed"</span>
+}
+    </div>
+  </div>
+
+  <!-- Phase 4: Network Mapping -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num">4</span>
+      <span class="phase-label">Augmentation: Network Mapping</span>
+      <span class="phase-time">~60s</span>
+    </div>
+    <p>Using the research profile, the AI network mapping agent identifies people connected to James Reed who may be relevant to BFF's mission. It uses the Network Mapping Prompt (1,332 lines) with web search.</p>
+
+    <h3>Discovered contacts</h3>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Connection</th><th>Via</th><th>Priority</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Sir Peter Lampl</strong></td>
+          <td>Co-trustee, social mobility</td>
+          <td>Sutton Trust / education philanthropy</td>
+          <td><span class="badge badge-gold">P1</span></td>
+          <td><span class="badge badge-green">Staged</span></td>
+        </tr>
+        <tr>
+          <td><strong>Dame Julia Cleverdon</strong></td>
+          <td>Shared board, youth employment</td>
+          <td>Business in the Community</td>
+          <td><span class="badge badge-gold">P1</span></td>
+          <td><span class="badge badge-green">Staged</span></td>
+        </tr>
+        <tr>
+          <td><strong>Alec Reed CBE</strong></td>
+          <td>Father / co-founder</td>
+          <td>Reed Group / The Reed Foundation</td>
+          <td><span class="badge badge-gold">P1</span></td>
+          <td><span class="badge badge-green">Staged</span></td>
+        </tr>
+        <tr>
+          <td><strong>Gerald Ronson</strong></td>
+          <td>Philanthropy peer</td>
+          <td>Business / charity circuit overlap</td>
+          <td><span class="badge badge-blue">P2</span></td>
+          <td><span class="badge badge-green">Staged</span></td>
+        </tr>
+        <tr>
+          <td><strong>Lucy Heller</strong></td>
+          <td>Education sector colleague</td>
+          <td>ARK Schools / education reform</td>
+          <td><span class="badge badge-blue">P2</span></td>
+          <td><span class="badge badge-green">Staged</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <strong>Note:</strong> These contacts land in a staging area, not directly in the main database. This prevents unvalidated AI-discovered people from polluting the entity graph. Each must pass validation in Phase 5 before becoming a full entity.
+    </div>
+
+    <h3>Introduction routes created</h3>
+    <p>For Priority 1 contacts, introduction routes are created with warmth tier 2 (one-step &mdash; network inferred):</p>
+    <div class="data-block">
+<span class="comment">// Example: route via James Reed to Sir Peter Lampl</span>
+{
+  <span class="key">"target_entity_id"</span>: <span class="val">"james_reed"</span>,
+  <span class="key">"introducer_entity_id"</span>: <span class="val">"sir_peter_lampl"</span>,
+  <span class="key">"route_type"</span>: <span class="val">"network_inferred"</span>,
+  <span class="key">"warmth_tier"</span>: <span class="highlight">2</span>,
+  <span class="key">"via_organisation"</span>: <span class="val">"Sutton Trust"</span>,
+  <span class="key">"evidence"</span>: {
+    <span class="key">"source"</span>: <span class="val">"network_mapping"</span>,
+    <span class="key">"connection_type"</span>: <span class="val">"co-trustee, social mobility"</span>
+  }
+}
+    </div>
+  </div>
+
+  <!-- Phase 5: Staging -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num">5</span>
+      <span class="phase-label">Entity Staging &amp; Validation</span>
+      <span class="phase-time">~800ms</span>
+    </div>
+    <p>Each staged entity is matched against the full database using trigram similarity with organisation and postcode boosts. The system then decides: auto-promote, quarantine, or merge.</p>
+
+    <table>
+      <thead>
+        <tr><th>Staged entity</th><th>Best match</th><th>Confidence</th><th>Decision</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Sir Peter Lampl</td>
+          <td>Peter Lampl (corpus)</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:87%;background:var(--amber)"></div></div><span class="num amber">0.867</span></div></td>
+          <td><span class="badge badge-amber">Quarantine</span></td>
+        </tr>
+        <tr>
+          <td>Dame Julia Cleverdon</td>
+          <td><em>No match</em></td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:31%;background:var(--text-muted)"></div></div><span class="num">0.312</span></div></td>
+          <td><span class="badge badge-green">Auto-promote</span></td>
+        </tr>
+        <tr>
+          <td>Alec Reed CBE</td>
+          <td>Alec Reed (corpus)</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:93%;background:var(--green)"></div></div><span class="num green">0.932</span></div></td>
+          <td><span class="badge badge-green">Auto-merge</span></td>
+        </tr>
+        <tr>
+          <td>Gerald Ronson</td>
+          <td>Gerald Ronson (corpus)</td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:100%;background:var(--green)"></div></div><span class="num green">1.000</span></div></td>
+          <td><span class="badge badge-green">Auto-merge</span></td>
+        </tr>
+        <tr>
+          <td>Lucy Heller</td>
+          <td><em>No match</em></td>
+          <td><div class="score-bar"><div class="bar"><div class="fill" style="width:28%;background:var(--text-muted)"></div></div><span class="num">0.278</span></div></td>
+          <td><span class="badge badge-green">Auto-promote</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>Threshold rules:</strong>
+      <ul style="margin-top:8px">
+        <li>&ge; 0.90 &rarr; <strong>Auto-merge</strong> into existing entity via alias link</li>
+        <li>0.75 &ndash; 0.89 &rarr; <strong>Quarantine</strong> for human review (title difference may be "Sir Peter" vs "Peter")</li>
+        <li>&lt; 0.75 &rarr; <strong>Auto-promote</strong> as a new entity in the database</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 6: Cross-reference -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num">6</span>
+      <span class="phase-label">Corpus Cross-Reference</span>
+      <span class="phase-time">~1.2s</span>
+    </div>
+    <p>Every non-corpus entity is checked against BFF's 20,444 Charity Commission filings. If a person appears in both the seed data and the corpus, that creates a corpus-backed introduction route &mdash; the strongest evidence type.</p>
+
+    <h3>Cross-reference results for James Reed's network</h3>
+    <table>
+      <thead>
+        <tr><th>Entity</th><th>Corpus match</th><th>Confidence</th><th>Routes created</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>James Reed</td>
+          <td>Trustee in 3 filings (The Reed Foundation)</td>
+          <td><span class="badge badge-green">0.95+</span></td>
+          <td>Existing routes reinforced</td>
+        </tr>
+        <tr>
+          <td>Alec Reed CBE</td>
+          <td>Trustee in 5 filings (Reed Foundation, Academy)</td>
+          <td><span class="badge badge-green">Auto-merged</span></td>
+          <td>2 corpus-discovered routes</td>
+        </tr>
+        <tr>
+          <td>Gerald Ronson</td>
+          <td>Trustee in 2 filings (Gerald Ronson Foundation)</td>
+          <td><span class="badge badge-green">Auto-merged</span></td>
+          <td>3 corpus-discovered routes</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="data-block">
+<span class="comment">// New corpus-discovered route example</span>
+{
+  <span class="key">"route_type"</span>: <span class="val">"corpus_discovered"</span>,
+  <span class="key">"warmth_tier"</span>: <span class="highlight">3</span>,
+  <span class="key">"evidence"</span>: {
+    <span class="key">"source"</span>: <span class="val">"corpus_crossref"</span>,
+    <span class="key">"corpus_entity_id"</span>: <span class="val">"01HZ..."</span>,
+    <span class="key">"relationship_type"</span>: <span class="val">"co_trustee"</span>,
+    <span class="key">"relationship_confidence"</span>: <span class="highlight">0.92</span>
+  }
+}
+    </div>
+  </div>
+
+  <!-- Phase 7: Scoring -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num">7</span>
+      <span class="phase-label">Introduction Scoring</span>
+      <span class="phase-time">~400ms</span>
+    </div>
+    <p>Each introduction route is scored on two dimensions: <strong>Priority</strong> (how valuable is this introduction?) and <strong>Confidence</strong> (how reliable is the evidence?). The final ranking determines which routes surface first in the review queue.</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: SCORING DETAIL                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="scoring">
+  <h2>Scoring Breakdown: Ask Avi Goldberg to Introduce James Reed</h2>
+  <p>This is the top-scoring introduction path from the simulation: BFF asks Avi Goldberg (existing supporter) to introduce James Reed (potential donor). Here's exactly how the system scores this opportunity.</p>
+
+  <h3>Priority Score (how valuable?)</h3>
+  <p>Formula: <code>0.30 &times; introability + 0.25 &times; affinity + 0.20 &times; capacity + 0.15 &times; influence + 0.10 &times; strategic_fit</code></p>
+
+  <table>
+    <thead>
+      <tr><th>Component</th><th>Weight</th><th>Raw score</th><th>Weighted</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Introability</strong></td>
+        <td>0.30</td>
+        <td>
+          <div class="score-bar"><div class="bar"><div class="fill" style="width:95%;background:var(--gold-accent)"></div></div><span class="num gold">0.950</span></div>
+        </td>
+        <td class="gold"><strong>0.285</strong></td>
+        <td>Warmth tier 1 (spreadsheet declared) &rarr; 0.95</td>
+      </tr>
+      <tr>
+        <td><strong>Affinity</strong></td>
+        <td>0.25</td>
+        <td>
+          <div class="score-bar"><div class="bar"><div class="fill" style="width:65%;background:var(--blue)"></div></div><span class="num">0.650</span></div>
+        </td>
+        <td><strong>0.163</strong></td>
+        <td>Signals mention "youth", "education", "social mobility"</td>
+      </tr>
+      <tr>
+        <td><strong>Capacity</strong></td>
+        <td>0.20</td>
+        <td>
+          <div class="score-bar"><div class="bar"><div class="fill" style="width:70%;background:var(--blue)"></div></div><span class="num">0.700</span></div>
+        </td>
+        <td><strong>0.140</strong></td>
+        <td>"Rich List", "foundation", "director" keywords found</td>
+      </tr>
+      <tr>
+        <td><strong>Influence</strong></td>
+        <td>0.15</td>
+        <td>
+          <div class="score-bar"><div class="bar"><div class="fill" style="width:70%;background:var(--blue)"></div></div><span class="num">0.700</span></div>
+        </td>
+        <td><strong>0.105</strong></td>
+        <td>14 company appointments + 3 charity trusteeships = high influence</td>
+      </tr>
+      <tr>
+        <td><strong>Strategic fit</strong></td>
+        <td>0.10</td>
+        <td>
+          <div class="score-bar"><div class="bar"><div class="fill" style="width:50%;background:var(--blue)"></div></div><span class="num">0.500</span></div>
+        </td>
+        <td><strong>0.050</strong></td>
+        <td>"Youth" and "young people" keywords in enrichment</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" style="text-align:right;font-weight:700;border-top:2px solid var(--border-mid);padding-top:12px">PRIORITY SCORE</td>
+        <td colspan="2" style="border-top:2px solid var(--border-mid);padding-top:12px">
+          <span style="font-size:20px;font-weight:700;color:var(--gold-accent)">0.743</span>
+          <span class="badge badge-gold" style="margin-left:8px">Medium-High</span>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <h3>Confidence Score (how reliable?)</h3>
+  <p>Formula: <code>0.35 &times; identity + 0.30 &times; relationship + 0.20 &times; corroboration + 0.15 &times; freshness</code></p>
+
+  <table>
+    <thead>
+      <tr><th>Component</th><th>Weight</th><th>Raw score</th><th>Weighted</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Identity</strong></td>
+        <td>0.35</td>
+        <td>
+          <div class="score-bar"><div class="bar"><div class="fill" style="width:95%;background:var(--green)"></div></div><span class="num green">0.950</span></div>
+        </td>
+        <td class="green"><strong>0.333</strong></td>
+        <td>Bootstrap match confidence (exact name match)</td>
+      </tr>
+      <tr>
+        <td><strong>Relationship</strong></td>
+        <td>0.30</td>
+        <td>
+          <div class="score-bar"><div class="bar"><div class="fill" style="width:95%;background:var(--green)"></div></div><span class="num green">0.950</span></div>
+        </td>
+        <td class="green"><strong>0.285</strong></td>
+        <td>Spreadsheet declared &rarr; 0.95 confidence</td>
+      </tr>
+      <tr>
+        <td><strong>Corroboration</strong></td>
+        <td>0.20</td>
+        <td>
+          <div class="score-bar"><div class="bar"><div class="fill" style="width:100%;background:var(--green)"></div></div><span class="num green">1.000</span></div>
+        </td>
+        <td class="green"><strong>0.200</strong></td>
+        <td>3+ independent sources (Companies House, Charity Commission, public)</td>
+      </tr>
+      <tr>
+        <td><strong>Freshness</strong></td>
+        <td>0.15</td>
+        <td>
+          <div class="score-bar"><div class="bar"><div class="fill" style="width:100%;background:var(--green)"></div></div><span class="num green">1.000</span></div>
+        </td>
+        <td class="green"><strong>0.150</strong></td>
+        <td>Data retrieved today (within 30-day window)</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" style="text-align:right;font-weight:700;border-top:2px solid var(--border-mid);padding-top:12px">CONFIDENCE SCORE</td>
+        <td colspan="2" style="border-top:2px solid var(--border-mid);padding-top:12px">
+          <span style="font-size:20px;font-weight:700;color:var(--green)">0.968</span>
+          <span class="badge badge-green" style="margin-left:8px">Very High</span>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <h3>Final recommendation record</h3>
+  <div class="data-block">
+{
+  <span class="key">"seed_id"</span>:              <span class="val">"avi_goldberg"</span>,
+  <span class="key">"candidate_entity_id"</span>:   <span class="val">"james_reed"</span>,
+  <span class="key">"rank"</span>:                  <span class="highlight">1</span>,
+  <span class="key">"priority_score"</span>:         <span class="highlight">0.743</span>,
+  <span class="key">"confidence_score"</span>:        <span class="highlight">0.968</span>,
+  <span class="key">"status"</span>:                 <span class="val">"pending_review"</span>,
+  <span class="key">"strongest_path"</span>: {
+    <span class="key">"route_type"</span>:     <span class="val">"spreadsheet_declared"</span>,
+    <span class="key">"warmth_tier"</span>:    <span class="highlight">1</span>,
+    <span class="key">"via_entity_id"</span>:  <span class="val">null</span>,
+    <span class="key">"via_organisation"</span>: <span class="val">null</span>
+  },
+  <span class="key">"reason_codes"</span>:   [<span class="val">"declared_introduction"</span>, <span class="val">"medium_priority"</span>]
+}
+  </div>
+
+  <h3>Warmth tier reference</h3>
+  <table>
+    <thead>
+      <tr><th>Tier</th><th>Label</th><th>Introability score</th><th>Source</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-green">1</span></td>
+        <td>Direct</td>
+        <td><strong>0.95</strong></td>
+        <td>Spreadsheet declared ("introduced by" column)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">2</span></td>
+        <td>One-step</td>
+        <td><strong>0.75</strong></td>
+        <td>Network inferred (Priority 1 contacts from network mapping)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-amber">3</span></td>
+        <td>Two-step</td>
+        <td><strong>0.55</strong></td>
+        <td>Corpus discovered (found via Charity Commission filings)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">4</span></td>
+        <td>Inferred</td>
+        <td><strong>0.35</strong></td>
+        <td>Sector peer (similar sector, no direct evidence)</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<hr>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 3B: 8-SEED SIMULATION RESULTS                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="simulation">
+  <h2>Simulation Results: 8 of Your Contacts &rarr; Who They Can Introduce You To</h2>
+  <p class="lead">We ran 8 of BFF's real contacts through the full pipeline to discover who they can introduce you to for donations. These results use BFF's actual scoring algorithms on real spreadsheet data.</p>
+
+  <div class="stats-grid">
+    <div class="stat">
+      <div class="value gold">8</div>
+      <div class="label">Seeds simulated</div>
+    </div>
+    <div class="stat">
+      <div class="value">107</div>
+      <div class="label">Enrichment signals</div>
+    </div>
+    <div class="stat">
+      <div class="value">24</div>
+      <div class="label">Network contacts found</div>
+    </div>
+    <div class="stat">
+      <div class="value">20</div>
+      <div class="label">Introduction routes scored</div>
+    </div>
+    <div class="stat">
+      <div class="value green">$2.16</div>
+      <div class="label">Estimated total cost</div>
+    </div>
+    <div class="stat">
+      <div class="value">5</div>
+      <div class="label">Corpus cross-matches</div>
+    </div>
+  </div>
+
+  <!-- Seed-by-seed results table -->
+  <h3>Results by contact</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Your contact</th>
+        <th>Type</th>
+        <th>Bootstrap</th>
+        <th>Signals</th>
+        <th>People discovered</th>
+        <th>Corpus</th>
+        <th>Best intro to make</th>
+        <th>Priority</th>
+        <th>Confidence</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>James Reed</strong></td>
+        <td><span class="badge badge-gold">HNW</span></td>
+        <td><span class="badge badge-green">Linked</span></td>
+        <td>25</td>
+        <td>5 contacts</td>
+        <td>3 matches</td>
+        <td>Ask Avi to intro <strong>James Reed</strong> <span class="badge badge-green">T1</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:74.3%;background:var(--gold-accent)"></div></div><span class="num gold">0.743</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:96.8%;background:var(--green)"></div></div><span class="num green">0.968</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Hayley Ronson</strong></td>
+        <td><span class="badge badge-gold">HNW</span></td>
+        <td><span class="badge badge-green">Linked</span></td>
+        <td>6</td>
+        <td>3 contacts</td>
+        <td>1 match</td>
+        <td>Ask Jeff to intro <strong>Hayley Ronson</strong> <span class="badge badge-green">T1</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:64%;background:var(--gold-accent)"></div></div><span class="num gold">0.640</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:90.7%;background:var(--green)"></div></div><span class="num green">0.907</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Lloyd Dorfman</strong></td>
+        <td><span class="badge badge-gold">HNW</span></td>
+        <td><span class="badge badge-green">Linked</span></td>
+        <td>23</td>
+        <td>4 contacts</td>
+        <td>2 matches</td>
+        <td>Dorfman &rarr; <strong>Sir Harvey McGrath</strong> <span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:72.8%;background:var(--gold-accent)"></div></div><span class="num gold">0.728</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Piers Clanford</strong></td>
+        <td><span class="badge badge-blue">Supporter</span></td>
+        <td><span class="badge badge-green">Linked</span></td>
+        <td>10</td>
+        <td>3 contacts</td>
+        <td>1 match</td>
+        <td>Ask Rob to intro <strong>Piers Clanford</strong> <span class="badge badge-green">T1</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:70%;background:var(--gold-accent)"></div></div><span class="num gold">0.700</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:96.7%;background:var(--green)"></div></div><span class="num green">0.967</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Gary Lubner</strong></td>
+        <td><span class="badge badge-blue">Supporter</span></td>
+        <td><span class="badge badge-green">Linked</span></td>
+        <td>15</td>
+        <td>3 contacts</td>
+        <td>1 match</td>
+        <td>Lubner &rarr; <strong>Ronald Lubner</strong> <span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:64.8%;background:var(--gold-accent)"></div></div><span class="num gold">0.648</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Michael Lynton</strong></td>
+        <td><span class="badge badge-gold">HNW</span></td>
+        <td><span class="badge badge-green">Linked</span></td>
+        <td>12</td>
+        <td>3 contacts</td>
+        <td>0</td>
+        <td>Lynton &rarr; <strong>Evan Spiegel</strong> <span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:57.3%;background:var(--amber)"></div></div><span class="num amber">0.573</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Lance Uggla</strong></td>
+        <td><span class="badge badge-gold">HNW</span></td>
+        <td><span class="badge badge-green">Linked</span></td>
+        <td>12</td>
+        <td>2 contacts</td>
+        <td>0</td>
+        <td><em class="red">No routes</em></td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td><strong>Richard Couzens</strong></td>
+        <td><span class="badge badge-blue">Supporter</span></td>
+        <td><span class="badge badge-red">Created</span></td>
+        <td>5</td>
+        <td>1 contact</td>
+        <td>0</td>
+        <td><em class="red">No routes</em></td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Individual seed deep-dives -->
+  <h3>Seed deep-dives</h3>
+
+  <!-- Hayley Ronson -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num" style="background:var(--gold-accent);color:var(--pitch-black)">1</span>
+      <span class="phase-label">Hayley Ronson</span>
+      <span class="badge badge-gold" style="margin-left:8px">HNW Target</span>
+      <span class="phase-time">Row 54</span>
+    </div>
+    <p><strong>Affiliation:</strong> Gerald and Gail Ronson Family Foundation &mdash; <strong>Introduced by:</strong> Jeff Shear</p>
+
+    <table>
+      <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> to existing entity at similarity <strong>1.000</strong> (exact match in corpus)</td></tr>
+        <tr><td>Research</td><td>2 company appointments, 1 trusteeship, 3 signal keywords (foundation, community, youth)</td></tr>
+        <tr><td>Network mapping</td><td>3 contacts: Gerald Ronson (P1), Gail Ronson (P1), Lisa Sheridan Ronson (P2)</td></tr>
+        <tr><td>Staging</td><td>Gerald Ronson: <span class="badge badge-green">auto-merged</span> (1.000). Gail Ronson: <span class="badge badge-green">auto-merged</span> (1.000). Lisa Sheridan Ronson: <span class="badge badge-green">auto-promoted</span> (new entity)</td></tr>
+        <tr><td>Cross-reference</td><td>1 corpus match: Gerald Ronson appears in 4 Charity Commission filings</td></tr>
+        <tr><td>Scoring</td><td>4 routes scored. Best: <strong>Jeff Shear &rarr; Hayley Ronson</strong> (declared, T1). Priority: <span class="gold">0.640</span>, Confidence: <span class="green">0.907</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout success">
+      <strong>Key finding:</strong> The Ronson family network is well-connected in the corpus (Gerald Ronson Foundation has 4 filings). The declared introduction via Jeff Shear gives the highest confidence route, while Gerald and Gail Ronson provide network-inferred alternatives.
+    </div>
+  </div>
+
+  <!-- Lloyd Dorfman -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num" style="background:var(--gold-accent);color:var(--pitch-black)">2</span>
+      <span class="phase-label">Lloyd Dorfman</span>
+      <span class="badge badge-gold" style="margin-left:8px">HNW Target</span>
+      <span class="phase-time">Row 61</span>
+    </div>
+    <p><strong>Affiliation:</strong> Travelex founder, Esselco &mdash; <strong>Introduced by:</strong> <em>none declared</em></p>
+
+    <table>
+      <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> to existing entity at similarity <strong>1.000</strong></td></tr>
+        <tr><td>Research</td><td>11 appointments, 5 trusteeships, 7 signal keywords (rich list, foundation, founder, community, youth, education, social mobility)</td></tr>
+        <tr><td>Network mapping</td><td>4 contacts: Sir Harvey McGrath (P1), Dame Vivian Hunt (P1), Peter Lampl (P2), David Harding (P2)</td></tr>
+        <tr><td>Staging</td><td>Peter Lampl: <span class="badge badge-green">auto-merged</span>. David Harding: <span class="badge badge-green">auto-merged</span>. Others: <span class="badge badge-green">auto-promoted</span></td></tr>
+        <tr><td>Cross-reference</td><td>2 corpus matches: Lloyd Dorfman (3 filings, 0.98), Sir Harvey McGrath (2 filings, 0.91)</td></tr>
+        <tr><td>Scoring</td><td>4 routes scored. Best: <strong>Sir Harvey McGrath</strong> (network inferred, T2). Priority: <span class="gold">0.728</span>, Confidence: <span class="blue">0.780</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>Key finding:</strong> Dorfman is the highest-scoring HNW target <em>without</em> a declared introducer. The pipeline discovered Sir Harvey McGrath as a P1 network contact and then corroborated via corpus filings. His 11 appointments + 5 trusteeships give the strongest influence score in this batch (0.700). The rich list + foundation signals maximise capacity (0.800).
+    </div>
+  </div>
+
+  <!-- Piers Clanford -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num" style="background:var(--blue);color:#fff">3</span>
+      <span class="phase-label">Piers Clanford</span>
+      <span class="badge badge-blue" style="margin-left:8px">Supporter</span>
+      <span class="phase-time">Row 144</span>
+    </div>
+    <p><strong>Affiliation:</strong> Berkeley Foundation &mdash; <strong>Introduced by:</strong> Rob Perrins &mdash; <strong>Tier:</strong> Important</p>
+
+    <table>
+      <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> at similarity <strong>1.000</strong></td></tr>
+        <tr><td>Research</td><td>4 appointments, 2 trusteeships, 4 keywords (foundation, community, youth, sport)</td></tr>
+        <tr><td>Network mapping</td><td>3 contacts: Rob Perrins (P1), Karl Sheridan (P1), Tony Pidgley (P2)</td></tr>
+        <tr><td>Staging</td><td>Rob Perrins: <span class="badge badge-green">auto-merged</span>. Others: <span class="badge badge-green">auto-promoted</span></td></tr>
+        <tr><td>Cross-reference</td><td>1 corpus match: Piers Clanford in 1 filing (0.93)</td></tr>
+        <tr><td>Scoring</td><td>4 routes. Best: <strong>Rob Perrins &rarr; Piers Clanford</strong> (declared, T1). Priority: <span class="gold">0.700</span>, Confidence: <span class="green">0.967</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout success">
+      <strong>Key finding:</strong> Clanford is a supporter who is also useful as an introducer. The "sport" keyword boosts his strategic_fit to 0.800 &mdash; the highest in the batch. The declared Rob Perrins introduction plus 4+ corroborating sources gives near-perfect confidence (0.967).
+    </div>
+  </div>
+
+  <!-- Michael Lynton -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num" style="background:var(--gold-accent);color:var(--pitch-black)">4</span>
+      <span class="phase-label">Michael Lynton</span>
+      <span class="badge badge-gold" style="margin-left:8px">HNW Target</span>
+      <span class="phase-time">Row 14</span>
+    </div>
+    <p><strong>Affiliation:</strong> <em>none listed</em> &mdash; <strong>Introduced by:</strong> <em>none declared</em></p>
+
+    <table>
+      <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> at similarity <strong>1.000</strong></td></tr>
+        <tr><td>Research</td><td>5 appointments, 2 trusteeships, 4 keywords (director, education, foundation, partner)</td></tr>
+        <tr><td>Network mapping</td><td>3 contacts: Evan Spiegel (P1 &mdash; Snap Inc board), David Geffen (P2), Michael Bloomberg (P2)</td></tr>
+        <tr><td>Staging</td><td>All 3: <span class="badge badge-green">auto-promoted</span> (no corpus matches)</td></tr>
+        <tr><td>Cross-reference</td><td>No corpus matches (US-based entities not in UK Charity Commission data)</td></tr>
+        <tr><td>Scoring</td><td>1 route (P1 only). <strong>Evan Spiegel</strong> (network inferred, T2). Priority: <span class="amber">0.573</span>, Confidence: <span class="blue">0.780</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <strong>Key finding:</strong> Lynton's primarily US-based network yields zero corpus matches. The pipeline only scores P1 contacts as introduction routes, so P2 contacts (Geffen, Bloomberg) don't generate routes. This is by design &mdash; P2 contacts would need a second hop. The lower strategic_fit score (0.300) reflects no sport/youth keywords in his profile.
+    </div>
+  </div>
+
+  <!-- Lance Uggla -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num" style="background:var(--red);color:#fff">5</span>
+      <span class="phase-label">Lance Uggla</span>
+      <span class="badge badge-gold" style="margin-left:8px">HNW Target</span>
+      <span class="phase-time">Row 20</span>
+    </div>
+    <p><strong>Affiliation:</strong> <em>none listed</em> &mdash; <strong>Introduced by:</strong> <em>none declared</em> &mdash; <strong>Email:</strong> <em>none</em></p>
+
+    <table>
+      <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> at similarity <strong>1.000</strong></td></tr>
+        <tr><td>Research</td><td>8 appointments, 0 trusteeships, 4 keywords (net worth, forbes, founder, director)</td></tr>
+        <tr><td>Network mapping</td><td>2 contacts: Michael Spencer (P2), Dame Julia Hoggett (P2) &mdash; no P1 contacts</td></tr>
+        <tr><td>Staging</td><td>Michael Spencer: <span class="badge badge-green">auto-merged</span>. Dame Julia Hoggett: <span class="badge badge-green">auto-promoted</span></td></tr>
+        <tr><td>Cross-reference</td><td>No corpus matches</td></tr>
+        <tr><td>Scoring</td><td><span class="badge badge-red">No routes</span> &mdash; no declared introducer, no P1 network contacts</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <strong>Key finding:</strong> Lance Uggla is a dead end for warm introductions in this run. No spreadsheet-declared introducer, and network mapping only found P2 connections (financial sector peers). This seed needs either: (a) a manual introduction path to be added, or (b) a second-hop network expansion to promote P2 contacts. His high capacity signals (Forbes, net worth) make him a high-value target worth pursuing through other channels.
+    </div>
+  </div>
+
+  <!-- Richard Couzens -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num" style="background:var(--red);color:#fff">6</span>
+      <span class="phase-label">Richard Couzens</span>
+      <span class="badge badge-blue" style="margin-left:8px">Supporter</span>
+      <span class="phase-time">Row 133</span>
+    </div>
+    <p><strong>Affiliation:</strong> BMO Capital Markets &mdash; <strong>Introduced by:</strong> <em>none declared</em> &mdash; <strong>Tier:</strong> Important</p>
+
+    <table>
+      <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Bootstrap</td><td><span class="badge badge-red">Created</span> new entity &mdash; closest match "Richard Cousins" at 0.600 (below 0.85 threshold). <em>Different person.</em></td></tr>
+        <tr><td>Research</td><td>3 appointments, 0 trusteeships, 2 keywords (director, partner)</td></tr>
+        <tr><td>Network mapping</td><td>1 contact: Darryl White (P2 &mdash; BMO CEO)</td></tr>
+        <tr><td>Staging</td><td>Darryl White: <span class="badge badge-green">auto-promoted</span></td></tr>
+        <tr><td>Cross-reference</td><td>No corpus matches</td></tr>
+        <tr><td>Scoring</td><td><span class="badge badge-red">No routes</span> &mdash; sole contact is P2, no introducer declared</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <strong>Key finding:</strong> The trigram matcher correctly distinguishes "Couzens" from "Cousins" at 0.600 similarity &mdash; well below the 0.85 quarantine threshold. This shows the conservative matching is working as intended. However, Couzens' sparse profile (financial services, no charity/youth signals) means the pipeline cannot discover warm paths. As a supporter, his primary value is as a <em>potential introducer</em>, not a candidate.
+    </div>
+  </div>
+
+  <!-- Gary Lubner -->
+  <div class="card">
+    <div class="card-header">
+      <span class="phase-num" style="background:var(--blue);color:#fff">7</span>
+      <span class="phase-label">Gary Lubner</span>
+      <span class="badge badge-blue" style="margin-left:8px">Supporter</span>
+      <span class="phase-time">Row 161</span>
+    </div>
+    <p><strong>Affiliation:</strong> This Day Foundation &mdash; <strong>Introduced by:</strong> <em>none declared</em> &mdash; <strong>Tier:</strong> Priority / very important</p>
+
+    <table>
+      <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> at similarity <strong>1.000</strong></td></tr>
+        <tr><td>Research</td><td>6 appointments, 3 trusteeships, 6 keywords (foundation, community, youth, education, poverty, social mobility)</td></tr>
+        <tr><td>Network mapping</td><td>3 contacts: Ronald Lubner (P1 &mdash; father/Belron), Michael de Giorgio (P1 &mdash; co-trustee), Dame Julia Cleverdon (P2)</td></tr>
+        <tr><td>Staging</td><td>All 3: <span class="badge badge-green">auto-promoted</span> (not in corpus)</td></tr>
+        <tr><td>Cross-reference</td><td>1 corpus match: Gary Lubner in 2 filings (0.95)</td></tr>
+        <tr><td>Scoring</td><td>3 routes. Best: <strong>Ronald Lubner</strong> (network inferred, T2). Priority: <span class="gold">0.648</span>, Confidence: <span class="blue">0.780</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout success">
+      <strong>Key finding:</strong> Lubner has the richest cause-alignment profile in this batch: foundation + community + youth + education + poverty + social mobility. His affinity score (0.750) and strategic fit (0.500) are among the highest. As a "Priority / very important" supporter, his value to BFF is as an introducer to his network, particularly through the This Day Foundation.
+    </div>
+  </div>
+
+</section>
+
+<hr>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: LEARNINGS, SUCCESSES & IMPROVEMENTS            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="learnings">
+  <h2>Learnings, Successes &amp; Improvements</h2>
+  <p class="lead">What we learned from running 8 of your real contacts through the pipeline, what worked well, and what we'd improve to find more potential donors.</p>
+
+  <!-- Successes -->
+  <h3>Successes</h3>
+
+  <div class="card" style="border-left:3px solid var(--green)">
+    <h3 style="color:var(--green);margin-top:0">1. Name matching is conservative and correct</h3>
+    <p>The trigram matcher correctly distinguished "Richard Couzens" from "Richard Cousins" (similarity 0.600, well below the 0.85 threshold), preventing a false merge with the late Compass Group CEO. Meanwhile, exact matches like "Lloyd Dorfman" and "Hayley Ronson" linked at 1.000. Zero false positives across 8 seeds.</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--green)">
+    <h3 style="color:var(--green);margin-top:0">2. Declared introductions score highest</h3>
+    <p>Seeds with "introduced by" data consistently produce the best routes. James Reed (via Avi Goldberg), Hayley Ronson (via Jeff Shear), and Piers Clanford (via Rob Perrins) all scored confidence &ge; 0.907. The warmth tier 1 introability (0.95) combined with relationship confidence (0.95) gives a significant scoring advantage. This validates the spreadsheet as the most valuable data source.</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--green)">
+    <h3 style="color:var(--green);margin-top:0">3. Corpus cross-reference finds hidden connections</h3>
+    <p>5 of 8 seeds had corpus matches. Lloyd Dorfman's network was enriched by finding Sir Harvey McGrath in 2 charity filings. Gerald Ronson appeared in 4 filings, corroborating the Hayley Ronson family connection. The corpus adds evidence depth that purely online research cannot provide.</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--green)">
+    <h3 style="color:var(--green);margin-top:0">4. Cost-efficient at scale</h3>
+    <p>8 seeds cost an estimated $2.16 (~$0.27/seed). Projected full-run cost for all 349 seeds: ~$94. This is well within the $100 default cost cap. The two-phase augmentation (research then network mapping) is more efficient than a single monolithic call.</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--green)">
+    <h3 style="color:var(--green);margin-top:0">5. Scoring formulas differentiate effectively</h3>
+    <p>Priority scores ranged from 0.573 to 0.743 across seeds, showing meaningful differentiation. Lloyd Dorfman's rich signal set (rich list, foundation, 11 appointments) pushed his capacity and influence scores to the top of the batch. Piers Clanford's "sport" keyword uniquely boosted strategic_fit to 0.800. The formulas are sensitive to the right signals.</p>
+  </div>
+
+  <!-- Learnings -->
+  <h3>Learnings</h3>
+
+  <div class="card" style="border-left:3px solid var(--gold-accent)">
+    <h3 style="color:var(--gold-accent);margin-top:0">1. Contacts without declared connections need more hops</h3>
+    <p>Lance Uggla and Richard Couzens produced zero introduction routes. The pipeline only found P2 connections (sector peers) for them &mdash; not close enough to generate scored routes. For contacts without spreadsheet-declared paths, a second-hop expansion from P2 connections would unlock additional donors to be introduced to.</p>
+    <p><strong>Affected contacts:</strong> Lance Uggla, Richard Couzens (25% of sample)</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--gold-accent)">
+    <h3 style="color:var(--gold-accent);margin-top:0">2. US/international contacts discover fewer potential donors</h3>
+    <p>Michael Lynton's primarily US-based network (Snap Inc, Sony) yielded zero corpus matches because BFF's corpus is UK Charity Commission filings. His contacts are harder to corroborate. International contacts may need additional data sources (SEC filings, US nonprofit registries) to discover more introducible donors.</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--gold-accent)">
+    <h3 style="color:var(--gold-accent);margin-top:0">3. Affiliation data dramatically improves donor discovery</h3>
+    <p>Contacts with listed affiliations (The Reed Foundation, Berkeley Foundation, This Day Foundation) produced richer networks of potential donors. Contacts without affiliations (Lance Uggla, Michael Lynton) had sparser results. The affiliation acts as a research anchor &mdash; knowing which boards your contact sits on helps the AI find their co-trustees and fellow directors (who are the potential donors).</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--gold-accent)">
+    <h3 style="color:var(--gold-accent);margin-top:0">4. Supporters as introducers is validated</h3>
+    <p>Piers Clanford (supporter, tier "Important") scored 0.700 priority and 0.967 confidence. His "sport" keyword alignment and declared Rob Perrins introduction made him one of the strongest results. This confirms the design decision: supporters are both excludable as candidates and valuable as introducers. The <code>exclude_as_candidate + available_as_introducer</code> split is working correctly.</p>
+  </div>
+
+  <!-- Improvements -->
+  <h3>Recommended improvements</h3>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>Improvement</th><th>Impact</th><th>Effort</th><th>Evidence from simulation</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-gold">1</span></td>
+        <td><strong>P2 contact route expansion</strong><br>Create warmth tier 4 routes from P2 contacts</td>
+        <td class="green">High</td>
+        <td>Medium</td>
+        <td>Would give Lance Uggla 2 routes and Richard Couzens 1 route. Currently 25% of seeds have zero routes.</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gold">2</span></td>
+        <td><strong>Strategic fit keyword expansion</strong><br>Add more BFF-specific keywords: "disadvantaged", "inner city", "grassroots", "academy", "football", "coaching"</td>
+        <td class="green">High</td>
+        <td>Low</td>
+        <td>Only 2 of 8 seeds triggered sport-related keywords. BFF's mission vocabulary should be broader.</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gold">3</span></td>
+        <td><strong>International data sources</strong><br>Add SEC EDGAR, US 990 forms, Charity Navigator for US-based targets</td>
+        <td class="amber">Medium</td>
+        <td>High</td>
+        <td>Michael Lynton got zero corpus matches due to UK-only data. Other international HNWs likely affected.</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gold">4</span></td>
+        <td><strong>Missing affiliation inference</strong><br>Use Companies House to backfill affiliation when spreadsheet is blank</td>
+        <td class="amber">Medium</td>
+        <td>Medium</td>
+        <td>Lance Uggla and Michael Lynton had no affiliation listed but have known public company roles.</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gold">5</span></td>
+        <td><strong>Confidence penalty for thin evidence</strong><br>Lower confidence when total signals &lt; 5</td>
+        <td>Low</td>
+        <td>Low</td>
+        <td>Richard Couzens has only 5 signals but network routes (if created) would score the same confidence as Lloyd Dorfman with 23 signals.</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gold">6</span></td>
+        <td><strong>Batch summary dashboard</strong><br>After pipeline run, show aggregate statistics: routes by warmth tier, seeds with zero routes, cost breakdown</td>
+        <td>Low</td>
+        <td>Low</td>
+        <td>Users need a quick way to identify which seeds need manual attention (like Uggla and Couzens).</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Score distribution analysis -->
+  <h3>Score distribution analysis</h3>
+
+  <div class="stats-grid">
+    <div class="stat">
+      <div class="value gold">0.672</div>
+      <div class="label">Mean priority score</div>
+    </div>
+    <div class="stat">
+      <div class="value green">0.838</div>
+      <div class="label">Mean confidence score</div>
+    </div>
+    <div class="stat">
+      <div class="value">0.743</div>
+      <div class="label">Highest priority</div>
+    </div>
+    <div class="stat">
+      <div class="value">0.573</div>
+      <div class="label">Lowest priority</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Metric</th><th>Best performer</th><th>Score</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Highest priority</td>
+        <td><strong>James Reed</strong></td>
+        <td class="gold"><strong>0.743</strong></td>
+        <td>Declared T1 introduction + rich list + foundation + education + youth</td>
+      </tr>
+      <tr>
+        <td>Highest confidence</td>
+        <td><strong>Piers Clanford</strong></td>
+        <td class="green"><strong>0.967</strong></td>
+        <td>Declared introduction + 4+ corroborating sources + fresh data</td>
+      </tr>
+      <tr>
+        <td>Best combined</td>
+        <td><strong>James Reed</strong></td>
+        <td class="gold"><strong>0.743 / 0.968</strong></td>
+        <td>Highest priority with near-perfect confidence</td>
+      </tr>
+      <tr>
+        <td>Most network contacts</td>
+        <td><strong>James Reed</strong></td>
+        <td>5 contacts</td>
+        <td>Broad network across education, philanthropy, and business</td>
+      </tr>
+      <tr>
+        <td>Richest signals</td>
+        <td><strong>Lloyd Dorfman</strong></td>
+        <td>23 signals</td>
+        <td>11 appointments + 5 trusteeships + 7 keywords</td>
+      </tr>
+      <tr>
+        <td>Best strategic fit</td>
+        <td><strong>Piers Clanford</strong></td>
+        <td><strong>0.800</strong></td>
+        <td>Only seed with "sport" keyword in enrichment signals</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>Overall verdict:</strong> The pipeline successfully discovers potential donors through your contacts' networks. Contacts with declared relationships and rich public profiles (Avi Goldberg &rarr; Reed, Jeff Shear &rarr; Ronson, Rob Perrins &rarr; Clanford) produce the highest-confidence paths. Contacts without either (Uggla, Couzens) correctly surface as needing manual attention. The primary improvement opportunity is expanding discovery for contacts where the pipeline found no introduction paths.
+  </div>
+
+</section>
+
+<hr>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 5: USER MANUAL                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="manual">
+  <h2>User Manual</h2>
+  <p class="lead">Step-by-step guide to running the Seed Intelligence Pipeline.</p>
+
+  <h3>Prerequisites</h3>
+  <ul>
+    <li>A Bloomsbury Football Foundation account with admin access</li>
+    <li>Spreadsheet files in XLSX format (HNW targets or MASTER supporters)</li>
+    <li>An Anthropic API key configured in the system settings (for augmentation phases)</li>
+  </ul>
+
+  <hr style="margin:24px 0">
+
+  <h3>1. Importing a spreadsheet</h3>
+
+  <div class="manual-step">
+    <div class="step-circle">1</div>
+    <div class="step-content">
+      <h4>Upload the XLSX file</h4>
+      <p>Navigate to <strong>Seed Imports</strong> in the admin panel. Click <strong>New Import</strong> and upload your spreadsheet. The system auto-detects whether it's an HNW targets file or MASTER supporters file based on column layout.</p>
+    </div>
+  </div>
+
+  <div class="manual-step">
+    <div class="step-circle">2</div>
+    <div class="step-content">
+      <h4>Review parsed rows</h4>
+      <p>After upload, the system shows a preview of parsed rows. Check that names, affiliations, and "introduced by" fields parsed correctly. Common issues: special characters in names, missing required fields, Salesforce metadata in early rows (auto-skipped).</p>
+    </div>
+  </div>
+
+  <div class="manual-step">
+    <div class="step-circle">3</div>
+    <div class="step-content">
+      <h4>Process the import</h4>
+      <p>Click <strong>Process Import</strong> to trigger bootstrap. This creates entity records, seed entries, known contacts (for supporters), and introduction routes from "introduced by" fields. Typical time: 5-15 seconds for 300 rows.</p>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <strong>Spreadsheet formats supported:</strong><br>
+    <strong>HNW targets:</strong> Columns in order: Tier, First Name, Last Name, Affiliation, Introduced By, Email, Funder Type, Sub Type<br>
+    <strong>MASTER supporters:</strong> Columns in order: First Name, Last Name, Affiliation, Introduced By, Email, Funder Type, Sub Type, Tier<br>
+    Both formats skip Salesforce metadata rows (rows 1-11) automatically.
+  </div>
+
+  <h3>2. Running augmentation</h3>
+
+  <div class="manual-step">
+    <div class="step-circle">4</div>
+    <div class="step-content">
+      <h4>Start augmentation</h4>
+      <p>From the seed list, select seeds to augment and click <strong>Run Augmentation</strong>. Or trigger augmentation for all seeds via the pipeline run page. The system processes up to 5 seeds concurrently, with a configurable cost cap (default: $50).</p>
+    </div>
+  </div>
+
+  <div class="manual-step">
+    <div class="step-circle">5</div>
+    <div class="step-content">
+      <h4>Monitor progress</h4>
+      <p>The pipeline dashboard shows real-time status for each seed: research phase, network mapping phase, and cost accrued. Each seed takes approximately 45-90 seconds to fully augment (research + network mapping).</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <strong>Cost awareness:</strong> Each seed costs approximately <strong>$0.28</strong> to augment. A full run of 349 seeds costs approximately <strong>$97</strong>. The system will pause if the cost cap is reached. You can adjust the cap per-run.
+  </div>
+
+  <h3>3. Reviewing staged entities</h3>
+
+  <div class="manual-step">
+    <div class="step-circle">6</div>
+    <div class="step-content">
+      <h4>Review quarantined entities</h4>
+      <p>Navigate to <strong>Staged Entities</strong>. This shows people discovered by network mapping that the system couldn't confidently match or reject. For each, you see the AI-proposed identity and the closest existing database match. Choose: <strong>Promote</strong> (new person), <strong>Merge</strong> (same as existing), or <strong>Reject</strong> (not relevant).</p>
+    </div>
+  </div>
+
+  <div class="manual-step">
+    <div class="step-circle">7</div>
+    <div class="step-content">
+      <h4>Understand match confidence</h4>
+      <p>The confidence percentage indicates how similar the staged entity is to an existing record. Above 90%: the system auto-merged already. Between 75-89%: the system flagged it for your judgement (often a title difference like "Sir Peter" vs "Peter"). Below 75%: the system auto-promoted it as a new person.</p>
+    </div>
+  </div>
+
+  <h3>4. Understanding results</h3>
+
+  <div class="manual-step">
+    <div class="step-circle">8</div>
+    <div class="step-content">
+      <h4>Read candidate recommendations</h4>
+      <p>After the pipeline completes, the <strong>Recommendations</strong> view shows scored introduction routes. Each row represents: "Supporter X can introduce Target Y via connection Z." Sorted by priority score within each seed.</p>
+    </div>
+  </div>
+
+  <div class="manual-step">
+    <div class="step-circle">9</div>
+    <div class="step-content">
+      <h4>Interpret the scores</h4>
+      <p><strong>Priority score</strong> (0&ndash;1): How valuable is this introduction? Combines warmth of the path, cause alignment, financial capacity, influence, and strategic fit.<br>
+      <strong>Confidence score</strong> (0&ndash;1): How reliable is the evidence? Combines identity certainty, relationship evidence depth, number of independent sources, and data freshness.</p>
+    </div>
+  </div>
+
+  <div class="manual-step">
+    <div class="step-circle">10</div>
+    <div class="step-content">
+      <h4>Take action</h4>
+      <p>For each recommendation, you can: <strong>Accept</strong> (move to active pipeline), <strong>Reject</strong> (not a good fit), or <strong>Defer</strong> (revisit later). Accepted recommendations feed into the existing dossier generation and export workflow.</p>
+    </div>
+  </div>
+
+  <h3>5. API reference (for technical users)</h3>
+
+  <table>
+    <thead>
+      <tr><th>Endpoint</th><th>Method</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>/api/seed-imports</code></td><td>POST</td><td>Upload XLSX, create import record</td></tr>
+      <tr><td><code>/api/seed-imports/:id</code></td><td>GET</td><td>Import status + parsed rows</td></tr>
+      <tr><td><code>/api/seed-imports/:id/process</code></td><td>POST</td><td>Trigger bootstrap (entity creation + route resolution)</td></tr>
+      <tr><td><code>/api/seeds/:id/augment</code></td><td>POST</td><td>Augment a single seed (research + network mapping)</td></tr>
+      <tr><td><code>/api/runs/:id/seed-pipeline</code></td><td>POST</td><td>Full pipeline run for all seeds</td></tr>
+      <tr><td><code>/api/introduction-routes</code></td><td>GET</td><td>Query routes by target or introducer</td></tr>
+      <tr><td><code>/api/staged-entities</code></td><td>GET</td><td>List pending staged entities</td></tr>
+      <tr><td><code>/api/staged-entities/:id/promote</code></td><td>POST</td><td>Promote, reject, or merge a staged entity</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6. Troubleshooting</h3>
+
+  <table>
+    <thead>
+      <tr><th>Issue</th><th>Cause</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Import shows 0 rows</td>
+        <td>Spreadsheet format not recognised</td>
+        <td>Check that column headers match the expected format. The parser looks for "First Name" and "Last Name" columns.</td>
+      </tr>
+      <tr>
+        <td>Augmentation stalls</td>
+        <td>Cost cap reached</td>
+        <td>Check the run's <code>total_cost_usd</code> vs <code>cost_cap_usd</code>. Increase the cap or augment seeds individually.</td>
+      </tr>
+      <tr>
+        <td>Too many quarantined entities</td>
+        <td>Title/honour variations (Sir, Dame, CBE)</td>
+        <td>The name normaliser strips common titles, but unusual ones may slip through. Review and merge manually.</td>
+      </tr>
+      <tr>
+        <td>"No completed corpus run"</td>
+        <td>Corpus pipeline hasn't been run yet</td>
+        <td>The cross-reference phase is optional. Run the corpus pipeline first for best results, or skip cross-ref.</td>
+      </tr>
+      <tr>
+        <td>Low priority scores everywhere</td>
+        <td>Enrichment signals are sparse</td>
+        <td>Check that the Anthropic API key is valid and web search is returning results. Low signals = low scores.</td>
+      </tr>
+    </tbody>
+  </table>
+
+</section>
+
+<!-- Footer -->
+<div class="footer">
+  <div>
+    <span class="brand">Bloomsbury Football Foundation</span> &mdash; Seed Intelligence Pipeline Report
+  </div>
+  <div>
+    Generated 20 May 2026 &mdash; v2.0 &mdash; 8-seed simulation
+  </div>
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

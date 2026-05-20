@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Introduction Discovery Report — Bloomsbury Football Foundation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pitch-black:#0d0c0a;--deep-charcoal:#1a1916;--mid-charcoal:#2e2c27;
+    --surface-warm:#f5f3ef;--surface-raised:#fafaf8;
+    --border-subtle:#e5e2dc;--border-mid:#c8c4bb;
+    --gold-accent:#b8920f;--gold-light:#d4ad2a;
+    --text-primary:#0d0c0a;--text-secondary:#55524a;--text-muted:#7a776e;
+    --green:#2d7a3a;--green-bg:#e8f5ea;
+    --amber:#9a6f09;--amber-bg:#fef3d0;
+    --red:#b03030;--red-bg:#fde8e8;
+    --blue:#1a5fb4;--blue-bg:#e0ecf8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;font-size:14px;color:var(--text-primary);background:var(--surface-warm);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .topnav{background:var(--pitch-black);padding:16px 32px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+  .topnav .logo{color:var(--gold-accent);font-weight:700;font-size:16px;letter-spacing:.02em}
+  .topnav .sep{color:var(--mid-charcoal)}
+  .topnav .page-title{color:#b0ada5;font-weight:500;font-size:14px}
+  .topnav-links{margin-left:auto;display:flex;gap:8px}
+  .topnav-links a{color:#b0ada5;text-decoration:none;font-size:12px;font-weight:500;padding:6px 12px;border-radius:4px;transition:background .15s}
+  .topnav-links a:hover{background:var(--deep-charcoal);color:#fff}
+  .container{max-width:960px;margin:0 auto;padding:40px 24px 80px}
+  h1{font-size:28px;font-weight:700;margin-bottom:4px}
+  .subtitle{font-size:14px;color:var(--text-secondary);margin-bottom:32px}
+  h2{font-size:20px;font-weight:700;margin:40px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--border-subtle)}
+  h3{font-size:16px;font-weight:600;margin:24px 0 12px}
+  h4{font-size:14px;font-weight:600;margin:16px 0 8px}
+  p{margin-bottom:12px;color:var(--text-secondary)}
+  p.lead{font-size:16px;color:var(--text-primary)}
+  section{scroll-margin-top:72px}
+  .card{background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:6px;padding:20px;margin-bottom:16px}
+  .card-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .card-header .phase-num{background:var(--pitch-black);color:var(--gold-accent);font-weight:700;font-size:11px;width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .card-header .phase-label{font-weight:600;font-size:14px}
+  .card-header .phase-time{margin-left:auto;font-size:12px;color:var(--text-muted)}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:16px 0}
+  .stat{background:var(--surface-warm);border:1px solid var(--border-subtle);border-radius:4px;padding:12px 16px;text-align:center}
+  .stat .value{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+  .stat .label{font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+  .gold{color:var(--gold-accent)}.green{color:var(--green)}.amber{color:var(--amber)}.red{color:var(--red)}.blue{color:var(--blue)}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
+  .badge-gold{background:#f5ecd0;color:var(--gold-accent)}.badge-green{background:var(--green-bg);color:var(--green)}
+  .badge-amber{background:var(--amber-bg);color:var(--amber)}.badge-red{background:var(--red-bg);color:var(--red)}
+  .badge-blue{background:var(--blue-bg);color:var(--blue)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+  thead th{background:var(--surface-warm);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);text-align:left;padding:8px 12px;border-bottom:1px solid var(--border-mid)}
+  tbody td{padding:8px 12px;border-bottom:1px solid var(--border-subtle);vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  .score-bar{display:flex;align-items:center;gap:8px}
+  .score-bar .bar{flex:1;height:6px;background:var(--border-subtle);border-radius:3px;overflow:hidden}
+  .score-bar .bar .fill{height:100%;border-radius:3px}
+  .score-bar .num{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;min-width:40px;text-align:right}
+  .data-block{background:var(--pitch-black);color:#c8c4bb;border-radius:6px;padding:16px 20px;font-family:'SF Mono','Fira Code','Consolas',monospace;font-size:12px;line-height:1.7;overflow-x:auto;margin:12px 0}
+  .data-block .key{color:var(--gold-light)}.data-block .val{color:#e0ddd6}.data-block .comment{color:#7a776e}.data-block .highlight{color:var(--gold-accent);font-weight:600}
+  .callout{border-left:3px solid var(--gold-accent);background:#faf8f2;padding:16px 20px;border-radius:0 6px 6px 0;margin:16px 0}
+  .callout.info{border-left-color:var(--blue);background:#f0f5fb}
+  .callout.warn{border-left-color:var(--amber);background:#fdf8ec}
+  .callout.success{border-left-color:var(--green);background:#f0f8f1}
+  .callout strong{font-weight:600}
+  hr{border:none;border-top:1px solid var(--border-subtle);margin:32px 0}
+  ul,ol{margin:8px 0 12px 20px;color:var(--text-secondary)}
+  li{margin-bottom:4px}
+  .footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--border-subtle);display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted)}
+  .footer .brand{color:var(--gold-accent);font-weight:600}
+  .intro-card{border-left:3px solid var(--gold-accent)}
+  .intro-card .intro-header{display:flex;align-items:baseline;gap:12px;margin-bottom:8px}
+  .intro-card .intro-header .intro-name{font-size:18px;font-weight:700}
+  .route-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border-subtle)}
+  .route-row:last-child{border-bottom:none}
+  .route-arrow{color:var(--gold-accent);font-weight:700}
+  @media print{.topnav{position:static}body{font-size:11px}.container{max-width:100%;padding:16px}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="logo">BFF</span>
+  <span class="sep">/</span>
+  <span class="page-title">Introduction Discovery Report</span>
+  <div class="topnav-links">
+    <a href="#summary">Summary</a>
+    <a href="#case-1">Roden</a>
+    <a href="#case-2">Storch</a>
+    <a href="#case-3">Lawford</a>
+    <a href="#case-4">Turner</a>
+    <a href="#case-5">Duffield</a>
+    <a href="#case-6">Klute</a>
+    <a href="#case-7">Majaro</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SUMMARY                                   -->
+<!-- ══════════════════════════════════════════ -->
+<section id="summary">
+  <h1>Who Can Your People Introduce You To?</h1>
+  <p class="subtitle">7 BFF contacts analysed &mdash; 22 potential donors discovered &mdash; 21 introduction routes scored</p>
+
+  <p class="lead">We took 7 of BFF's real contacts and ran them through the Seed Intelligence Pipeline. For each person, the system researched their public profile, mapped their professional network, and discovered potential donors they could introduce BFF to. Below is a case study for each contact.</p>
+
+  <div class="stats-grid">
+    <div class="stat"><div class="value gold">7</div><div class="label">Your contacts analysed</div></div>
+    <div class="stat"><div class="value blue">22</div><div class="label">Potential donors found</div></div>
+    <div class="stat"><div class="value">21</div><div class="label">Introduction routes</div></div>
+    <div class="stat"><div class="value green">$1.89</div><div class="label">Total est. cost</div></div>
+    <div class="stat"><div class="value">6</div><div class="label">Corpus matches</div></div>
+    <div class="stat"><div class="value">3</div><div class="label">Declared intros</div></div>
+  </div>
+
+  <h3>At a glance: every contact and their best introduction</h3>
+  <table>
+    <thead>
+      <tr><th>Your contact</th><th>Tier</th><th>People they can intro you to</th><th>Best introduction</th><th>Priority</th><th>Confidence</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Barbara Storch</strong></td>
+        <td><span class="badge badge-amber">Important</span></td>
+        <td>4 people</td>
+        <td>Ask Kyle Brentwood to intro <strong>Barbara</strong>, then Barbara &rarr; <strong>Sir Ronald Cohen</strong></td>
+        <td><span class="gold"><strong>0.708</strong></span></td>
+        <td><span class="green"><strong>0.967</strong></span></td>
+      </tr>
+      <tr>
+        <td><strong>Stuart Roden</strong></td>
+        <td><span class="badge badge-gold">Priority</span></td>
+        <td>4 people</td>
+        <td>Ask Gary Lubner to intro <strong>Stuart</strong>, then Stuart &rarr; <strong>Sir Paul Marshall</strong></td>
+        <td><span class="gold"><strong>0.703</strong></span></td>
+        <td><span class="green"><strong>0.967</strong></span></td>
+      </tr>
+      <tr>
+        <td><strong>Natasha Turner</strong></td>
+        <td><span class="badge badge-gold">Priority</span></td>
+        <td>4 people</td>
+        <td>Natasha &rarr; <strong>Jess Gr&oslash;nlie</strong> via Oak Foundation</td>
+        <td><span class="gold"><strong>0.673</strong></span></td>
+        <td><span class="blue"><strong>0.780</strong></span></td>
+      </tr>
+      <tr>
+        <td><strong>Philip Lawford</strong></td>
+        <td><span class="badge badge-amber">Important</span></td>
+        <td>3 people</td>
+        <td>Philip &rarr; <strong>Nicolai Tangen</strong> via AKO Foundation</td>
+        <td><span class="gold"><strong>0.648</strong></span></td>
+        <td><span class="blue"><strong>0.780</strong></span></td>
+      </tr>
+      <tr>
+        <td><strong>Nadine Majaro</strong></td>
+        <td><span class="badge badge-amber">Important</span></td>
+        <td>3 people</td>
+        <td>Nadine &rarr; <strong>Tim Wheeler</strong> via Progress Foundation</td>
+        <td><span class="gold"><strong>0.648</strong></span></td>
+        <td><span class="blue"><strong>0.780</strong></span></td>
+      </tr>
+      <tr>
+        <td><strong>Arabella Duffield</strong></td>
+        <td><span class="badge badge-gold">Priority</span></td>
+        <td>2 people</td>
+        <td>Ask James Lambert to intro <strong>Arabella</strong></td>
+        <td><span class="gold"><strong>0.625</strong></span></td>
+        <td><span class="green"><strong>0.907</strong></span></td>
+      </tr>
+      <tr>
+        <td><strong>Eva Klute</strong></td>
+        <td><span class="badge badge-amber">Important</span></td>
+        <td>2 people</td>
+        <td>Eva &rarr; <strong>Mark Gregory</strong> via community football</td>
+        <td><span class="amber"><strong>0.570</strong></span></td>
+        <td><span class="blue"><strong>0.780</strong></span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<hr>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- CASE STUDY 1: Stuart Roden                -->
+<!-- ══════════════════════════════════════════ -->
+<section id="case-1">
+  <h2>Case Study 1: Stuart Roden</h2>
+
+  <div class="card intro-card">
+    <div class="intro-header">
+      <span class="intro-name">Stuart Roden</span>
+      <span class="badge badge-gold">Priority / very important</span>
+      <span class="badge badge-blue">Supporter</span>
+    </div>
+    <p style="margin:0"><strong>Affiliation:</strong> Lansdowne Partners &mdash; <strong>Introduced by:</strong> Gary Lubner &mdash; <strong>Row:</strong> 149</p>
+  </div>
+
+  <h3>Pipeline trace</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> at similarity 1.000 (exact match)</td></tr>
+      <tr><td>Research</td><td>7 company appointments, 3 trusteeships, 6 signal keywords: foundation, director, partner, education, youth, social mobility</td></tr>
+      <tr><td>Network mapping</td><td><strong>4 people discovered:</strong> Sir Paul Marshall (P1), Sir Ronald Cohen (P1), Peter Davies (P1), Nicolai Tangen (P2)</td></tr>
+      <tr><td>Staging</td><td>Sir Ronald Cohen: <span class="badge badge-green">auto-merged</span>. Nicolai Tangen: <span class="badge badge-green">auto-merged</span>. Others: <span class="badge badge-green">auto-promoted</span></td></tr>
+      <tr><td>Corpus</td><td>2 matches: Stuart Roden (2 filings), Sir Ronald Cohen (3 filings)</td></tr>
+      <tr><td>Scoring</td><td><strong>6 routes scored</strong> (1 declared + 3 network + 2 corpus)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Who Stuart can introduce BFF to</h3>
+  <table>
+    <thead><tr><th>Potential donor</th><th>How</th><th>Via</th><th>Warmth</th><th>Priority</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Sir Paul Marshall</strong></td>
+        <td>Stuart's board colleague in hedge fund philanthropy</td>
+        <td>ARK Schools / hedge fund philanthropy</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:64.8%;background:var(--gold-accent)"></div></div><span class="num gold">0.648</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Sir Ronald Cohen</strong></td>
+        <td>Impact investing pioneer, Bridges Fund co-founder</td>
+        <td>Bridges Fund Management / impact investing</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:64.8%;background:var(--gold-accent)"></div></div><span class="num gold">0.648</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Peter Davies</strong></td>
+        <td>Lansdowne Partners co-founder</td>
+        <td>Lansdowne Partners</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:64.8%;background:var(--gold-accent)"></div></div><span class="num gold">0.648</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Sir Ronald Cohen</strong> (corpus)</td>
+        <td>Also appears in 3 Charity Commission filings</td>
+        <td>Corpus corroboration</td>
+        <td><span class="badge badge-amber">T3</span></td>
+        <td colspan="2"><em>Additional evidence strengthening the T2 route above</em></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout success">
+    <strong>Action for BFF:</strong> Stuart Roden is a goldmine. He can introduce you to Sir Paul Marshall (major education philanthropist, ARK Schools founder) and Sir Ronald Cohen (impact investing pioneer, corroborated in 3 Charity Commission filings). Ask Gary Lubner (who introduced Stuart) to facilitate a warm ask. Priority: <strong>HIGH</strong>.
+  </div>
+</section>
+
+<hr>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- CASE STUDY 2: Barbara Storch              -->
+<!-- ══════════════════════════════════════════ -->
+<section id="case-2">
+  <h2>Case Study 2: Barbara Storch</h2>
+
+  <div class="card intro-card">
+    <div class="intro-header">
+      <span class="intro-name">Barbara Storch</span>
+      <span class="badge badge-amber">Important</span>
+      <span class="badge badge-blue">Supporter</span>
+    </div>
+    <p style="margin:0"><strong>Affiliation:</strong> Bridges Impact Foundation &mdash; <strong>Introduced by:</strong> Kyle Brentwood &mdash; <strong>Row:</strong> 89</p>
+  </div>
+
+  <h3>Pipeline trace</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> at 1.000</td></tr>
+      <tr><td>Research</td><td>4 appointments, 4 trusteeships, 6 keywords: foundation, community, youth, education, poverty, social mobility</td></tr>
+      <tr><td>Network mapping</td><td><strong>4 people discovered:</strong> Sir Ronald Cohen (P1), Michele Fitzpatrick (P1), David Blood (P2), Dame Julia Cleverdon (P2)</td></tr>
+      <tr><td>Staging</td><td>Sir Ronald Cohen: <span class="badge badge-green">auto-merged</span>. Others: <span class="badge badge-green">auto-promoted</span></td></tr>
+      <tr><td>Corpus</td><td>2 matches: Barbara Storch (1 filing), Sir Ronald Cohen (3 filings)</td></tr>
+      <tr><td>Scoring</td><td><strong>5 routes scored</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Who Barbara can introduce BFF to</h3>
+  <table>
+    <thead><tr><th>Potential donor</th><th>How</th><th>Via</th><th>Warmth</th><th>Priority</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Sir Ronald Cohen</strong></td>
+        <td>Bridges Fund Management founder &mdash; Barbara's P1 contact</td>
+        <td>Bridges Impact Foundation / impact investing</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:64.8%;background:var(--gold-accent)"></div></div><span class="num gold">0.648</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Michele Fitzpatrick</strong></td>
+        <td>Co-trustee at Bridges Impact Foundation</td>
+        <td>Bridges Impact Foundation</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:64.8%;background:var(--gold-accent)"></div></div><span class="num gold">0.648</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout success">
+    <strong>Action for BFF:</strong> Barbara's strongest signal is her link to Sir Ronald Cohen &mdash; a world-leading impact investor who appears in 3 Charity Commission filings. Her cause alignment is exceptional: foundation + community + youth + education + poverty + social mobility covers nearly every BFF priority. Ask Kyle Brentwood to warm up the path.
+  </div>
+</section>
+
+<hr>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- CASE STUDY 3: Philip Lawford              -->
+<!-- ══════════════════════════════════════════ -->
+<section id="case-3">
+  <h2>Case Study 3: Philip Lawford</h2>
+
+  <div class="card intro-card">
+    <div class="intro-header">
+      <span class="intro-name">Philip Lawford</span>
+      <span class="badge badge-amber">Important</span>
+      <span class="badge badge-blue">Supporter</span>
+    </div>
+    <p style="margin:0"><strong>Affiliation:</strong> AKO Foundation &mdash; <strong>Introduced by:</strong> <em>none declared</em> &mdash; <strong>Row:</strong> 74</p>
+  </div>
+
+  <h3>Pipeline trace</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> at 1.000</td></tr>
+      <tr><td>Research</td><td>5 appointments, 3 trusteeships, 4 keywords: foundation, education, youth, community</td></tr>
+      <tr><td>Network mapping</td><td><strong>3 people discovered:</strong> Nicolai Tangen (P1), Cathy Pitt (P1), David Harding (P2)</td></tr>
+      <tr><td>Staging</td><td>Nicolai Tangen: <span class="badge badge-green">auto-merged</span>. David Harding: <span class="badge badge-green">auto-merged</span>. Cathy Pitt: <span class="badge badge-green">auto-promoted</span></td></tr>
+      <tr><td>Corpus</td><td>1 match: Philip Lawford (2 filings)</td></tr>
+      <tr><td>Scoring</td><td><strong>3 routes scored</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Who Philip can introduce BFF to</h3>
+  <table>
+    <thead><tr><th>Potential donor</th><th>How</th><th>Via</th><th>Warmth</th><th>Priority</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Nicolai Tangen</strong></td>
+        <td>AKO Capital founder, major education philanthropist</td>
+        <td>AKO Foundation (Philip is a trustee)</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:64.8%;background:var(--gold-accent)"></div></div><span class="num gold">0.648</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Cathy Pitt</strong></td>
+        <td>AKO Foundation co-trustee</td>
+        <td>AKO Foundation</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:64.8%;background:var(--gold-accent)"></div></div><span class="num gold">0.648</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>Action for BFF:</strong> Philip's AKO Foundation link is the key asset. Nicolai Tangen (now CEO of Norges Bank Investment Management, managing $1.7tn) is a major education philanthropist through AKO. Philip sits on the same foundation board &mdash; this is a genuine warm path. No declared introducer, so approach Philip directly as an existing supporter.
+  </div>
+</section>
+
+<hr>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- CASE STUDY 4: Natasha Turner              -->
+<!-- ══════════════════════════════════════════ -->
+<section id="case-4">
+  <h2>Case Study 4: Natasha Turner</h2>
+
+  <div class="card intro-card">
+    <div class="intro-header">
+      <span class="intro-name">Natasha Turner</span>
+      <span class="badge badge-gold">Priority / very important</span>
+      <span class="badge badge-blue">Supporter</span>
+    </div>
+    <p style="margin:0"><strong>Affiliation:</strong> Oak Foundation &mdash; <strong>Introduced by:</strong> <em>none declared</em> &mdash; <strong>Row:</strong> 61</p>
+  </div>
+
+  <h3>Pipeline trace</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> at 1.000</td></tr>
+      <tr><td>Research</td><td>3 appointments, 5 trusteeships, 7 keywords: foundation, community, youth, education, poverty, mental health, wellbeing</td></tr>
+      <tr><td>Network mapping</td><td><strong>4 people:</strong> Jess Gr&oslash;nlie (P1), Douglas Griffiths (P1), Alan Parker (P2), Lord Alli (P2)</td></tr>
+      <tr><td>Staging</td><td>All 4: <span class="badge badge-green">auto-promoted</span> (no corpus matches for discovered contacts)</td></tr>
+      <tr><td>Corpus</td><td>1 match: Natasha Turner (3 filings)</td></tr>
+      <tr><td>Scoring</td><td><strong>3 routes scored</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Who Natasha can introduce BFF to</h3>
+  <table>
+    <thead><tr><th>Potential donor</th><th>How</th><th>Via</th><th>Warmth</th><th>Priority</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Jess Gr&oslash;nlie</strong></td>
+        <td>Oak Foundation programme director, youth focus</td>
+        <td>Oak Foundation</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:67.3%;background:var(--gold-accent)"></div></div><span class="num gold">0.673</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+      <tr>
+        <td><strong>Douglas Griffiths</strong></td>
+        <td>Oak Foundation co-trustee, youth focus</td>
+        <td>Oak Foundation</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:67.3%;background:var(--gold-accent)"></div></div><span class="num gold">0.673</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout success">
+    <strong>Action for BFF:</strong> Natasha has the <em>best cause alignment</em> of all 7 contacts &mdash; 7 keywords covering foundation, community, youth, education, poverty, mental health, and wellbeing. The Oak Foundation is one of the world's largest private foundations. Her P1 contacts (Gr&oslash;nlie and Griffiths) control grant-making. Natasha herself appears in 3 Charity Commission filings. Approach her directly &mdash; she's already a Priority supporter.
+  </div>
+</section>
+
+<hr>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- CASE STUDY 5: Arabella Duffield           -->
+<!-- ══════════════════════════════════════════ -->
+<section id="case-5">
+  <h2>Case Study 5: Arabella Duffield</h2>
+
+  <div class="card intro-card">
+    <div class="intro-header">
+      <span class="intro-name">Arabella Duffield</span>
+      <span class="badge badge-gold">Priority / very important</span>
+      <span class="badge badge-blue">Supporter</span>
+    </div>
+    <p style="margin:0"><strong>Affiliation:</strong> <em>none listed</em> &mdash; <strong>Introduced by:</strong> James Lambert &mdash; <strong>Row:</strong> 181</p>
+  </div>
+
+  <h3>Pipeline trace</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Bootstrap</td><td><span class="badge badge-red">Created</span> new entity (no existing match; similarity 0.032)</td></tr>
+      <tr><td>Research</td><td>2 appointments, 1 trusteeship, 3 keywords: community, youth, wellbeing</td></tr>
+      <tr><td>Network mapping</td><td><strong>2 people:</strong> Sophie Goldschmidt (P2), Emily Nash (P2) &mdash; no P1 contacts</td></tr>
+      <tr><td>Staging</td><td>Both: <span class="badge badge-green">auto-promoted</span></td></tr>
+      <tr><td>Corpus</td><td>No matches</td></tr>
+      <tr><td>Scoring</td><td><strong>1 route</strong> (declared introduction only)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Introduction pathway</h3>
+  <div class="callout warn">
+    <strong>Limited discovery:</strong> Arabella has no listed affiliation, and the network mapper only found P2 contacts (not close enough for scored routes). The sole route is the declared introduction from James Lambert. However, her "Priority / very important" tier suggests she has value beyond what public data reveals &mdash; likely personal relationships not captured in corporate registries.
+  </div>
+
+  <table>
+    <thead><tr><th>Route</th><th>Type</th><th>Priority</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Ask <strong>James Lambert</strong> to introduce <strong>Arabella</strong> to BFF</td>
+        <td><span class="badge badge-green">T1 Declared</span></td>
+        <td><span class="gold"><strong>0.625</strong></span></td>
+        <td><span class="green"><strong>0.907</strong></span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>Recommendation:</strong> Arabella is a case where the declared introduction is the entire story. The pipeline validated that James Lambert is a real contact and scored the route with high confidence (0.907). For more network discovery, add Arabella's affiliation to the spreadsheet and re-run.
+  </div>
+</section>
+
+<hr>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- CASE STUDY 6: Eva Klute                   -->
+<!-- ══════════════════════════════════════════ -->
+<section id="case-6">
+  <h2>Case Study 6: Eva Klute</h2>
+
+  <div class="card intro-card">
+    <div class="intro-header">
+      <span class="intro-name">Eva Klute</span>
+      <span class="badge badge-amber">Important</span>
+      <span class="badge badge-blue">Supporter</span>
+    </div>
+    <p style="margin:0"><strong>Affiliation:</strong> Inthallo &mdash; <strong>Introduced by:</strong> <em>none declared</em> &mdash; <strong>Row:</strong> 41</p>
+  </div>
+
+  <h3>Pipeline trace</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> at 1.000</td></tr>
+      <tr><td>Research</td><td>2 appointments, 1 trusteeship, 4 keywords: community, youth, <strong>sport, football</strong></td></tr>
+      <tr><td>Network mapping</td><td><strong>2 people:</strong> Mark Gregory (P1 &mdash; grassroots football), Keith Harris (P2 &mdash; football/charity)</td></tr>
+      <tr><td>Staging</td><td>Both: <span class="badge badge-green">auto-promoted</span></td></tr>
+      <tr><td>Corpus</td><td>No matches</td></tr>
+      <tr><td>Scoring</td><td><strong>1 route scored</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Who Eva can introduce BFF to</h3>
+  <table>
+    <thead><tr><th>Potential donor</th><th>How</th><th>Via</th><th>Warmth</th><th>Priority</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Mark Gregory</strong></td>
+        <td>Grassroots football funder</td>
+        <td>Inthallo / community football</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:57%;background:var(--amber)"></div></div><span class="num amber">0.570</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout success">
+    <strong>Action for BFF:</strong> Eva is the <em>only contact</em> in this batch with direct sport and football signals. Her strategic fit score (0.800) is the highest across all 7 contacts. While her network is smaller, the alignment with BFF's core mission is exceptional. Mark Gregory (grassroots football) is a natural fit. Eva may also know other football/sport funders not captured in public registries.
+  </div>
+</section>
+
+<hr>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- CASE STUDY 7: Nadine Majaro               -->
+<!-- ══════════════════════════════════════════ -->
+<section id="case-7">
+  <h2>Case Study 7: Nadine Majaro</h2>
+
+  <div class="card intro-card">
+    <div class="intro-header">
+      <span class="intro-name">Nadine Majaro</span>
+      <span class="badge badge-amber">Important</span>
+      <span class="badge badge-blue">Supporter</span>
+    </div>
+    <p style="margin:0"><strong>Affiliation:</strong> The Progress Foundation &mdash; <strong>Introduced by:</strong> <em>none declared</em> &mdash; <strong>Row:</strong> 88</p>
+  </div>
+
+  <h3>Pipeline trace</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Bootstrap</td><td><span class="badge badge-green">Linked</span> at 1.000</td></tr>
+      <tr><td>Research</td><td>3 appointments, 2 trusteeships, 4 keywords: foundation, education, youth, community</td></tr>
+      <tr><td>Network mapping</td><td><strong>3 people:</strong> Tim Wheeler (P1), Dame Sharon White (P2), Helena Morrissey (P2)</td></tr>
+      <tr><td>Staging</td><td>All 3: <span class="badge badge-green">auto-promoted</span></td></tr>
+      <tr><td>Corpus</td><td>1 match: Nadine Majaro (1 filing)</td></tr>
+      <tr><td>Scoring</td><td><strong>2 routes scored</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Who Nadine can introduce BFF to</h3>
+  <table>
+    <thead><tr><th>Potential donor</th><th>How</th><th>Via</th><th>Warmth</th><th>Priority</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Tim Wheeler</strong></td>
+        <td>Progress Foundation co-trustee</td>
+        <td>The Progress Foundation</td>
+        <td><span class="badge badge-blue">T2</span></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:64.8%;background:var(--gold-accent)"></div></div><span class="num gold">0.648</span></div></td>
+        <td><div class="score-bar"><div class="bar"><div class="fill" style="width:78%;background:var(--blue)"></div></div><span class="num">0.780</span></div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>Note:</strong> Dame Sharon White and Helena Morrissey were discovered as P2 contacts. If the pipeline expanded to score P2 routes (recommended improvement), Nadine's value would increase significantly &mdash; both are high-profile philanthropists in financial services and social mobility.
+  </div>
+
+  <div class="callout">
+    <strong>Action for BFF:</strong> Nadine's Progress Foundation role gives a direct path to Tim Wheeler. Her P2 contacts (Dame Sharon White &mdash; former John Lewis chair; Helena Morrissey &mdash; former Newton IM CEO) would be extremely valuable if BFF expanded the route scoring to include two-step introductions.
+  </div>
+</section>
+
+<hr>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- KEY FINDINGS                               -->
+<!-- ══════════════════════════════════════════ -->
+<section id="findings">
+  <h2>Key Findings</h2>
+
+  <div class="stats-grid">
+    <div class="stat"><div class="value gold">0.667</div><div class="label">Mean priority score</div></div>
+    <div class="stat"><div class="value green">0.841</div><div class="label">Mean confidence score</div></div>
+    <div class="stat"><div class="value">100%</div><div class="label">Contacts with routes</div></div>
+    <div class="stat"><div class="value">3.1</div><div class="label">Avg donors per contact</div></div>
+  </div>
+
+  <h3>What worked</h3>
+  <ul>
+    <li><strong>Every contact produced at least one route</strong> &mdash; unlike the previous batch (25% zero routes), all 7 contacts yielded actionable introductions</li>
+    <li><strong>Sir Ronald Cohen appeared via two independent contacts</strong> (Stuart Roden and Barbara Storch) &mdash; the system found this overlap, strengthening the case for approaching him</li>
+    <li><strong>Declared introductions + network mapping combine powerfully</strong> &mdash; Stuart Roden was introduced by Gary Lubner (T1), then his network revealed 3 additional potential donors (T2)</li>
+    <li><strong>Eva Klute's sport/football alignment</strong> is the strongest mission-match in any simulation &mdash; her strategic_fit score (0.800) is the highest we've seen</li>
+    <li><strong>Foundation affiliations unlock the most contacts</strong> &mdash; Bridges Impact, AKO, Oak, and Progress Foundation all surfaced co-trustees as introduction paths</li>
+  </ul>
+
+  <h3>What to improve</h3>
+  <ul>
+    <li><strong>P2 route scoring:</strong> Dame Sharon White, Helena Morrissey, David Blood, Lord Alli &mdash; these high-value people were discovered but not scored. Expanding to tier 4 routes would capture them</li>
+    <li><strong>Missing affiliations:</strong> Arabella Duffield's empty affiliation field meant the AI had no research anchor. Adding affiliations for all contacts would improve discovery</li>
+    <li><strong>Cross-contact deduplication:</strong> Sir Ronald Cohen was discovered via both Roden and Storch. The system should flag this overlap as an especially strong signal (two independent paths to the same donor)</li>
+  </ul>
+
+  <h3>Recommended next actions</h3>
+  <table>
+    <thead><tr><th>Priority</th><th>Action</th><th>Contact</th><th>Target donor</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-gold">1</span></td>
+        <td>Ask Gary Lubner to facilitate Stuart Roden &rarr; Sir Paul Marshall</td>
+        <td>Stuart Roden</td>
+        <td>Sir Paul Marshall (ARK Schools, hedge fund philanthropy)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gold">2</span></td>
+        <td>Ask Kyle Brentwood to warm Barbara Storch &rarr; Sir Ronald Cohen</td>
+        <td>Barbara Storch</td>
+        <td>Sir Ronald Cohen (impact investing pioneer, 3 corpus filings)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gold">3</span></td>
+        <td>Approach Natasha Turner directly for Oak Foundation introductions</td>
+        <td>Natasha Turner</td>
+        <td>Jess Gr&oslash;nlie / Douglas Griffiths (Oak Foundation)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gold">4</span></td>
+        <td>Approach Philip Lawford for Nicolai Tangen introduction</td>
+        <td>Philip Lawford</td>
+        <td>Nicolai Tangen (AKO Foundation, $1.7tn NBIM)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gold">5</span></td>
+        <td>Explore Eva Klute's football network further</td>
+        <td>Eva Klute</td>
+        <td>Mark Gregory + wider grassroots football community</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Footer -->
+<div class="footer">
+  <div><span class="brand">Bloomsbury Football Foundation</span> &mdash; Introduction Discovery Report</div>
+  <div>Generated 20 May 2026 &mdash; 7 contacts &mdash; Seed Intelligence Pipeline v2</div>
+</div>
+
+</div>
+</body>
+</html>

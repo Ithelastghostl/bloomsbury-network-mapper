@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bloomsbury Network Mapper — Project Briefing</title>
+<style>
+  :root {
+    --bg:        oklch(98.5% 0.005 60);
+    --surface:  oklch(100% 0 0 / 1);
+    --ink:      oklch(22% 0.01 60);
+    --ink-soft: oklch(45% 0.015 60);
+    --rule:     oklch(90% 0.01 60);
+    --accent:   oklch(58% 0.14 50);
+    --accent-deep: oklch(38% 0.10 45);
+    --tag-bg:   oklch(96% 0.015 55);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-serif, "Iowan Old Style", "Charter", Georgia, serif;
+    font-size: 18px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .page {
+    max-width: 70ch;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+  }
+  header.masthead {
+    border-top: 4px solid var(--accent);
+    padding-top: 26px;
+    margin-bottom: 56px;
+  }
+  .eyebrow {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-family: ui-serif, "Iowan Old Style", "Charter", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(34px, 4.5vw, 52px);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin: 0 0 18px;
+  }
+  .lede {
+    font-size: 20px;
+    color: var(--ink-soft);
+    margin: 0 0 28px;
+    max-width: 60ch;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .meta .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--tag-bg);
+    border: 1px solid var(--rule);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .meta .pill.ok {
+    color: var(--accent-deep);
+    border-color: oklch(85% 0.06 50);
+    background: oklch(97% 0.04 60);
+  }
+  section { margin: 56px 0; }
+  h2 {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--accent-deep);
+    margin: 0 0 18px;
+  }
+  h3 {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 28px 0 10px;
+    letter-spacing: -0.005em;
+  }
+  p { margin: 0 0 18px; }
+  ul { padding-left: 22px; margin: 0 0 18px; }
+  li { margin: 0 0 8px; }
+  strong { color: var(--ink); }
+  blockquote {
+    margin: 24px 0;
+    padding: 18px 24px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    font-style: italic;
+    font-size: 19px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  blockquote p { margin: 0; }
+  .jobs {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .jobs li {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 18px;
+    align-items: baseline;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .jobs li:first-child { border-top: 1px solid var(--rule); }
+  .jobs .tag {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--accent-deep);
+    font-weight: 700;
+  }
+  .jobs strong { display: block; margin-bottom: 4px; font-family: ui-serif, Georgia, serif; font-weight: 600; font-size: 19px; }
+  .jobs span.body { color: var(--ink-soft); }
+  ol.flow {
+    list-style: none;
+    counter-reset: step;
+    padding: 0;
+    margin: 0;
+  }
+  ol.flow li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 16px;
+    padding: 14px 0;
+    align-items: baseline;
+  }
+  ol.flow li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
+    font-size: 12px;
+    color: var(--accent-deep);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  ol.flow li + li { border-top: 1px solid var(--rule); }
+  .pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin: 24px 0 8px;
+    font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .pipeline span {
+    padding: 6px 10px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .pipeline em {
+    font-style: normal;
+    color: var(--accent-deep);
+    font-weight: 700;
+  }
+  .northstars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .northstars li {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    padding: 18px 20px;
+  }
+  .northstars strong {
+    display: block;
+    font-family: ui-serif, Georgia, serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .northstars span {
+    color: var(--ink-soft);
+    font-size: 16px;
+  }
+  .anti {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .anti li {
+    border-top: 1px solid var(--rule);
+    padding: 14px 0;
+    display: grid;
+    grid-template-columns: 16px 1fr;
+    gap: 14px;
+  }
+  .anti li:last-child { border-bottom: 1px solid var(--rule); }
+  .anti li::before {
+    content: "✕";
+    color: var(--accent);
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  .anti strong { font-family: ui-serif, Georgia, serif; font-weight: 600; }
+  .anti span { color: var(--ink-soft); }
+  footer {
+    margin-top: 80px;
+    padding-top: 28px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 13px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    justify-content: space-between;
+  }
+  footer code {
+    font-family: ui-monospace, monospace;
+    background: var(--tag-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+  code.inline {
+    font-family: ui-monospace, monospace;
+    background: var(--tag-bg);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.92em;
+  }
+  @media (max-width: 600px) {
+    .page { padding: 56px 22px 90px; }
+    .lede { font-size: 18px; }
+    .jobs li { grid-template-columns: 48px 1fr; }
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <p class="eyebrow">Bloomsbury Football Foundation · internal briefing</p>
+      <h1>Network Mapper.</h1>
+      <p class="lede">A fundraising intelligence platform: map sponsor and donor networks, surface high-likelihood leads, route the right introduction to the right person.</p>
+      <div class="meta">
+        <span class="pill">Version 0.2</span>
+        <span class="pill">2026-05-01</span>
+        <span class="pill">Owner: Ignacio Raposo</span>
+        <span class="pill ok">Confirmed by intake</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>What this is</h2>
+      <p><strong>Bloomsbury Network Mapper</strong> is an internal fundraising intelligence platform for the Bloomsbury Football Foundation charity (UK).</p>
+      <p>It is not a traditional CRM and not a graph visualization toy. It is a <strong>lead-generation engine for charity fundraising</strong>, where the leads are individuals the foundation should be trying to reach, and the key to reaching them is the existing network of sponsors and donors.</p>
+      <p>Staff-facing. Trustees, the CEO, and external partners may see polished views in board meetings or pitches; they read, they do not act in the tool.</p>
+    </section>
+
+    <section>
+      <h2>Aspiration</h2>
+      <blockquote>
+        <p>An internal platform for the fundraising team to map sponsors' and donors' networks of individuals of interest, so we can engage and direct their engagements with potential leads, augmenting our targeted reach of highly likely donors and expanding the network.</p>
+      </blockquote>
+    </section>
+
+    <section>
+      <h2>Jobs to be done</h2>
+      <ul class="jobs">
+        <li>
+          <span class="tag">JTBD&nbsp;A</span>
+          <div>
+            <strong>Sponsor DB</strong>
+            <span class="body">Canonical record of current sponsors and donors and what we know about them.</span>
+          </div>
+        </li>
+        <li>
+          <span class="tag">JTBD&nbsp;B</span>
+          <div>
+            <strong>Network DB</strong>
+            <span class="body">The network of individuals connected to those sponsors and donors who could become donor candidates themselves.</span>
+          </div>
+        </li>
+        <li>
+          <span class="tag">JTBD&nbsp;C</span>
+          <div>
+            <strong>Lead Surfacing</strong>
+            <span class="body">A recommender that ranks candidates and suggests which sponsor should introduce us to which lead.</span>
+          </div>
+        </li>
+        <li>
+          <span class="tag">JTBD&nbsp;D</span>
+          <div>
+            <strong>Trigger Surfacing</strong>
+            <span class="body">A monthly news and web watcher that surfaces fresh signals (a new charity engagement, a new role, the sale of a business, a public donation) that change a lead's likelihood or unlock a new branch of the network.</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Acquisition workflow</h2>
+      <ol class="flow">
+        <li>We receive a sponsor or donor name.</li>
+        <li>Build their record. Fields include, but are not limited to: activity, net worth, entities, location, clubs, trusts, institutions, place of work, college, school, football team.</li>
+        <li>Crawl the public web around those fields to build their network: board co-members, alumni, fellow trustees, business partners, club connections, and similar.</li>
+        <li>Filter that network by conditions that mark "individuals of interest": HNWI and UHNWI signals, philanthropic activity, relevant interests.</li>
+        <li>Re-run the enrichment pass for each individual of interest (net worth, charity engagements, donation history) so they become full lead records.</li>
+        <li>Overlay a recommender that proposes, for each lead, which sponsor or donor is best positioned to make the introduction.</li>
+        <li>A separate monthly model watches the public web for news (philanthropic moves, new appointments, public giving) and generates trigger events that either add new individuals or raise existing ones in the priority list.</li>
+      </ol>
+      <div class="pipeline" aria-label="Pipeline summary">
+        <span>ingest</span><em>→</em>
+        <span>enrich</span><em>→</em>
+        <span>expand</span><em>→</em>
+        <span>score</span><em>→</em>
+        <span>recommend</span><em>→</em>
+        <span>monitor</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>How the team works in the product</h2>
+      <ul>
+        <li>The <strong>front door is the lead pipeline</strong>, a ranked queue. Daily work starts there, not at the graph.</li>
+        <li>Leads are reviewed in a <strong>side panel that opens from the pipeline</strong> so the team can triage many in a row.</li>
+        <li>Each lead can be <strong>assigned a sponsor for introduction</strong>, the introduction can be <strong>drafted in-app</strong>, the <strong>outreach stage tracked</strong> (sent → meeting → donation), and the lead <strong>exported to <code class="inline">bloomsbury-crm</code> or email</strong> for the actual send.</li>
+        <li>The <strong>trigger feed</strong> is a chronological list scored for relevance, used to reorder the day.</li>
+        <li>The <strong>graph view is secondary</strong>. It exists to confirm a connection or show a stakeholder a network, not as the daily canvas.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Trust and compliance commitments</h2>
+      <ul>
+        <li><strong>Public web only.</strong> Companies House, Charity Commission, public news, public bios. Each enriched field stores source URL and retrieval date.</li>
+        <li><strong>Conservative GDPR / ICO posture.</strong> Lawful basis recorded, retention rules applied, subject access requests serviceable, one-click delete on a person.</li>
+        <li><strong>Provenance is on-screen, always.</strong> Every enriched value shows source and confidence inline. No hover-only provenance.</li>
+        <li><strong>Recommender transparency.</strong> Every lead score shows its top three reasons. No black box.</li>
+        <li><strong>Flat permissions.</strong> All team members see everything. Audit log captures who viewed what.</li>
+        <li><strong>Human-in-the-loop outreach.</strong> The tool drafts and tracks; a human always presses send.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Brand and tone</h2>
+      <p><strong>Personality:</strong> discreet, considered, credible. Quiet authority. Editorial restraint over tech-product flash.</p>
+      <p><strong>Voice:</strong> plain professional, British English. No exclamation marks, no fluff, no jokes.</p>
+      <p><strong>Visual reference, dominant:</strong> Attio. Restrained palette, generous whitespace, sharp grid, monochrome with one accent, fast keyboard navigation.</p>
+      <p><strong>Visual reference, secondary:</strong> Monday.com, used only as a reminder that simpler views must stay friendly for the non-power user. Not a colour direction.</p>
+
+      <h3>Anti-references</h3>
+      <ul class="anti">
+        <li>
+          <div>
+            <strong>AI startup landing-page slop.</strong>
+            <span> No glassmorphism, gradient meshes, hero-metric templates, SaaS-cream pastels.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Charity-sector clichés.</strong>
+            <span> No stock children photography, ribbons, donate-button red, sentimental copy.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Crypto / wealth-flex aesthetic.</strong>
+            <span> No neon-on-black, no gold accents, no "unlock the network of billionaires" energy.</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>v1 north stars</h2>
+      <ul class="northstars">
+        <li>
+          <strong>Quality</strong>
+          <span>The recommender surfaces measurably better-fit leads than the team's manual list.</span>
+        </li>
+        <li>
+          <strong>Speed</strong>
+          <span>Sponsor name in, first leads out, in minutes, not days.</span>
+        </li>
+      </ul>
+      <p style="margin-top: 18px; color: var(--ink-soft); font-size: 16px;">Trust and workflow integration are required, not headline.</p>
+    </section>
+
+    <section>
+      <h2>Scope for v1</h2>
+      <h3>Out of v1</h3>
+      <ul>
+        <li>Public donor portal or any external donor-facing surfaces.</li>
+        <li>Payments and donation processing.</li>
+        <li>Auto-sending introductions.</li>
+      </ul>
+      <h3>In v1, but constrained</h3>
+      <ul>
+        <li>Sponsor intake is manual single-name. CSV and CRM sync deferred.</li>
+        <li>Permissions are flat across the team.</li>
+        <li>Freshness shown as per-record "last updated".</li>
+        <li>No formal WCAG target. Common-sense accessibility baseline: keyboard navigation, focus states, sane contrast, reduced-motion respected.</li>
+      </ul>
+      <p>Scale to design for: <strong>hundreds of sponsors, 10k+ candidate leads.</strong> Heavy filtering, batching, and pagination from the first release.</p>
+    </section>
+
+    <section>
+      <h2>Pointers</h2>
+      <ul>
+        <li><code class="inline">PRODUCT.md</code> — full strategic record (register, users, principles, anti-references).</li>
+        <li><code class="inline">DESIGN.md</code> — visual system. Currently a stub; will be filled when the first surfaces are designed.</li>
+        <li><code class="inline">PROJECT.md</code> — operational context (status, stack, links, open questions).</li>
+      </ul>
+    </section>
+
+    <footer>
+      <span>Bloomsbury Network Mapper — internal briefing v0.2</span>
+      <span><code>docs/briefing.html</code></span>
+    </footer>
+  </main>
+</body>
+</html>

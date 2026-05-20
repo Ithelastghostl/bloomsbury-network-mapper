@@ -1,0 +1,707 @@
+{
+  "selected_at": "2026-05-18T15:45:47.621Z",
+  "total_selected": 100,
+  "selection_criteria": "stratified by year, size, entity density",
+  "documents": [
+    {
+      "filename": "1000566_2022.txt",
+      "registry_number": "1000566",
+      "year": 2022,
+      "size_bytes": 305689,
+      "path": "MKData/markdown/1000566_2022.txt"
+    },
+    {
+      "filename": "1000566_2023.txt",
+      "registry_number": "1000566",
+      "year": 2023,
+      "size_bytes": 345015,
+      "path": "MKData/markdown/1000566_2023.txt"
+    },
+    {
+      "filename": "1002722_2025.txt",
+      "registry_number": "1002722",
+      "year": 2025,
+      "size_bytes": 173304,
+      "path": "MKData/markdown/1002722_2025.txt"
+    },
+    {
+      "filename": "1005505_2025.txt",
+      "registry_number": "1005505",
+      "year": 2025,
+      "size_bytes": 46911,
+      "path": "MKData/markdown/1005505_2025.txt"
+    },
+    {
+      "filename": "1011213_2021.txt",
+      "registry_number": "1011213",
+      "year": 2021,
+      "size_bytes": 48070,
+      "path": "MKData/markdown/1011213_2021.txt"
+    },
+    {
+      "filename": "1011611_2019.txt",
+      "registry_number": "1011611",
+      "year": 2019,
+      "size_bytes": 37364,
+      "path": "MKData/markdown/1011611_2019.txt"
+    },
+    {
+      "filename": "1013768_2025.txt",
+      "registry_number": "1013768",
+      "year": 2025,
+      "size_bytes": 44361,
+      "path": "MKData/markdown/1013768_2025.txt"
+    },
+    {
+      "filename": "1014056_2025.txt",
+      "registry_number": "1014056",
+      "year": 2025,
+      "size_bytes": 113506,
+      "path": "MKData/markdown/1014056_2025.txt"
+    },
+    {
+      "filename": "1020488_2020.txt",
+      "registry_number": "1020488",
+      "year": 2020,
+      "size_bytes": 28261,
+      "path": "MKData/markdown/1020488_2020.txt"
+    },
+    {
+      "filename": "1024818_2020.txt",
+      "registry_number": "1024818",
+      "year": 2020,
+      "size_bytes": 39604,
+      "path": "MKData/markdown/1024818_2020.txt"
+    },
+    {
+      "filename": "1034245_2025.txt",
+      "registry_number": "1034245",
+      "year": 2025,
+      "size_bytes": 381165,
+      "path": "MKData/markdown/1034245_2025.txt"
+    },
+    {
+      "filename": "1035072_2020.txt",
+      "registry_number": "1035072",
+      "year": 2020,
+      "size_bytes": 154279,
+      "path": "MKData/markdown/1035072_2020.txt"
+    },
+    {
+      "filename": "1039651_2022.txt",
+      "registry_number": "1039651",
+      "year": 2022,
+      "size_bytes": 137496,
+      "path": "MKData/markdown/1039651_2022.txt"
+    },
+    {
+      "filename": "1043603_2023.txt",
+      "registry_number": "1043603",
+      "year": 2023,
+      "size_bytes": 133826,
+      "path": "MKData/markdown/1043603_2023.txt"
+    },
+    {
+      "filename": "1043886_2021.txt",
+      "registry_number": "1043886",
+      "year": 2021,
+      "size_bytes": 264580,
+      "path": "MKData/markdown/1043886_2021.txt"
+    },
+    {
+      "filename": "1045229_2025.txt",
+      "registry_number": "1045229",
+      "year": 2025,
+      "size_bytes": 32466,
+      "path": "MKData/markdown/1045229_2025.txt"
+    },
+    {
+      "filename": "1053866_2025.txt",
+      "registry_number": "1053866",
+      "year": 2025,
+      "size_bytes": 221300,
+      "path": "MKData/markdown/1053866_2025.txt"
+    },
+    {
+      "filename": "1053992_2022.txt",
+      "registry_number": "1053992",
+      "year": 2022,
+      "size_bytes": 189697,
+      "path": "MKData/markdown/1053992_2022.txt"
+    },
+    {
+      "filename": "1056192_2023.txt",
+      "registry_number": "1056192",
+      "year": 2023,
+      "size_bytes": 132043,
+      "path": "MKData/markdown/1056192_2023.txt"
+    },
+    {
+      "filename": "1058068_2022.txt",
+      "registry_number": "1058068",
+      "year": 2022,
+      "size_bytes": 39983,
+      "path": "MKData/markdown/1058068_2022.txt"
+    },
+    {
+      "filename": "209131_2024.txt",
+      "registry_number": "209131",
+      "year": 2024,
+      "size_bytes": 418868,
+      "path": "MKData/markdown/209131_2024.txt"
+    },
+    {
+      "filename": "209174_2019.txt",
+      "registry_number": "209174",
+      "year": 2019,
+      "size_bytes": 134864,
+      "path": "MKData/markdown/209174_2019.txt"
+    },
+    {
+      "filename": "209259_2020.txt",
+      "registry_number": "209259",
+      "year": 2020,
+      "size_bytes": 122687,
+      "path": "MKData/markdown/209259_2020.txt"
+    },
+    {
+      "filename": "210183_2020.txt",
+      "registry_number": "210183",
+      "year": 2020,
+      "size_bytes": 499494,
+      "path": "MKData/markdown/210183_2020.txt"
+    },
+    {
+      "filename": "211109_2021.txt",
+      "registry_number": "211109",
+      "year": 2021,
+      "size_bytes": 124137,
+      "path": "MKData/markdown/211109_2021.txt"
+    },
+    {
+      "filename": "211588_2022.txt",
+      "registry_number": "211588",
+      "year": 2022,
+      "size_bytes": 95169,
+      "path": "MKData/markdown/211588_2022.txt"
+    },
+    {
+      "filename": "214929_2020.txt",
+      "registry_number": "214929",
+      "year": 2020,
+      "size_bytes": 147374,
+      "path": "MKData/markdown/214929_2020.txt"
+    },
+    {
+      "filename": "217484_2019.txt",
+      "registry_number": "217484",
+      "year": 2019,
+      "size_bytes": 69192,
+      "path": "MKData/markdown/217484_2019.txt"
+    },
+    {
+      "filename": "230260_2023.txt",
+      "registry_number": "230260",
+      "year": 2023,
+      "size_bytes": 332768,
+      "path": "MKData/markdown/230260_2023.txt"
+    },
+    {
+      "filename": "231239_2023.txt",
+      "registry_number": "231239",
+      "year": 2023,
+      "size_bytes": 154677,
+      "path": "MKData/markdown/231239_2023.txt"
+    },
+    {
+      "filename": "233082_2020.txt",
+      "registry_number": "233082",
+      "year": 2020,
+      "size_bytes": 174733,
+      "path": "MKData/markdown/233082_2020.txt"
+    },
+    {
+      "filename": "234216_2019.txt",
+      "registry_number": "234216",
+      "year": 2019,
+      "size_bytes": 191816,
+      "path": "MKData/markdown/234216_2019.txt"
+    },
+    {
+      "filename": "234557_2019.txt",
+      "registry_number": "234557",
+      "year": 2019,
+      "size_bytes": 77047,
+      "path": "MKData/markdown/234557_2019.txt"
+    },
+    {
+      "filename": "236464_2023.txt",
+      "registry_number": "236464",
+      "year": 2023,
+      "size_bytes": 126746,
+      "path": "MKData/markdown/236464_2023.txt"
+    },
+    {
+      "filename": "242552_2023.txt",
+      "registry_number": "242552",
+      "year": 2023,
+      "size_bytes": 138607,
+      "path": "MKData/markdown/242552_2023.txt"
+    },
+    {
+      "filename": "244178_2023.txt",
+      "registry_number": "244178",
+      "year": 2023,
+      "size_bytes": 96677,
+      "path": "MKData/markdown/244178_2023.txt"
+    },
+    {
+      "filename": "246871_2020.txt",
+      "registry_number": "246871",
+      "year": 2020,
+      "size_bytes": 208769,
+      "path": "MKData/markdown/246871_2020.txt"
+    },
+    {
+      "filename": "248887_2023.txt",
+      "registry_number": "248887",
+      "year": 2023,
+      "size_bytes": 260663,
+      "path": "MKData/markdown/248887_2023.txt"
+    },
+    {
+      "filename": "249339_2021.txt",
+      "registry_number": "249339",
+      "year": 2021,
+      "size_bytes": 273062,
+      "path": "MKData/markdown/249339_2021.txt"
+    },
+    {
+      "filename": "249798_2022.txt",
+      "registry_number": "249798",
+      "year": 2022,
+      "size_bytes": 266910,
+      "path": "MKData/markdown/249798_2022.txt"
+    },
+    {
+      "filename": "252157_2023.txt",
+      "registry_number": "252157",
+      "year": 2023,
+      "size_bytes": 85832,
+      "path": "MKData/markdown/252157_2023.txt"
+    },
+    {
+      "filename": "258710_2024.txt",
+      "registry_number": "258710",
+      "year": 2024,
+      "size_bytes": 48979,
+      "path": "MKData/markdown/258710_2024.txt"
+    },
+    {
+      "filename": "263296_2020.txt",
+      "registry_number": "263296",
+      "year": 2020,
+      "size_bytes": 49643,
+      "path": "MKData/markdown/263296_2020.txt"
+    },
+    {
+      "filename": "267618_2019.txt",
+      "registry_number": "267618",
+      "year": 2019,
+      "size_bytes": 98294,
+      "path": "MKData/markdown/267618_2019.txt"
+    },
+    {
+      "filename": "275067_2024.txt",
+      "registry_number": "275067",
+      "year": 2024,
+      "size_bytes": 105033,
+      "path": "MKData/markdown/275067_2024.txt"
+    },
+    {
+      "filename": "276035_2023.txt",
+      "registry_number": "276035",
+      "year": 2023,
+      "size_bytes": 192587,
+      "path": "MKData/markdown/276035_2023.txt"
+    },
+    {
+      "filename": "277992_2022.txt",
+      "registry_number": "277992",
+      "year": 2022,
+      "size_bytes": 130939,
+      "path": "MKData/markdown/277992_2022.txt"
+    },
+    {
+      "filename": "278508_2019.txt",
+      "registry_number": "278508",
+      "year": 2019,
+      "size_bytes": 86228,
+      "path": "MKData/markdown/278508_2019.txt"
+    },
+    {
+      "filename": "284470_2020.txt",
+      "registry_number": "284470",
+      "year": 2020,
+      "size_bytes": 111515,
+      "path": "MKData/markdown/284470_2020.txt"
+    },
+    {
+      "filename": "285174_2024.txt",
+      "registry_number": "285174",
+      "year": 2024,
+      "size_bytes": 131566,
+      "path": "MKData/markdown/285174_2024.txt"
+    },
+    {
+      "filename": "306975_2021.txt",
+      "registry_number": "306975",
+      "year": 2021,
+      "size_bytes": 124141,
+      "path": "MKData/markdown/306975_2021.txt"
+    },
+    {
+      "filename": "311714_2021.txt",
+      "registry_number": "311714",
+      "year": 2021,
+      "size_bytes": 140054,
+      "path": "MKData/markdown/311714_2021.txt"
+    },
+    {
+      "filename": "312749_2023.txt",
+      "registry_number": "312749",
+      "year": 2023,
+      "size_bytes": 71946,
+      "path": "MKData/markdown/312749_2023.txt"
+    },
+    {
+      "filename": "327114_2022.txt",
+      "registry_number": "327114",
+      "year": 2022,
+      "size_bytes": 149126,
+      "path": "MKData/markdown/327114_2022.txt"
+    },
+    {
+      "filename": "327155_2024.txt",
+      "registry_number": "327155",
+      "year": 2024,
+      "size_bytes": 49298,
+      "path": "MKData/markdown/327155_2024.txt"
+    },
+    {
+      "filename": "3942860_2023.txt",
+      "registry_number": "3942860",
+      "year": 2023,
+      "size_bytes": 146983,
+      "path": "MKData/markdown/3942860_2023.txt"
+    },
+    {
+      "filename": "3944639_2021.txt",
+      "registry_number": "3944639",
+      "year": 2021,
+      "size_bytes": 78906,
+      "path": "MKData/markdown/3944639_2021.txt"
+    },
+    {
+      "filename": "3952558_2021.txt",
+      "registry_number": "3952558",
+      "year": 2021,
+      "size_bytes": 137240,
+      "path": "MKData/markdown/3952558_2021.txt"
+    },
+    {
+      "filename": "3963704_2022.txt",
+      "registry_number": "3963704",
+      "year": 2022,
+      "size_bytes": 43170,
+      "path": "MKData/markdown/3963704_2022.txt"
+    },
+    {
+      "filename": "3965342_2024.txt",
+      "registry_number": "3965342",
+      "year": 2024,
+      "size_bytes": 49529,
+      "path": "MKData/markdown/3965342_2024.txt"
+    },
+    {
+      "filename": "3974399_2024.txt",
+      "registry_number": "3974399",
+      "year": 2024,
+      "size_bytes": 199286,
+      "path": "MKData/markdown/3974399_2024.txt"
+    },
+    {
+      "filename": "3982804_2023.txt",
+      "registry_number": "3982804",
+      "year": 2023,
+      "size_bytes": 17218,
+      "path": "MKData/markdown/3982804_2023.txt"
+    },
+    {
+      "filename": "4013017_2025.txt",
+      "registry_number": "4013017",
+      "year": 2025,
+      "size_bytes": 78822,
+      "path": "MKData/markdown/4013017_2025.txt"
+    },
+    {
+      "filename": "4040820_2020.txt",
+      "registry_number": "4040820",
+      "year": 2020,
+      "size_bytes": 49859,
+      "path": "MKData/markdown/4040820_2020.txt"
+    },
+    {
+      "filename": "4040917_2019.txt",
+      "registry_number": "4040917",
+      "year": 2019,
+      "size_bytes": 83918,
+      "path": "MKData/markdown/4040917_2019.txt"
+    },
+    {
+      "filename": "4041226_2020.txt",
+      "registry_number": "4041226",
+      "year": 2020,
+      "size_bytes": 159056,
+      "path": "MKData/markdown/4041226_2020.txt"
+    },
+    {
+      "filename": "4050564_2022.txt",
+      "registry_number": "4050564",
+      "year": 2022,
+      "size_bytes": 115754,
+      "path": "MKData/markdown/4050564_2022.txt"
+    },
+    {
+      "filename": "5001312_2020.txt",
+      "registry_number": "5001312",
+      "year": 2020,
+      "size_bytes": 142611,
+      "path": "MKData/markdown/5001312_2020.txt"
+    },
+    {
+      "filename": "5003360_2022.txt",
+      "registry_number": "5003360",
+      "year": 2022,
+      "size_bytes": 81191,
+      "path": "MKData/markdown/5003360_2022.txt"
+    },
+    {
+      "filename": "5007077_2019.txt",
+      "registry_number": "5007077",
+      "year": 2019,
+      "size_bytes": 48697,
+      "path": "MKData/markdown/5007077_2019.txt"
+    },
+    {
+      "filename": "5007237_2021.txt",
+      "registry_number": "5007237",
+      "year": 2021,
+      "size_bytes": 19948,
+      "path": "MKData/markdown/5007237_2021.txt"
+    },
+    {
+      "filename": "5009068_2020.txt",
+      "registry_number": "5009068",
+      "year": 2020,
+      "size_bytes": 131163,
+      "path": "MKData/markdown/5009068_2020.txt"
+    },
+    {
+      "filename": "5010420_2024.txt",
+      "registry_number": "5010420",
+      "year": 2024,
+      "size_bytes": 329493,
+      "path": "MKData/markdown/5010420_2024.txt"
+    },
+    {
+      "filename": "5010840_2021.txt",
+      "registry_number": "5010840",
+      "year": 2021,
+      "size_bytes": 134990,
+      "path": "MKData/markdown/5010840_2021.txt"
+    },
+    {
+      "filename": "5015263_2022.txt",
+      "registry_number": "5015263",
+      "year": 2022,
+      "size_bytes": 80408,
+      "path": "MKData/markdown/5015263_2022.txt"
+    },
+    {
+      "filename": "5017095_2022.txt",
+      "registry_number": "5017095",
+      "year": 2022,
+      "size_bytes": 14431,
+      "path": "MKData/markdown/5017095_2022.txt"
+    },
+    {
+      "filename": "5024934_2019.txt",
+      "registry_number": "5024934",
+      "year": 2019,
+      "size_bytes": 64263,
+      "path": "MKData/markdown/5024934_2019.txt"
+    },
+    {
+      "filename": "5025264_2019.txt",
+      "registry_number": "5025264",
+      "year": 2019,
+      "size_bytes": 87532,
+      "path": "MKData/markdown/5025264_2019.txt"
+    },
+    {
+      "filename": "5037186_2019.txt",
+      "registry_number": "5037186",
+      "year": 2019,
+      "size_bytes": 88430,
+      "path": "MKData/markdown/5037186_2019.txt"
+    },
+    {
+      "filename": "5038330_2021.txt",
+      "registry_number": "5038330",
+      "year": 2021,
+      "size_bytes": 96739,
+      "path": "MKData/markdown/5038330_2021.txt"
+    },
+    {
+      "filename": "5039601_2020.txt",
+      "registry_number": "5039601",
+      "year": 2020,
+      "size_bytes": 111452,
+      "path": "MKData/markdown/5039601_2020.txt"
+    },
+    {
+      "filename": "5040524_2019.txt",
+      "registry_number": "5040524",
+      "year": 2019,
+      "size_bytes": 52466,
+      "path": "MKData/markdown/5040524_2019.txt"
+    },
+    {
+      "filename": "5041885_2023.txt",
+      "registry_number": "5041885",
+      "year": 2023,
+      "size_bytes": 46362,
+      "path": "MKData/markdown/5041885_2023.txt"
+    },
+    {
+      "filename": "5046418_2025.txt",
+      "registry_number": "5046418",
+      "year": 2025,
+      "size_bytes": 47232,
+      "path": "MKData/markdown/5046418_2025.txt"
+    },
+    {
+      "filename": "5047802_2022.txt",
+      "registry_number": "5047802",
+      "year": 2022,
+      "size_bytes": 46163,
+      "path": "MKData/markdown/5047802_2022.txt"
+    },
+    {
+      "filename": "5051509_2021.txt",
+      "registry_number": "5051509",
+      "year": 2021,
+      "size_bytes": 186900,
+      "path": "MKData/markdown/5051509_2021.txt"
+    },
+    {
+      "filename": "5053172_2021.txt",
+      "registry_number": "5053172",
+      "year": 2021,
+      "size_bytes": 49506,
+      "path": "MKData/markdown/5053172_2021.txt"
+    },
+    {
+      "filename": "5056009_2024.txt",
+      "registry_number": "5056009",
+      "year": 2024,
+      "size_bytes": 127660,
+      "path": "MKData/markdown/5056009_2024.txt"
+    },
+    {
+      "filename": "5066150_2022.txt",
+      "registry_number": "5066150",
+      "year": 2022,
+      "size_bytes": 147226,
+      "path": "MKData/markdown/5066150_2022.txt"
+    },
+    {
+      "filename": "5087627_2024.txt",
+      "registry_number": "5087627",
+      "year": 2024,
+      "size_bytes": 146448,
+      "path": "MKData/markdown/5087627_2024.txt"
+    },
+    {
+      "filename": "5103301_2019.txt",
+      "registry_number": "5103301",
+      "year": 2019,
+      "size_bytes": 178443,
+      "path": "MKData/markdown/5103301_2019.txt"
+    },
+    {
+      "filename": "5104685_2024.txt",
+      "registry_number": "5104685",
+      "year": 2024,
+      "size_bytes": 35086,
+      "path": "MKData/markdown/5104685_2024.txt"
+    },
+    {
+      "filename": "5118591_2024.txt",
+      "registry_number": "5118591",
+      "year": 2024,
+      "size_bytes": 149009,
+      "path": "MKData/markdown/5118591_2024.txt"
+    },
+    {
+      "filename": "5130703_2021.txt",
+      "registry_number": "5130703",
+      "year": 2021,
+      "size_bytes": 140577,
+      "path": "MKData/markdown/5130703_2021.txt"
+    },
+    {
+      "filename": "5133428_2021.txt",
+      "registry_number": "5133428",
+      "year": 2021,
+      "size_bytes": 10313,
+      "path": "MKData/markdown/5133428_2021.txt"
+    },
+    {
+      "filename": "5144817_2024.txt",
+      "registry_number": "5144817",
+      "year": 2024,
+      "size_bytes": 146563,
+      "path": "MKData/markdown/5144817_2024.txt"
+    },
+    {
+      "filename": "515595_2024.txt",
+      "registry_number": "515595",
+      "year": 2024,
+      "size_bytes": 140762,
+      "path": "MKData/markdown/515595_2024.txt"
+    },
+    {
+      "filename": "5182476_2024.txt",
+      "registry_number": "5182476",
+      "year": 2024,
+      "size_bytes": 42163,
+      "path": "MKData/markdown/5182476_2024.txt"
+    },
+    {
+      "filename": "800058_2019.txt",
+      "registry_number": "800058",
+      "year": 2019,
+      "size_bytes": 180526,
+      "path": "MKData/markdown/800058_2019.txt"
+    },
+    {
+      "filename": "803779_2025.txt",
+      "registry_number": "803779",
+      "year": 2025,
+      "size_bytes": 98449,
+      "path": "MKData/markdown/803779_2025.txt"
+    }
+  ]
+}

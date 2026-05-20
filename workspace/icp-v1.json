@@ -1,0 +1,154 @@
+{
+  "version": "v1.0",
+  "description": "MVP ICP for Charity Commission filing corpus — targets persons with trustee/director roles, donor history, or board membership across multiple organisations, excluding generic service providers.",
+  "target_entity_types": ["person"],
+  "qualifying_signals": [
+    {
+      "signal": "trustee_role",
+      "description": "Named as trustee of a charity or trust (TRUSTEE_OF edge)",
+      "weight": 1.0,
+      "min_evidence_confidence": 0.40
+    },
+    {
+      "signal": "director_role",
+      "description": "Named as director of a company (DIRECTOR_OF edge)",
+      "weight": 0.9,
+      "min_evidence_confidence": 0.40
+    },
+    {
+      "signal": "donor",
+      "description": "Named as donor in a donation event (MADE_DONATION edge with amount/date)",
+      "weight": 0.85,
+      "min_evidence_confidence": 0.40
+    },
+    {
+      "signal": "board_member",
+      "description": "Named in board/committee membership context without explicit trustee/director title",
+      "weight": 0.80,
+      "min_evidence_confidence": 0.40
+    },
+    {
+      "signal": "multi_org_presence",
+      "description": "Person appears across 2+ distinct charity/company filings",
+      "weight": 0.75,
+      "min_evidence_confidence": 0.40
+    }
+  ],
+  "disqualifying_signals": [
+    {
+      "signal": "accountant",
+      "description": "Identified as accountant, auditor, or reporting accountant for the filing entity",
+      "action": "exclude"
+    },
+    {
+      "signal": "solicitor",
+      "description": "Identified as solicitor or legal adviser to the filing entity",
+      "action": "exclude"
+    },
+    {
+      "signal": "bank_nominee",
+      "description": "Named as bank nominee, custodian, or institutional holder",
+      "action": "exclude"
+    },
+    {
+      "signal": "investment_manager",
+      "description": "Named as investment manager or fund manager providing services to the entity",
+      "action": "exclude"
+    },
+    {
+      "signal": "generic_service_provider",
+      "description": "Identified as insurance broker, property agent, payroll provider, or other arms-length service role",
+      "action": "exclude"
+    },
+    {
+      "signal": "company_entity_only",
+      "description": "Entity is a company/firm name rather than a person (e.g. 'Buzzacott LLP', 'Barclays Bank PLC')",
+      "action": "exclude"
+    }
+  ],
+  "affinity_indicators": [
+    {
+      "indicator": "shared_charity_trusteeship",
+      "description": "Candidate and seed both serve as trustees of the same charity",
+      "weight": 1.0
+    },
+    {
+      "indicator": "shared_company_directorship",
+      "description": "Candidate and seed both serve as directors of the same company",
+      "weight": 0.90
+    },
+    {
+      "indicator": "donation_to_seed_charity",
+      "description": "Candidate donated to a charity where the seed is a trustee or director",
+      "weight": 0.85
+    },
+    {
+      "indicator": "shared_donation_target",
+      "description": "Candidate and seed both donated to the same charity",
+      "weight": 0.70
+    },
+    {
+      "indicator": "co_occurrence_in_filing",
+      "description": "Candidate and seed named in the same filing document",
+      "weight": 0.20
+    }
+  ],
+  "capacity_indicators": [
+    {
+      "indicator": "donation_amount_evidenced",
+      "description": "Donation amounts directly attributed to the person in filing text",
+      "tiers": [
+        { "label": "high", "min_gbp": 100000 },
+        { "label": "medium", "min_gbp": 10000 },
+        { "label": "low", "min_gbp": 1000 }
+      ]
+    },
+    {
+      "indicator": "multiple_trusteeships",
+      "description": "Number of distinct charities/trusts where the person serves as trustee",
+      "tiers": [
+        { "label": "high", "min_count": 5 },
+        { "label": "medium", "min_count": 3 },
+        { "label": "low", "min_count": 1 }
+      ]
+    },
+    {
+      "indicator": "foundation_involvement",
+      "description": "Person is connected to a grant-making foundation or trust (as trustee or donor)",
+      "weight": 0.80
+    },
+    {
+      "indicator": "senior_company_role",
+      "description": "Person holds a senior company directorship (chair, CEO, managing director)",
+      "weight": 0.70
+    }
+  ],
+  "influence_indicators": [
+    {
+      "indicator": "multiple_board_positions",
+      "description": "Person holds trustee or director roles at 3+ organisations",
+      "tiers": [
+        { "label": "high", "min_count": 5 },
+        { "label": "medium", "min_count": 3 }
+      ]
+    },
+    {
+      "indicator": "senior_role",
+      "description": "Person holds chair, vice-chair, treasurer, secretary, or named officer role",
+      "weight": 0.90
+    },
+    {
+      "indicator": "multi_filing_presence",
+      "description": "Person named across filings from 3+ distinct organisations",
+      "tiers": [
+        { "label": "high", "min_orgs": 5 },
+        { "label": "medium", "min_orgs": 3 }
+      ]
+    },
+    {
+      "indicator": "long_tenure",
+      "description": "Person appears in filings spanning 3+ years for the same organisation",
+      "weight": 0.60
+    }
+  ]
+}

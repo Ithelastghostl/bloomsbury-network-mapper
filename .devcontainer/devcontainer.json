@@ -1,6 +1,7 @@
 {
   "name": "Bloomsbury Network Mapper",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "runArgs": ["--dns=1.1.1.1", "--dns=8.8.8.8"],
   "remoteEnv": {
     "NODE_TLS_REJECT_UNAUTHORIZED": "0"
   },
@@ -11,27 +12,28 @@
       "version": "3.12"
     }
   },
-  "forwardPorts": [3000, 5173, 8000],
+  "forwardPorts": [3000, 5173, 5174, 5175, 8000],
   "mounts": [
     "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind,consistency=cached"
   ],
+  "postStartCommand": "sudo sh -c 'printf \"nameserver 1.1.1.1\\nnameserver 8.8.8.8\\n\" > /etc/resolv.conf' || true; sudo -u node bash -c 'grep -q CLAUDE_CODE_OAUTH_TOKEN ~/.bashrc || echo '\"'\"'export CLAUDE_CODE_OAUTH_TOKEN=\"$(tr -d \"[:space:]\" < ~/.claude/oauth-token 2>/dev/null)\"'\"'\"' >> ~/.bashrc'",
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "customizations": {
     "vscode": {
       "extensions": ["anthropic.claude-code", "dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
       "settings": {
         "workbench.colorCustomizations": {
-          "titleBar.activeBackground": "#7c2d12",
-          "titleBar.activeForeground": "#ffffff",
-          "titleBar.inactiveBackground": "#5b1f0c",
-          "statusBar.background": "#f97316",
-          "statusBar.foreground": "#ffffff",
-          "statusBar.noFolderBackground": "#f97316",
-          "activityBar.background": "#7c2d12",
-          "activityBar.foreground": "#fdba74",
-          "activityBar.inactiveForeground": "#fed7aa",
-          "sideBar.background": "#2d1106",
-          "sideBarTitle.foreground": "#fdba74"
+          "titleBar.activeBackground": "#0d0c0a",
+          "titleBar.activeForeground": "#f5f3ef",
+          "titleBar.inactiveBackground": "#1a1916",
+          "statusBar.background": "#b8920f",
+          "statusBar.foreground": "#0d0c0a",
+          "statusBar.noFolderBackground": "#b8920f",
+          "activityBar.background": "#0d0c0a",
+          "activityBar.foreground": "#d4a820",
+          "activityBar.inactiveForeground": "#7a756c",
+          "sideBar.background": "#1a1916",
+          "sideBarTitle.foreground": "#d4a820"
         }
       }
     }

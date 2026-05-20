@@ -1,0 +1,97 @@
+Bloomsbury Corpus Profiler
+============================================================
+
+Corpus: 20444 files in /workspaces/bloomsbury-network-mapper/MKData/markdown
+Sample: 600 files (stratified by year, seed="bloomsbury-corpus-profile-2026")
+
+Profiling documents...
+  100/600 processed
+  200/600 processed
+  300/600 processed
+  400/600 processed
+  500/600 processed
+  600/600 processed
+  600/600 processed
+
+JSON report written to /workspaces/bloomsbury-network-mapper/workspace/corpus-profile.json
+
+============================================================
+CORPUS PROFILE SUMMARY
+============================================================
+
+Total corpus files:  20444
+Sample size:         600
+Seed:                bloomsbury-corpus-profile-2026
+
+--- Size Statistics ---
+  Min:    5.4 KB (5506 bytes)
+  Max:    487.8 KB (499494 bytes)
+  Avg:    82.7 KB (84657 bytes)
+  Median: 69.3 KB (71006 bytes)
+  P95:    183.0 KB (187374 bytes)
+
+--- Line Statistics ---
+  Min:    153
+  Max:    5192
+  Avg:    1254
+  Median: 1113
+
+--- Year Distribution (sample / corpus) ---
+  2019:    28 (4.7%)  /    939 (4.6%)
+  2020:   111 (18.5%)  /   3780 (18.5%)
+  2021:   116 (19.3%)  /   3951 (19.3%)
+  2022:   119 (19.8%)  /   4067 (19.9%)
+  2023:   121 (20.2%)  /   4114 (20.1%)
+  2024:    99 (16.5%)  /   3383 (16.5%)
+  2025:     6 (1.0%)  /    210 (1.0%)
+
+--- Document Type Distribution ---
+  mixed                   554  (92.3%)
+  financial_statement      39  (6.5%)
+  trustee_filing            5  (0.8%)
+  accounts_only             2  (0.3%)
+
+--- Format Quality ---
+  Has markdown headers:         100%
+  Has tables:                   100%
+  Has horizontal rules:         100%
+  Starts with charity number:   4%
+  Avg empty line percentage:    39.19%
+
+--- Entity Density (averages per document) ---
+  Person name patterns:    330.94
+  Monetary amounts:        111.1
+  Date patterns:           62.32
+  Charity/company numbers: 3.85
+  Address (postcode) pats: 5.61
+
+--- Entity Density Ranges ---
+  person_names           min=8  max=2478  median=265
+  monetary_amounts       min=0  max=778  median=87
+  dates                  min=0  max=251  median=56
+  charity_numbers        min=0  max=379  median=2
+  addresses              min=0  max=25  median=5
+
+--- Top 5 Largest Files ---
+  210183_2020.txt                  487.8 KB  (financial_statement)
+  209131_2024.txt                  409.1 KB  (financial_statement)
+  3961959_2022.txt                 338.9 KB  (mixed)
+  1000566_2023.txt                 336.9 KB  (mixed)
+  230260_2023.txt                  325.0 KB  (mixed)
+
+--- Top 5 Smallest Files ---
+  5149036_2021.txt                   5.4 KB  (mixed)
+  5020087_2023.txt                   6.2 KB  (mixed)
+  1052061_2022.txt                   6.8 KB  (mixed)
+  5133428_2021.txt                  10.1 KB  (trustee_filing)
+  282464_2020.txt                   11.3 KB  (mixed)
+
+--- Quality Issues ---
+  Files with 0 person names + 0 monetary + 0 dates: 0
+  Files under 500 bytes: 0
+  Files under 10 lines: 0
+  Files without markdown headers: 0
+  Files without tables: 0
+
+============================================================
+Done.

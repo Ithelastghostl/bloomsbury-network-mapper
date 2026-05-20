@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Gold Label Annotation",
+  "description": "Annotation format for gold-set documents in the Bloomsbury Network Mapper corpus.",
+  "type": "object",
+  "required": ["metadata", "entities", "relationships", "donations"],
+  "additionalProperties": false,
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["document_id", "annotator", "annotation_date", "document_type"],
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "Filename of the source document (e.g. 1000146_2021.txt)"
+        },
+        "annotator": {
+          "type": "string",
+          "description": "Identifier of the person or system that created this annotation"
+        },
+        "annotation_date": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO 8601 date when annotation was created"
+        },
+        "document_type": {
+          "type": "string",
+          "description": "Category of document (e.g. mixed, financial_statement, trustee_filing, accounts_only)"
+        },
+        "quality_notes": {
+          "type": "string",
+          "description": "Optional free-text notes on annotation quality or document issues"
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["entity_id", "entity_type", "raw_value", "normalised_value", "span_start", "span_end", "evidence_span"],
+        "additionalProperties": false,
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "description": "Unique identifier within this document (e.g. E1, E2)"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": ["person", "organisation", "address", "registration_number", "date", "monetary_amount"],
+            "description": "The type of entity"
+          },
+          "raw_value": {
+            "type": "string",
+            "description": "Exact text as it appears in the document"
+          },
+          "normalised_value": {
+            "type": "string",
+            "description": "Cleaned and standardised form of the entity value"
+          },
+          "span_start": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Character offset where entity begins in the document"
+          },
+          "span_end": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Character offset where entity ends in the document"
+          },
+          "evidence_span": {
+            "type": "string",
+            "description": "Surrounding context text that contains the entity"
+          },
+          "attributes": {
+            "type": "object",
+            "description": "Type-specific attributes (e.g. role for persons, charity_number for organisations)",
+            "properties": {
+              "role": {
+                "type": "string",
+                "description": "Role of a person entity (e.g. trustee, director, accountant)"
+              },
+              "charity_number": {
+                "type": "string",
+                "description": "Charity Commission registration number for an organisation"
+              },
+              "company_number": {
+                "type": "string",
+                "description": "Companies House registration number for an organisation"
+              },
+              "date_format": {
+                "type": "string",
+                "description": "Original format of a date entity (e.g. DD/MM/YYYY)"
+              },
+              "currency": {
+                "type": "string",
+                "description": "Currency code for a monetary_amount entity"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["relationship_id", "relationship_type", "source_entity_id", "target_entity_id", "evidence_span", "confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "relationship_id": {
+            "type": "string",
+            "description": "Unique identifier within this document (e.g. R1, R2)"
+          },
+          "relationship_type": {
+            "type": "string",
+            "enum": ["trustee_of", "director_of", "employee_of", "donor_to", "received_donation_from", "subsidiary_of", "related_to"],
+            "description": "The type of relationship between entities"
+          },
+          "source_entity_id": {
+            "type": "string",
+            "description": "References an entity_id in the entities array"
+          },
+          "target_entity_id": {
+            "type": "string",
+            "description": "References an entity_id in the entities array"
+          },
+          "evidence_span": {
+            "type": "string",
+            "description": "Text that evidences this relationship"
+          },
+          "valid_from": {
+            "type": ["string", "null"],
+            "format": "date",
+            "description": "ISO 8601 date when the relationship started, or null if unknown"
+          },
+          "valid_to": {
+            "type": ["string", "null"],
+            "format": "date",
+            "description": "ISO 8601 date when the relationship ended, or null if ongoing/unknown"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Annotator certainty score from 0 (uncertain) to 1 (certain)"
+          }
+        }
+      }
+    },
+    "donations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["donation_id", "donor_entity_id", "recipient_entity_id", "evidence_span"],
+        "additionalProperties": false,
+        "properties": {
+          "donation_id": {
+            "type": "string",
+            "description": "Unique identifier within this document (e.g. D1, D2)"
+          },
+          "donor_entity_id": {
+            "type": "string",
+            "description": "References an entity_id in the entities array"
+          },
+          "recipient_entity_id": {
+            "type": "string",
+            "description": "References an entity_id in the entities array"
+          },
+          "amount": {
+            "type": ["number", "null"],
+            "description": "Donation amount, or null if not specified"
+          },
+          "currency": {
+            "type": "string",
+            "default": "GBP",
+            "description": "ISO 4217 currency code"
+          },
+          "year": {
+            "type": ["integer", "null"],
+            "description": "Year of the donation, or null if not specified"
+          },
+          "evidence_span": {
+            "type": "string",
+            "description": "Text that evidences this donation"
+          }
+        }
+      }
+    }
+  }
+}

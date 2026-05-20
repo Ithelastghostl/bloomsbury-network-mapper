@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloomsbury Network Mapper — Design Reviews</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #0d0c0a; color: #f5f3ef; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .wrap { max-width: 560px; width: 100%; padding: 48px 32px; }
+    h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px; }
+    .sub { font-size: 0.75rem; color: #7a756c; margin-bottom: 40px; }
+    .cards { display: flex; flex-direction: column; gap: 12px; }
+    a.card { display: block; background: #1a1916; border: 1px solid #2e2c28; border-radius: 6px; padding: 20px 24px; text-decoration: none; color: inherit; transition: border-color 150ms, background 150ms; }
+    a.card:hover { background: #2e2c28; border-color: #4a4640; }
+    .card-label { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #b8920f; margin-bottom: 6px; }
+    .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .card-desc { font-size: 0.8125rem; color: #7a756c; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Bloomsbury Network Mapper</h1>
+    <p class="sub">Frontend wireframe review — three design directions</p>
+    <div class="cards">
+      <a class="card" href="/a/">
+        <div class="card-label">Design A</div>
+        <div class="card-title">The Pipeline</div>
+        <div class="card-desc">Sidebar nav · ranked lead list · persistent detail panel. Optimised for daily triage by a power user.</div>
+      </a>
+      <a class="card" href="/b/">
+        <div class="card-label">Design B</div>
+        <div class="card-title">The Briefing</div>
+        <div class="card-desc">Top nav · trigger alerts · card grid by priority · full-screen lead modal. Optimised for morning check-in and board presentations.</div>
+      </a>
+      <a class="card" href="/c/">
+        <div class="card-label">Design C</div>
+        <div class="card-title">The Network Map</div>
+        <div class="card-desc">Expandable relationship tree · context panel · enrichment drawer. Optimised for understanding who connects to whom.</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

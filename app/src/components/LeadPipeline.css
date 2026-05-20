@@ -1,0 +1,27 @@
+.pipeline {
+  display: grid;
+  grid-template-columns: 1fr var(--panel-width);
+  height: 100%;
+  overflow: hidden;
+}
+
+.pipeline__list-col {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.pipeline__list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-raised);
+}
+
+.pipeline__panel-col {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}

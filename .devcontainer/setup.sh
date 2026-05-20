@@ -20,7 +20,7 @@ ok  "safe.directory = ${PWD}"
 log "Ensuring Node 24"
 if ! node --version | grep -q '^v24\.'; then
   sudo npm install -g n
-  sudo n 24
+  sudo env "PATH=$PATH" n 24
   hash -r
   ok "Node upgraded to $(node --version)"
 else
@@ -44,8 +44,26 @@ install_npm_global() {
 install_npm_global "@anthropic-ai/claude-code" "claude"
 install_npm_global "@google/gemini-cli"        "gemini"
 install_npm_global "@openai/codex"             "codex"
-install_npm_global "supabase"                  "supabase"
 install_npm_global "vercel"                    "vercel"
+
+# Supabase CLI — npm global installs are unsupported; use the official .deb release.
+if command -v supabase >/dev/null 2>&1; then
+  ok "supabase already installed ($(supabase --version 2>/dev/null | head -1))"
+else
+  log "Installing supabase CLI from GitHub releases"
+  SUPA_VER=$(curl -fsSL https://api.github.com/repos/supabase/cli/releases/latest \
+    | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))')
+  if [ -z "$SUPA_VER" ]; then
+    warn "Could not determine latest supabase version. Skipping install."
+  else
+    ARCH=$(dpkg --print-architecture)
+    TMP=$(mktemp -d)
+    curl -fsSL -o "$TMP/supabase.deb" "https://github.com/supabase/cli/releases/download/v${SUPA_VER}/supabase_${SUPA_VER}_linux_${ARCH}.deb"
+    sudo dpkg -i "$TMP/supabase.deb"
+    rm -rf "$TMP"
+    ok "supabase ${SUPA_VER} installed"
+  fi
+fi
 
 # ---------------------------------------------------------------------------
 # 3. GitHub auth (interactive — user authorizes in browser)

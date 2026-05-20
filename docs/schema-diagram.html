@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BFF Database Schema — Supabase Tables</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pitch-black:#0d0c0a;--deep-charcoal:#1a1916;--surface-warm:#f5f3ef;--surface-raised:#fafaf8;
+    --border-subtle:#e5e2dc;--border-mid:#c8c4bb;--gold-accent:#b8920f;--gold-light:#d4ad2a;
+    --text-primary:#0d0c0a;--text-secondary:#55524a;--text-muted:#7a776e;
+    --green:#2d7a3a;--amber:#9a6f09;--red:#b03030;--blue:#1a5fb4;
+    --purple:#6c3fa0;--teal:#0d7377;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--text-primary);background:var(--surface-warm);line-height:1.4;-webkit-font-smoothing:antialiased}
+  .topnav{background:var(--pitch-black);padding:14px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+  .topnav .logo{color:var(--gold-accent);font-weight:700;font-size:16px}
+  .topnav .sep{color:#2e2c27}
+  .topnav .title{color:#b0ada5;font-weight:500;font-size:14px}
+  .topnav .count{margin-left:auto;color:#7a776e;font-size:12px}
+  .container{max-width:1400px;margin:0 auto;padding:24px}
+  h1{font-size:22px;font-weight:700;margin-bottom:4px}
+  .sub{font-size:13px;color:var(--text-secondary);margin-bottom:20px}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px;padding:12px 16px;background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:6px}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--text-secondary)}
+  .legend-dot{width:10px;height:10px;border-radius:2px}
+  .group{margin-bottom:32px}
+  .group-header{font-size:14px;font-weight:700;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--border-subtle);display:flex;align-items:center;gap:8px}
+  .group-header .dot{width:12px;height:12px;border-radius:2px}
+  .group-header .count{font-weight:400;color:var(--text-muted);font-size:12px}
+  .tables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .tbl{background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:6px;overflow:hidden;font-size:12px}
+  .tbl-head{padding:8px 12px;font-weight:700;font-size:12px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border-subtle)}
+  .tbl-head .schema{font-weight:400;color:var(--text-muted)}
+  .tbl-body{padding:0}
+  .col-row{display:flex;padding:4px 12px;border-bottom:1px solid #f0ede8;align-items:baseline;gap:4px}
+  .col-row:last-child{border-bottom:none}
+  .col-name{font-weight:600;min-width:160px;font-family:'SF Mono','Fira Code',monospace;font-size:11px}
+  .col-name.pk{color:var(--gold-accent)}
+  .col-name.fk{color:var(--blue)}
+  .col-type{color:var(--text-muted);font-family:'SF Mono','Fira Code',monospace;font-size:10px;min-width:80px}
+  .col-tags{display:flex;gap:3px;flex-wrap:wrap}
+  .tag{font-size:9px;font-weight:600;padding:1px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
+  .tag-pk{background:#f5ecd0;color:var(--gold-accent)}
+  .tag-fk{background:#e0ecf8;color:var(--blue)}
+  .tag-nn{background:#e8f5ea;color:var(--green)}
+  .tag-uq{background:#f3e8f9;color:var(--purple)}
+  .tag-idx{background:#e5f5f5;color:var(--teal)}
+  .tag-def{background:#fef3d0;color:var(--amber)}
+  .fk-section{padding:6px 12px;background:#f8f7f4;border-top:1px solid var(--border-subtle);font-size:10px;color:var(--text-muted)}
+  .fk-section .fk-line{display:flex;gap:4px;padding:2px 0}
+  .fk-section .fk-col{color:var(--blue);font-weight:600;font-family:'SF Mono','Fira Code',monospace}
+  .fk-section .fk-arrow{color:var(--text-muted)}
+  .fk-section .fk-target{color:var(--text-secondary);font-family:'SF Mono','Fira Code',monospace}
+  /* SVG diagram */
+  .diagram-wrap{margin:24px 0;overflow-x:auto;padding-bottom:16px}
+  .diagram-wrap svg{display:block}
+  @media print{.topnav{position:static}body{font-size:10px}.container{max-width:100%;padding:12px}.tables-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="logo">BFF</span>
+  <span class="sep">/</span>
+  <span class="title">Database Schema Diagram</span>
+  <span class="count">30 tables &middot; app schema &middot; Supabase Postgres</span>
+</nav>
+
+<div class="container">
+
+<h1>Supabase Database Schema</h1>
+<p class="sub">All tables in the <code>app</code> schema. 30 tables across 6 domains. Extensions: pg_trgm, pgvector, pg_cron.</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--gold-accent)"></div>Primary key</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Foreign key</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>NOT NULL</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Unique</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Indexed</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Default value</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- RELATIONSHIP DIAGRAM (SVG)                         -->
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 style="font-size:16px;margin:24px 0 8px">Entity Relationship Overview</h2>
+<p class="sub" style="margin-bottom:12px">Foreign key relationships between tables. Colour-coded by domain.</p>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 1200 820" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:1200px;font-family:'Inter',system-ui,sans-serif;background:#fafaf8;border:1px solid #e5e2dc;border-radius:6px;">
+  <!-- Legend -->
+  <g transform="translate(16,12)">
+    <rect width="1168" height="28" rx="4" fill="#f5f3ef" stroke="#e5e2dc"/>
+    <rect x="12" y="8" width="10" height="10" rx="2" fill="#b8920f"/><text x="28" y="17" font-size="9.5" fill="#55524a" font-weight="500">Pipeline Core</text>
+    <rect x="130" y="8" width="10" height="10" rx="2" fill="#1a5fb4"/><text x="146" y="17" font-size="9.5" fill="#55524a" font-weight="500">Entity Resolution</text>
+    <rect x="280" y="8" width="10" height="10" rx="2" fill="#2d7a3a"/><text x="296" y="17" font-size="9.5" fill="#55524a" font-weight="500">Discovery &amp; Review</text>
+    <rect x="430" y="8" width="10" height="10" rx="2" fill="#6c3fa0"/><text x="446" y="17" font-size="9.5" fill="#55524a" font-weight="500">Seed Pipeline</text>
+    <rect x="560" y="8" width="10" height="10" rx="2" fill="#0d7377"/><text x="576" y="17" font-size="9.5" fill="#55524a" font-weight="500">Augmentation</text>
+    <rect x="690" y="8" width="10" height="10" rx="2" fill="#9a6f09"/><text x="706" y="17" font-size="9.5" fill="#55524a" font-weight="500">Config &amp; Ops</text>
+    <line x1="800" y1="13" x2="830" y2="13" stroke="#999" stroke-width="1"/>
+    <text x="836" y="17" font-size="9.5" fill="#55524a">FK relationship</text>
+    <line x1="920" y1="13" x2="950" y2="13" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="956" y="17" font-size="9.5" fill="#55524a">Soft-delete table</text>
+  </g>
+
+  <!-- ──── PIPELINE CORE (gold) ──── -->
+  <!-- runs -->
+  <g transform="translate(80,70)"><rect width="100" height="32" rx="4" fill="#b8920f" stroke="#0d0c0a" stroke-width="1"/><text x="50" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">runs</text></g>
+  <!-- documents -->
+  <g transform="translate(220,70)"><rect width="100" height="32" rx="4" fill="#b8920f" stroke="#0d0c0a" stroke-width="1"/><text x="50" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">documents</text></g>
+  <!-- extraction_runs -->
+  <g transform="translate(150,130)"><rect width="120" height="32" rx="4" fill="#b8920f" stroke="#0d0c0a" stroke-width="1"/><text x="60" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">extraction_runs</text></g>
+  <!-- evidence_spans -->
+  <g transform="translate(350,130)"><rect width="120" height="32" rx="4" fill="#b8920f" stroke="#0d0c0a" stroke-width="1"/><text x="60" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">evidence_spans</text></g>
+  <!-- graph_snapshots -->
+  <g transform="translate(10,130)"><rect width="120" height="32" rx="4" fill="#b8920f" stroke="#0d0c0a" stroke-width="1"/><text x="60" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">graph_snapshots</text></g>
+
+  <!-- FK lines: extraction_runs -> runs, documents -->
+  <line x1="180" y1="102" x2="195" y2="130" stroke="#999" stroke-width="1"/>
+  <line x1="270" y1="102" x2="230" y2="130" stroke="#999" stroke-width="1"/>
+  <!-- evidence_spans -> documents, runs -->
+  <line x1="310" y1="102" x2="390" y2="130" stroke="#999" stroke-width="1"/>
+  <!-- graph_snapshots -> runs -->
+  <line x1="100" y1="102" x2="70" y2="130" stroke="#999" stroke-width="1"/>
+
+  <!-- ──── ENTITY RESOLUTION (blue) ──── -->
+  <!-- entity_mentions -->
+  <g transform="translate(160,200)"><rect width="120" height="32" rx="4" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/><text x="60" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">entity_mentions</text></g>
+  <!-- canonical_entities (CENTRAL) -->
+  <g transform="translate(500,260)"><rect width="140" height="36" rx="4" fill="#1a5fb4" stroke="#b8920f" stroke-width="2"/><text x="70" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">canonical_entities</text></g>
+  <!-- identity_clusters -->
+  <g transform="translate(340,200)"><rect width="120" height="32" rx="4" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/><text x="60" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">identity_clusters</text></g>
+  <!-- human_identity_decisions -->
+  <g transform="translate(160,265)"><rect width="160" height="28" rx="4" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/><text x="80" y="18" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">human_identity_decisions</text></g>
+  <!-- relationships -->
+  <g transform="translate(500,200)"><rect width="110" height="32" rx="4" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/><text x="55" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">relationships</text></g>
+  <!-- donation_events -->
+  <g transform="translate(640,200)"><rect width="120" height="32" rx="4" fill="#1a5fb4" stroke="#0d0c0a" stroke-width="1"/><text x="60" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">donation_events</text></g>
+
+  <!-- FK: identity_clusters -> canonical_entities -->
+  <line x1="420" y1="232" x2="510" y2="260" stroke="#999" stroke-width="1"/>
+  <!-- FK: relationships -> canonical_entities (2x) -->
+  <line x1="545" y1="232" x2="560" y2="260" stroke="#999" stroke-width="1"/>
+  <!-- FK: donation_events -> canonical_entities -->
+  <line x1="680" y1="232" x2="620" y2="260" stroke="#999" stroke-width="1"/>
+  <!-- FK: entity_mentions -> documents, runs -->
+  <line x1="220" y1="200" x2="220" y2="162" stroke="#999" stroke-width="1"/>
+  <!-- FK: human_identity_decisions -> entity_mentions -->
+  <line x1="230" y1="265" x2="220" y2="232" stroke="#999" stroke-width="1"/>
+
+  <!-- ──── DISCOVERY & REVIEW (green) ──── -->
+  <!-- seeds -->
+  <g transform="translate(700,330)"><rect width="80" height="32" rx="4" fill="#2d7a3a" stroke="#0d0c0a" stroke-width="1"/><text x="40" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">seeds</text></g>
+  <!-- candidate_recommendations -->
+  <g transform="translate(530,370)"><rect width="180" height="28" rx="4" fill="#2d7a3a" stroke="#0d0c0a" stroke-width="1"/><text x="90" y="18" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">candidate_recommendations</text></g>
+  <!-- enrichment_signals -->
+  <g transform="translate(760,260)"><rect width="130" height="32" rx="4" fill="#2d7a3a" stroke="#0d0c0a" stroke-width="1"/><text x="65" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">enrichment_signals</text></g>
+  <!-- human_decisions -->
+  <g transform="translate(540,420)"><rect width="120" height="28" rx="4" fill="#2d7a3a" stroke="#0d0c0a" stroke-width="1"/><text x="60" y="18" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">human_decisions</text></g>
+  <!-- intro_outcomes -->
+  <g transform="translate(680,420)"><rect width="120" height="28" rx="4" fill="#2d7a3a" stroke="#0d0c0a" stroke-width="1"/><text x="60" y="18" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">intro_outcomes</text></g>
+  <!-- known_contacts -->
+  <g transform="translate(810,330)"><rect width="120" height="32" rx="4" fill="#2d7a3a" stroke="#0d0c0a" stroke-width="1"/><text x="60" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">known_contacts</text></g>
+  <!-- rejection_log -->
+  <g transform="translate(820,420)"><rect width="100" height="28" rx="4" fill="#2d7a3a" stroke="#0d0c0a" stroke-width="1"/><text x="50" y="18" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">rejection_log</text></g>
+
+  <!-- FK: seeds -> canonical_entities -->
+  <line x1="700" y1="340" x2="640" y2="290" stroke="#999" stroke-width="1"/>
+  <!-- FK: candidate_recommendations -> runs, seeds, canonical_entities -->
+  <line x1="620" y1="370" x2="620" y2="296" stroke="#999" stroke-width="1"/>
+  <line x1="700" y1="370" x2="730" y2="362" stroke="#999" stroke-width="1"/>
+  <!-- FK: enrichment_signals -> canonical_entities -->
+  <line x1="760" y1="276" x2="640" y2="276" stroke="#999" stroke-width="1"/>
+  <!-- FK: known_contacts -> canonical_entities -->
+  <line x1="810" y1="346" x2="640" y2="280" stroke="#999" stroke-width="1"/>
+  <!-- FK: human_decisions -> candidate_recommendations -->
+  <line x1="600" y1="420" x2="620" y2="398" stroke="#999" stroke-width="1"/>
+  <!-- FK: intro_outcomes -> candidate_recommendations -->
+  <line x1="700" y1="420" x2="660" y2="398" stroke="#999" stroke-width="1"/>
+
+  <!-- ──── SEED PIPELINE (purple) ──── -->
+  <!-- seed_imports -->
+  <g transform="translate(50,510)"><rect width="110" height="32" rx="4" fill="#6c3fa0" stroke="#0d0c0a" stroke-width="1"/><text x="55" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">seed_imports</text></g>
+  <!-- seed_import_rows -->
+  <g transform="translate(190,510)"><rect width="130" height="32" rx="4" fill="#6c3fa0" stroke="#0d0c0a" stroke-width="1"/><text x="65" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">seed_import_rows</text></g>
+  <!-- staged_entities -->
+  <g transform="translate(360,510)"><rect width="120" height="32" rx="4" fill="#6c3fa0" stroke="#0d0c0a" stroke-width="1"/><text x="60" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">staged_entities</text></g>
+  <!-- entity_aliases -->
+  <g transform="translate(520,510)"><rect width="110" height="32" rx="4" fill="#6c3fa0" stroke="#0d0c0a" stroke-width="1"/><text x="55" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">entity_aliases</text></g>
+  <!-- introduction_routes -->
+  <g transform="translate(360,570)"><rect width="140" height="32" rx="4" fill="#6c3fa0" stroke="#0d0c0a" stroke-width="1"/><text x="70" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">introduction_routes</text></g>
+
+  <!-- FK: seed_import_rows -> seed_imports -->
+  <line x1="190" y1="526" x2="160" y2="526" stroke="#999" stroke-width="1"/>
+  <!-- FK: seed_import_rows -> canonical_entities -->
+  <line x1="280" y1="510" x2="540" y2="296" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <!-- FK: staged_entities -> canonical_entities -->
+  <line x1="420" y1="510" x2="560" y2="296" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <!-- FK: entity_aliases -> canonical_entities -->
+  <line x1="575" y1="510" x2="575" y2="296" stroke="#999" stroke-width="1"/>
+  <!-- FK: introduction_routes -> canonical_entities (2x) -->
+  <line x1="430" y1="570" x2="550" y2="296" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- ──── AUGMENTATION (teal) ──── -->
+  <!-- seed_augmentation_runs -->
+  <g transform="translate(700,510)"><rect width="160" height="32" rx="4" fill="#0d7377" stroke="#0d0c0a" stroke-width="1"/><text x="80" y="20" text-anchor="middle" font-size="9.5" font-weight="700" fill="#fff">seed_augmentation_runs</text></g>
+  <!-- network_connections -->
+  <g transform="translate(700,570)"><rect width="150" height="32" rx="4" fill="#0d7377" stroke="#0d0c0a" stroke-width="1"/><text x="75" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">network_connections</text></g>
+
+  <!-- FK: seed_augmentation_runs -> canonical_entities, runs -->
+  <line x1="780" y1="510" x2="600" y2="296" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <!-- FK: network_connections -> canonical_entities, staged_entities, augmentation_runs -->
+  <line x1="720" y1="570" x2="480" y2="536" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="780" y1="570" x2="780" y2="542" stroke="#999" stroke-width="1"/>
+
+  <!-- ──── CONFIG & OPS (amber) ──── -->
+  <!-- pipeline_jobs -->
+  <g transform="translate(50,400)"><rect width="110" height="28" rx="4" fill="#9a6f09" stroke="#0d0c0a" stroke-width="1"/><text x="55" y="18" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">pipeline_jobs</text></g>
+  <!-- quarantine -->
+  <g transform="translate(180,400)"><rect width="100" height="28" rx="4" fill="#9a6f09" stroke="#0d0c0a" stroke-width="1"/><text x="50" y="18" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">quarantine</text></g>
+  <!-- scoring_configs -->
+  <g transform="translate(300,400)"><rect width="110" height="28" rx="4" fill="#9a6f09" stroke="#0d0c0a" stroke-width="1"/><text x="55" y="18" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">scoring_configs</text></g>
+  <!-- icp_configs -->
+  <g transform="translate(420,400)"><rect width="90" height="28" rx="4" fill="#9a6f09" stroke="#0d0c0a" stroke-width="1"/><text x="45" y="18" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">icp_configs</text></g>
+  <!-- audit_log -->
+  <g transform="translate(50,450)"><rect width="90" height="28" rx="4" fill="#9a6f09" stroke="#0d0c0a" stroke-width="1"/><text x="45" y="18" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">audit_log</text></g>
+  <!-- FK: pipeline_jobs -> runs -->
+  <line x1="105" y1="400" x2="120" y2="102" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <!-- FK: quarantine -> runs -->
+  <line x1="230" y1="400" x2="140" y2="102" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- Central label -->
+  <text x="570" y="315" text-anchor="middle" font-size="8" fill="#7a776e" font-style="italic">hub table — 16 FKs point here</text>
+
+</svg>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- TABLE DETAILS                                       -->
+<!-- ═══════════════════════════════════════════════════ -->
+
+<!-- GROUP 1: PIPELINE CORE -->
+<div class="group">
+<div class="group-header"><div class="dot" style="background:var(--gold-accent)"></div>Pipeline Core<span class="count">5 tables</span></div>
+<div class="tables-grid">
+
+<div class="tbl"><div class="tbl-head" style="background:var(--gold-accent);color:#fff"><span>runs</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name">run_type</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-def">def: corpus</span></span></div>
+  <div class="col-row"><span class="col-name">corpus_version</span><span class="col-type">text</span></div>
+  <div class="col-row"><span class="col-name">schema_version</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">cost_cap_usd</span><span class="col-type">numeric</span></div>
+  <div class="col-row"><span class="col-name">total_cost_usd</span><span class="col-type">numeric</span><span class="col-tags"><span class="tag tag-def">def: 0</span></span></div>
+  <div class="col-row"><span class="col-name">started_at</span><span class="col-type">timestamptz</span><span class="col-tags"><span class="tag tag-def">def: now()</span></span></div>
+  <div class="col-row"><span class="col-name">completed_at</span><span class="col-type">timestamptz</span></div>
+  <div class="col-row"><span class="col-name">error</span><span class="col-type">jsonb</span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--gold-accent);color:#fff"><span>documents</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">document_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name">corpus_version</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">source</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">document_type</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">content_hash</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-uq">UQ</span></span></div>
+  <div class="col-row"><span class="col-name">storage_uri</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">year</span><span class="col-type">int</span><span class="col-tags"><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">metadata</span><span class="col-type">jsonb</span><span class="col-tags"><span class="tag tag-def">def: {}</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--gold-accent);color:#fff"><span>extraction_runs</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">extraction_run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-uq">UQ*</span></span></div>
+  <div class="col-row"><span class="col-name fk">document_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-uq">UQ*</span></span></div>
+  <div class="col-row"><span class="col-name">prompt_version</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">model</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">deleted_at</span><span class="col-type">timestamptz</span></div>
+</div><div class="fk-section"><div class="fk-line"><span class="fk-col">run_id</span><span class="fk-arrow">&rarr;</span><span class="fk-target">runs.run_id</span></div><div class="fk-line"><span class="fk-col">document_id</span><span class="fk-arrow">&rarr;</span><span class="fk-target">documents.document_id</span></div></div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--gold-accent);color:#fff"><span>evidence_spans</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">evidence_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">document_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name fk">run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">text</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">evidence_type</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">deleted_at</span><span class="col-type">timestamptz</span></div>
+</div><div class="fk-section"><div class="fk-line"><span class="fk-col">document_id</span><span class="fk-arrow">&rarr;</span><span class="fk-target">documents.document_id</span></div><div class="fk-line"><span class="fk-col">run_id</span><span class="fk-arrow">&rarr;</span><span class="fk-target">runs.run_id</span></div></div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--gold-accent);color:#fff"><span>graph_snapshots</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">snapshot_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">node_count</span><span class="col-type">int</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">edge_count</span><span class="col-type">int</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">deleted_at</span><span class="col-type">timestamptz</span></div>
+</div><div class="fk-section"><div class="fk-line"><span class="fk-col">run_id</span><span class="fk-arrow">&rarr;</span><span class="fk-target">runs.run_id</span></div></div></div>
+
+</div></div>
+
+<!-- GROUP 2: ENTITY RESOLUTION -->
+<div class="group">
+<div class="group-header"><div class="dot" style="background:var(--blue)"></div>Entity Resolution<span class="count">6 tables</span></div>
+<div class="tables-grid">
+
+<div class="tbl"><div class="tbl-head" style="background:var(--blue);color:#fff"><span>canonical_entities</span><span style="margin-left:auto;font-size:9px;opacity:.8">HUB</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">canonical_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name">entity_type</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">display_name</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">TRGM</span></span></div>
+  <div class="col-row"><span class="col-name fk">first_seen_run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name fk">last_seen_run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">attributes</span><span class="col-type">jsonb</span><span class="col-tags"><span class="tag tag-def">def: {}</span></span></div>
+  <div class="col-row"><span class="col-name">source</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-def">def: corpus</span></span></div>
+</div><div class="fk-section"><div class="fk-line"><span class="fk-col">first_seen_run_id</span><span class="fk-arrow">&rarr;</span><span class="fk-target">runs.run_id</span></div></div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--blue);color:#fff"><span>entity_mentions</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">entity_mention_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">document_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name fk">run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">entity_type</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">normalised_value</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">TRGM</span></span></div>
+  <div class="col-row"><span class="col-name">embedding</span><span class="col-type">vector(1536)</span><span class="col-tags"><span class="tag tag-idx">IVF</span></span></div>
+  <div class="col-row"><span class="col-name">extraction_confidence</span><span class="col-type">numeric</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">deleted_at</span><span class="col-type">timestamptz</span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--blue);color:#fff"><span>identity_clusters</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">cluster_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">canonical_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">member_mention_ids</span><span class="col-type">text[]</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">cluster_confidence</span><span class="col-type">numeric</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">decision_status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--blue);color:#fff"><span>relationships</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">relationship_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">source_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name fk">target_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">relationship_type</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">confidence</span><span class="col-type">numeric</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">edge_weight</span><span class="col-type">numeric</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">deleted_at</span><span class="col-type">timestamptz</span></div>
+</div><div class="fk-section"><div class="fk-line"><span class="fk-col">source_entity_id</span><span class="fk-arrow">&rarr;</span><span class="fk-target">canonical_entities</span></div><div class="fk-line"><span class="fk-col">target_entity_id</span><span class="fk-arrow">&rarr;</span><span class="fk-target">canonical_entities</span></div></div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--blue);color:#fff"><span>donation_events</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">donation_event_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">donor_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name fk">recipient_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">amount</span><span class="col-type">numeric</span></div>
+  <div class="col-row"><span class="col-name">confidence</span><span class="col-type">numeric</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">deleted_at</span><span class="col-type">timestamptz</span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--blue);color:#fff"><span>human_identity_decisions</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">identity_decision_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">entity_a_mention_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name fk">entity_b_mention_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">decision</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">replay_on_future_runs</span><span class="col-type">boolean</span><span class="col-tags"><span class="tag tag-def">def: true</span></span></div>
+</div></div>
+
+</div></div>
+
+<!-- GROUP 3: DISCOVERY & REVIEW -->
+<div class="group">
+<div class="group-header"><div class="dot" style="background:var(--green)"></div>Discovery &amp; Review<span class="count">7 tables</span></div>
+<div class="tables-grid">
+
+<div class="tbl"><div class="tbl-head" style="background:var(--green);color:#fff"><span>seeds</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">seed_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">canonical_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">tier</span><span class="col-type">text</span></div>
+  <div class="col-row"><span class="col-name">funder_type</span><span class="col-type">text</span></div>
+  <div class="col-row"><span class="col-name">augmentation_status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-def">def: not_started</span></span></div>
+  <div class="col-row"><span class="col-name">active</span><span class="col-type">boolean</span><span class="col-tags"><span class="tag tag-def">def: true</span></span></div>
+</div><div class="fk-section"><div class="fk-line"><span class="fk-col">canonical_entity_id</span><span class="fk-arrow">&rarr;</span><span class="fk-target">canonical_entities</span></div></div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--green);color:#fff"><span>candidate_recommendations</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">candidate_recommendation_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-uq">UQ*</span></span></div>
+  <div class="col-row"><span class="col-name fk">seed_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-uq">UQ*</span></span></div>
+  <div class="col-row"><span class="col-name fk">candidate_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-uq">UQ*</span></span></div>
+  <div class="col-row"><span class="col-name">priority_score</span><span class="col-type">numeric</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">confidence_score</span><span class="col-type">numeric</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name fk">introduction_route_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name fk">target_seed_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">deleted_at</span><span class="col-type">timestamptz</span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--green);color:#fff"><span>enrichment_signals</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">enrichment_signal_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">candidate_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-uq">UQ*</span></span></div>
+  <div class="col-row"><span class="col-name">source</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-uq">UQ*</span></span></div>
+  <div class="col-row"><span class="col-name">signal_type</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">signal_payload</span><span class="col-type">jsonb</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">match_confidence</span><span class="col-type">numeric</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">accepted_for_scoring</span><span class="col-type">boolean</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">deleted_at</span><span class="col-type">timestamptz</span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--green);color:#fff"><span>known_contacts</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">canonical_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">exclude_as_candidate</span><span class="col-type">boolean</span><span class="col-tags"><span class="tag tag-def">def: true</span></span></div>
+  <div class="col-row"><span class="col-name">available_as_introducer</span><span class="col-type">boolean</span><span class="col-tags"><span class="tag tag-def">def: true</span></span></div>
+  <div class="col-row"><span class="col-name">source</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--green);color:#fff"><span>human_decisions</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">human_decision_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">candidate_recommendation_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">decision</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">decided_by</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--green);color:#fff"><span>intro_outcomes</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">intro_outcome_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">candidate_recommendation_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">intro_status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">converted</span><span class="col-type">boolean</span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--green);color:#fff"><span>rejection_log</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">rejection_log_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">seed_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-uq">UQ*</span></span></div>
+  <div class="col-row"><span class="col-name fk">candidate_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-uq">UQ*</span></span></div>
+  <div class="col-row"><span class="col-name">reason_code</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+</div></div>
+
+</div></div>
+
+<!-- GROUP 4: SEED PIPELINE -->
+<div class="group">
+<div class="group-header"><div class="dot" style="background:var(--purple)"></div>Seed Pipeline<span class="count">5 tables</span></div>
+<div class="tables-grid">
+
+<div class="tbl"><div class="tbl-head" style="background:var(--purple);color:#fff"><span>seed_imports</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">import_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name">import_type</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">file_name</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">row_count</span><span class="col-type">int</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-def">def: pending</span></span></div>
+  <div class="col-row"><span class="col-name">imported_by</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--purple);color:#fff"><span>seed_import_rows</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">row_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">import_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">first_name</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">last_name</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">primary_affiliation</span><span class="col-type">text</span></div>
+  <div class="col-row"><span class="col-name">introduced_by_raw</span><span class="col-type">text</span></div>
+  <div class="col-row"><span class="col-name fk">canonical_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name fk">introducer_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-def">def: pending</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--purple);color:#fff"><span>staged_entities</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">staged_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name">display_name</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">TRGM</span></span></div>
+  <div class="col-row"><span class="col-name">promotion_status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-def">def: pending</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name fk">match_candidate_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">match_confidence</span><span class="col-type">numeric</span></div>
+  <div class="col-row"><span class="col-name fk">promoted_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--purple);color:#fff"><span>entity_aliases</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">alias_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name">alias_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-uq">UQ*</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name fk">canonical_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-uq">UQ*</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">alias_source</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--purple);color:#fff"><span>introduction_routes</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">route_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">target_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name fk">introducer_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">route_type</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">warmth_tier</span><span class="col-type">int</span><span class="col-tags">1-4</span></div>
+  <div class="col-row"><span class="col-name fk">via_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">evidence</span><span class="col-type">jsonb</span><span class="col-tags"><span class="tag tag-def">def: {}</span></span></div>
+</div></div>
+
+</div></div>
+
+<!-- GROUP 5: AUGMENTATION -->
+<div class="group">
+<div class="group-header"><div class="dot" style="background:var(--teal)"></div>Augmentation<span class="count">2 tables</span></div>
+<div class="tables-grid">
+
+<div class="tbl"><div class="tbl-head" style="background:var(--teal);color:#fff"><span>seed_augmentation_runs</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">augmentation_run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">canonical_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name fk">run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">phase</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">model</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">input_tokens</span><span class="col-type">int</span></div>
+  <div class="col-row"><span class="col-name">output_tokens</span><span class="col-type">int</span></div>
+  <div class="col-row"><span class="col-name">estimated_cost_usd</span><span class="col-type">numeric</span></div>
+  <div class="col-row"><span class="col-name">status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-def">def: pending</span><span class="tag tag-idx">IDX</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--teal);color:#fff"><span>network_connections</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">connection_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">source_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name fk">connected_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name fk">staged_entity_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">connection_type</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">priority</span><span class="col-type">int</span></div>
+  <div class="col-row"><span class="col-name fk">augmentation_run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">background_check</span><span class="col-type">jsonb</span><span class="col-tags"><span class="tag tag-def">def: {}</span></span></div>
+</div></div>
+
+</div></div>
+
+<!-- GROUP 6: CONFIG & OPS -->
+<div class="group">
+<div class="group-header"><div class="dot" style="background:var(--amber)"></div>Config &amp; Operations<span class="count">5 tables</span></div>
+<div class="tables-grid">
+
+<div class="tbl"><div class="tbl-head" style="background:var(--amber);color:#fff"><span>pipeline_jobs</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">job_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">phase</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">status</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">attempts</span><span class="col-type">int</span><span class="col-tags"><span class="tag tag-def">def: 0</span></span></div>
+  <div class="col-row"><span class="col-name">max_attempts</span><span class="col-type">int</span><span class="col-tags"><span class="tag tag-def">def: 3</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--amber);color:#fff"><span>quarantine</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">quarantine_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name fk">run_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-fk">FK</span></span></div>
+  <div class="col-row"><span class="col-name">source_phase</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">reason_code</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">resolved</span><span class="col-type">boolean</span><span class="col-tags"><span class="tag tag-def">def: false</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--amber);color:#fff"><span>scoring_configs</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">scoring_config_version</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name">config</span><span class="col-type">jsonb</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">promoted_by</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--amber);color:#fff"><span>icp_configs</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">icp_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name">config</span><span class="col-type">jsonb</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">active</span><span class="col-type">boolean</span><span class="col-tags"><span class="tag tag-def">def: false</span></span></div>
+</div></div>
+
+<div class="tbl"><div class="tbl-head" style="background:var(--amber);color:#fff"><span>audit_log</span></div><div class="tbl-body">
+  <div class="col-row"><span class="col-name pk">log_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-pk">PK</span></span></div>
+  <div class="col-row"><span class="col-name">user_id</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">action</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span><span class="tag tag-idx">IDX</span></span></div>
+  <div class="col-row"><span class="col-name">resource</span><span class="col-type">text</span><span class="col-tags"><span class="tag tag-nn">NN</span></span></div>
+  <div class="col-row"><span class="col-name">payload</span><span class="col-type">jsonb</span><span class="col-tags"><span class="tag tag-def">def: {}</span></span></div>
+</div></div>
+
+</div></div>
+
+<div class="footer" style="margin-top:40px;padding-top:16px;border-top:1px solid #e5e2dc;font-size:12px;color:#7a776e;display:flex;justify-content:space-between">
+  <div><span style="color:#b8920f;font-weight:600">Bloomsbury Football Foundation</span> &mdash; Database Schema Diagram</div>
+  <div>30 tables &middot; app schema &middot; Generated 20 May 2026</div>
+</div>
+
+</div>
+</body>
+</html>
