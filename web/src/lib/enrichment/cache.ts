@@ -10,25 +10,47 @@
 import type { EnrichmentSource } from './types';
 import type { EnrichmentSignal } from '@/types/database';
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /** TTL in milliseconds per source (R4.8) */
 const SOURCE_TTL_MS: Record<EnrichmentSource, number> = {
-  companies_house: 30 * 24 * 60 * 60 * 1000,
-  charity_commission: 30 * 24 * 60 * 60 * 1000,
-  wikidata: 90 * 24 * 60 * 60 * 1000,
-  wikipedia: 90 * 24 * 60 * 60 * 1000,
-  news: 7 * 24 * 60 * 60 * 1000,
-  manual_research: 365 * 24 * 60 * 60 * 1000,
-  hnw_research: 90 * 24 * 60 * 60 * 1000,
-  network_mapping: 90 * 24 * 60 * 60 * 1000,
+  companies_house: 30 * DAY_MS,
+  companies_house_psc: 30 * DAY_MS,
+  charity_commission: 30 * DAY_MS,
+  charity_commission_bulk: 30 * DAY_MS,
+  electoral_commission: 14 * DAY_MS,
+  '360giving': 30 * DAY_MS,
+  fca_register: 30 * DAY_MS,
+  land_registry: 90 * DAY_MS,
+  wikidata: 90 * DAY_MS,
+  wikipedia: 90 * DAY_MS,
+  news: 7 * DAY_MS,
+  gdelt: 7 * DAY_MS,
+  guardian: 7 * DAY_MS,
+  forbes: 90 * DAY_MS,
+  web_search: 14 * DAY_MS,
+  manual_research: 365 * DAY_MS,
+  hnw_research: 90 * DAY_MS,
+  network_mapping: 90 * DAY_MS,
 };
 
 /** TTL in days for display / DB storage */
 export const SOURCE_TTL_DAYS: Record<EnrichmentSource, number> = {
   companies_house: 30,
+  companies_house_psc: 30,
   charity_commission: 30,
+  charity_commission_bulk: 30,
+  electoral_commission: 14,
+  '360giving': 30,
+  fca_register: 30,
+  land_registry: 90,
   wikidata: 90,
   wikipedia: 90,
   news: 7,
+  gdelt: 7,
+  guardian: 7,
+  forbes: 90,
+  web_search: 14,
   manual_research: 365,
   hnw_research: 90,
   network_mapping: 90,

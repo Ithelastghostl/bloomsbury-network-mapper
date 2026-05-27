@@ -559,6 +559,55 @@ Epics are numbered by functional area. **Execution order follows milestones:**
 
 ---
 
+## Epic 14: Wealth Intelligence, Prospect Augmentation & Dossier Storage (M9)
+
+> Mine and estimate individual net worth, run augmentation on leads, validate seed-to-HNW linkage, store personal dossiers as a graph, and assess introduction targets for donation potential based on giving history.
+
+### Feature 14.1: Net Worth & Transaction Value Estimation
+
+| ID | Task | PRD Ref | Acceptance | Status |
+|---|---|---|---|---|
+| F14.1-T1 | Build net worth estimation engine: aggregate Companies House directorships, property records, Rich List mentions, foundation assets, known transaction values into a wealth band (not a point estimate) | §18.3 | Each individual assigned a wealth band (e.g. £1M–5M, £5M–25M, £25M–100M, £100M+) with evidence sources listed | `[ ]` |
+| F14.1-T2 | Mine transaction values from Charity Commission filings: extract donation amounts, grant values, trustee-related financial flows from corpus | §11.1 | Transaction values extracted and stored in `donation_events` with amount, currency, year, and evidence_id | `[ ]` |
+| F14.1-T3 | Calculate overall net worth potential per individual: combine wealth band, transaction history, foundation involvement, and institutional affiliations into a composite score | §18.1 | Net worth potential score stored on `enrichment_signals`; breakdown visible in dossier | `[ ]` |
+| F14.1-T4 | Implement web mining fallback for thin-data individuals: targeted web_search queries for Companies House filings, charity trusteeships, news mentions, Rich List appearances | — | Thin-data individuals (< 5 signals) automatically trigger web mining; results stored as enrichment signals | `[ ]` |
+
+### Feature 14.2: Lead Augmentation & Prospect Database
+
+| ID | Task | PRD Ref | Acceptance | Status |
+|---|---|---|---|---|
+| F14.2-T1 | Run full augmentation pipeline (research + network mapping) on all discovered leads using v10 prompts | Plan §Sprint 2–3 | Each lead has a completed `seed_augmentation_runs` record for both research and network_mapping phases | `[ ]` |
+| F14.2-T2 | Store augmented lead profiles in prospect database: enrichment signals, network connections, wealth indicators, giving history | §11.1 | Prospect data queryable via API; linked to `canonical_entities` and `enrichment_signals` | `[ ]` |
+| F14.2-T3 | Build prospect search and filter API: search by name, wealth band, affinity signals, connection depth | §20 | `GET /api/prospects?wealth_band=&affinity=&min_connections=` returns filtered results | `[ ]` |
+
+### Feature 14.3: Seed-to-HNW Validation via HNW Table
+
+| ID | Task | PRD Ref | Acceptance | Status |
+|---|---|---|---|---|
+| F14.3-T1 | Cross-reference seeds against HNW target spreadsheet: match by name + affiliation to validate which seeds have known HNW connections | Plan §Fix #8 | Each seed-to-HNW link has a match confidence score and source attribution (spreadsheet row, corpus filing, or augmentation) | `[ ]` |
+| F14.3-T2 | Pinpoint lead source for each HNW match: trace whether the connection was declared in spreadsheet, discovered via network mapping, or found in corpus cross-reference | Plan §Phase ordering | Each HNW match has a `route_type` (spreadsheet_declared, network_inferred, corpus_discovered) and the originating seed identified | `[ ]` |
+| F14.3-T3 | Build HNW validation dashboard: show seed → HNW linkages with confidence, source, and introduction route | — | Dashboard shows all validated seed-to-HNW connections; filterable by confidence and route type | `[ ]` |
+
+### Feature 14.4: Personal Dossier Graph Storage
+
+| ID | Task | PRD Ref | Acceptance | Status |
+|---|---|---|---|---|
+| F14.4-T1 | Design dossier graph schema: each individual's dossier stored as a sub-graph with nodes for roles, affiliations, donations, connections, and wealth indicators | §18.7 | Schema documented; dossier nodes and edges defined with types | `[ ]` |
+| F14.4-T2 | Implement dossier graph storage in database: create `app.dossier_nodes` and `app.dossier_edges` tables linked to `canonical_entity_id` | §11.1 | Dossier graph persisted per individual; queryable by entity | `[ ]` |
+| F14.4-T3 | Build dossier graph API: `GET /api/entities/:id/dossier-graph` returns the full sub-graph for rendering | §20 | API returns nodes and edges in a format suitable for graph visualisation (e.g. D3/Cytoscape) | `[ ]` |
+| F14.4-T4 | Integrate dossier graph into existing dossier UI page: render interactive sub-graph alongside the tabular dossier | §18.7 | Dossier page shows both table view and graph view; user can toggle between them | `[ ]` |
+
+### Feature 14.5: Donation Potential Assessment for Introduction Targets
+
+| ID | Task | PRD Ref | Acceptance | Status |
+|---|---|---|---|---|
+| F14.5-T1 | Analyse introduction targets' previous donation history: aggregate all known donations from `donation_events`, enrichment signals, and augmentation results | §18.1, §18.3 | Each introduction target has a donation history summary with total given, recipient categories, and frequency | `[ ]` |
+| F14.5-T2 | Map institutional giving patterns: identify which charities, foundations, and causes each target donates to; flag alignment with BFF's mission (youth, sport, community) | §18.1 | Institutional giving profile stored; affinity score reflects cause alignment | `[ ]` |
+| F14.5-T3 | Calculate donation potential score: combine giving history, wealth band, cause alignment, and peer giving patterns into a composite donation likelihood score | §18.1 | Donation potential score stored on `candidate_recommendations`; breakdown visible in dossier | `[ ]` |
+| F14.5-T4 | Surface donation potential in review queue: add donation history column and donation potential score to the review table | §18.6 | Reviewers can sort/filter by donation potential; giving history visible without opening full dossier | `[ ]` |
+
+---
+
 ## Summary
 
 | Epic | Feature Count | Task Count | Milestone |
@@ -576,4 +625,5 @@ Epics are numbered by functional area. **Execution order follows milestones:**
 | 11. Observability & Admin Dashboards | 5 | 11 | M7 |
 | 12. Full-Corpus Dry Run & QA | 2 | 7 | M7 |
 | 13. Pilot & Cold-Start Monitoring | 2 | 8 | M8 |
-| **Totals** | **51** | **198** | |
+| 14. Wealth Intelligence, Prospect Augmentation & Dossier Storage | 5 | 18 | M9 |
+| **Totals** | **56** | **216** | |

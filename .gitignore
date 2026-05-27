@@ -46,3 +46,9 @@ venv/
 
 # Local Bin folder for staged deletions
 Bin/
+
+# Local data & tool config (not for repo)
+MKData/
+Seed_reference/
+.claude/
+.temp-claude-config/

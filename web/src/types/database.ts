@@ -408,3 +408,52 @@ export interface NetworkConnection {
   evidence: Record<string, unknown>;
   created_at: string;
 }
+
+// =========================================================
+// SWEEP GRAPH STORAGE (migration 00009)
+// =========================================================
+
+export type ArticleType = 'news' | 'filing' | 'profile' | 'philanthropy' | 'rich_list' | 'other';
+
+export interface EntityArticle {
+  article_id: string;
+  entity_id: string;
+  url: string;
+  title: string;
+  source_name: string;
+  published_date: string | null;
+  excerpt: string | null;
+  article_type: ArticleType;
+  enrichment_source: string;
+  source_layer: 'A' | 'B' | 'C';
+  sweep_run_id: string | null;
+  created_at: string;
+}
+
+export interface EnrichmentEvidence {
+  evidence_id: string;
+  entity_id: string;
+  source: string;
+  source_layer: 'A' | 'B' | 'C';
+  evidence_url: string | null;
+  evidence_text: string;
+  confidence: number;
+  sweep_run_id: string | null;
+  created_at: string;
+}
+
+export interface SweepRun {
+  sweep_run_id: string;
+  entity_id: string;
+  run_id: string | null;
+  layers_completed: string[];
+  wealth_band: string | null;
+  wealth_score: number | null;
+  signals_count: number;
+  relationships_found: number;
+  articles_found: number;
+  status: 'running' | 'completed' | 'failed';
+  started_at: string;
+  completed_at: string | null;
+  error: Record<string, unknown> | null;
+}
