@@ -457,3 +457,70 @@ export interface SweepRun {
   completed_at: string | null;
   error: Record<string, unknown> | null;
 }
+
+// =========================================================
+// WEALTH ESTIMATES & CO-DIRECTORS (migration 00010)
+// =========================================================
+
+export type WealthBandValue = 'unknown' | '1m_5m' | '5m_25m' | '25m_100m' | '100m_plus';
+
+export interface WealthEstimate {
+  wealth_estimate_id: string;
+  entity_id: string;
+  band: WealthBandValue;
+  score: number;
+  confidence: number;
+  evidence: WealthEvidenceItem[];
+  sweep_run_id: string | null;
+  assessed_at: string;
+}
+
+export interface WealthEvidenceItem {
+  signal: string;
+  source_layer: 'A' | 'B' | 'C';
+  contribution: number;
+  detail: string;
+}
+
+export interface CoDirectorEdge {
+  co_director_edge_id: string;
+  seed_entity_id: string;
+  co_director_entity_id: string;
+  company_number: string;
+  company_name: string;
+  seed_role: string | null;
+  co_director_role: string | null;
+  co_director_name: string;
+  appointed_on: string | null;
+  resigned_on: string | null;
+  confidence: number;
+  sweep_run_id: string | null;
+  evidence_id: string | null;
+  created_at: string;
+}
+
+export interface NetworkNetWorth {
+  entity_id: string;
+  connections_with_wealth: number;
+  network_net_worth_gbp: number;
+  avg_connection_wealth_score: number;
+  connection_wealth_breakdown: Array<{
+    connected_entity_id: string;
+    band: WealthBandValue;
+    score: number;
+    midpoint_gbp: number;
+  }>;
+}
+
+export interface EntityWealthSummary {
+  entity_id: string;
+  display_name: string;
+  entity_type: string;
+  personal_wealth_band: WealthBandValue | null;
+  personal_wealth_score: number | null;
+  personal_wealth_confidence: number | null;
+  connections_with_wealth: number;
+  network_net_worth_gbp: number;
+  avg_connection_wealth_score: number;
+  total_ecosystem_value_gbp: number;
+}

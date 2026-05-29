@@ -20,6 +20,8 @@ import type {
 } from './types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { persistSweepToGraph, type PersistSweepResult } from '@/lib/graph/sweep-persist';
+import { harvestCoDirectors, type CoDirectorRecord } from './co-director-harvester';
+import { runLlmWebSearch as executeLlmWebSearch } from './llm-web-search';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -59,6 +61,7 @@ export interface LayerAResult {
   politicalDonations: DonationRecord[];
   grantLinks: GrantRecord[];
   fcaRoles: FcaRecord[];
+  coDirectors: CoDirectorRecord[];
 }
 
 export interface DirectorshipRecord {
@@ -257,7 +260,14 @@ export async function runLayerA(
     });
   }
 
-  return { signals, directorships, trusteeships, politicalDonations, grantLinks, fcaRoles };
+  // A+: Harvest co-directors from every company found above
+  const coDirectorResult = await harvestCoDirectors(name, directorships, config);
+  signals.push(...coDirectorResult.signals);
+
+  return {
+    signals, directorships, trusteeships, politicalDonations, grantLinks, fcaRoles,
+    coDirectors: coDirectorResult.coDirectors,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -354,9 +364,12 @@ export async function runLayerB(
     signals.push(...wikiSignals);
   }
 
-  // B5: LLM web search — targeted queries based on what A found
+  // B5: LLM web search — MANDATORY for every entity
   if (config.llm?.apiKey) {
-    const llmSignals = await runLlmWebSearch(entity, layerA, allArticles, config);
+    const llmSignals = await executeLlmWebSearch(entity, layerA, allArticles, {
+      apiKey: config.llm.apiKey,
+      model: config.llm.model,
+    });
     signals.push(...llmSignals);
   }
 
@@ -509,6 +522,36 @@ export function calculateWealthBand(
       detail: `${articleCount} news articles found`,
     });
     score += newsScore;
+  }
+
+  // Layer B: Web search wealth signals (max 0.15)
+  const webWealthSignals = layerB.signals.filter(
+    s => s.source === 'web_search' &&
+         s.signal_payload &&
+         (s.signal_payload as Record<string, unknown>).finding_type === 'wealth_signal',
+  );
+  if (webWealthSignals.length > 0) {
+    const wsScore = Math.min(webWealthSignals.length * 0.05, 0.15);
+    evidence.push({
+      signal: 'web_search_wealth',
+      source_layer: 'B',
+      contribution: wsScore,
+      detail: `${webWealthSignals.length} wealth signals from web search`,
+    });
+    score += wsScore;
+  }
+
+  // Layer A: Co-director network density (max 0.10)
+  const coDirectorCount = layerA.coDirectors?.length ?? 0;
+  if (coDirectorCount >= 5) {
+    const cdScore = Math.min(coDirectorCount * 0.005, 0.10);
+    evidence.push({
+      signal: 'co_director_network',
+      source_layer: 'A',
+      contribution: cdScore,
+      detail: `${coDirectorCount} co-directors across companies`,
+    });
+    score += cdScore;
   }
 
   score = Math.min(score, 1.0);
@@ -855,15 +898,4 @@ async function fetchWikidata(
   return [];
 }
 
-async function runLlmWebSearch(
-  _entity: CanonicalEntity,
-  _layerA: LayerAResult,
-  _existingArticles: DiscoveredArticle[],
-  _config: UnifiedSweepConfig,
-): Promise<GraphEnrichmentSignal[]> {
-  // Claude with web_search tool — targeted queries based on Layer A findings.
-  // Searches for: Rich List mentions, private giving, biographical context,
-  // awards/honours, foundation launches, charity galas.
-  // Each finding stored as a signal with discovered_relationships and discovered_articles.
-  return [];
-}
+// LLM web search is now in llm-web-search.ts — imported and called in runLayerB()

@@ -16,6 +16,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const SOURCE_TTL_MS: Record<EnrichmentSource, number> = {
   companies_house: 30 * DAY_MS,
   companies_house_psc: 30 * DAY_MS,
+  companies_house_co_director: 30 * DAY_MS,
   charity_commission: 30 * DAY_MS,
   charity_commission_bulk: 30 * DAY_MS,
   electoral_commission: 14 * DAY_MS,
@@ -38,6 +39,7 @@ const SOURCE_TTL_MS: Record<EnrichmentSource, number> = {
 export const SOURCE_TTL_DAYS: Record<EnrichmentSource, number> = {
   companies_house: 30,
   companies_house_psc: 30,
+  companies_house_co_director: 30,
   charity_commission: 30,
   charity_commission_bulk: 30,
   electoral_commission: 14,

@@ -31,6 +31,7 @@ const DEFAULT_BATCH = 50;
 const SOURCE_TTL_DAYS: Record<string, number> = {
   companies_house: 30,
   companies_house_psc: 30,
+  companies_house_co_director: 30,
   charity_commission: 30,
   charity_commission_bulk: 30,
   electoral_commission: 14,
@@ -191,7 +192,46 @@ export async function persistSweepToGraph(
     }
   }
 
-  // 4. Update wealth band on the canonical entity's attributes
+  // 4. Store wealth estimate in dedicated table
+  if (wealth) {
+    await supabase.from('wealth_estimates').upsert({
+      wealth_estimate_id: generateId(),
+      entity_id: sweep.entity_id,
+      band: wealth.band,
+      score: wealth.score,
+      confidence: wealth.confidence,
+      evidence: wealth.evidence,
+      sweep_run_id: sweepRunId,
+    }, { onConflict: 'entity_id,sweep_run_id' });
+  }
+
+  // 4b. Store co-director edges in dedicated table
+  for (const signal of sweep.signals) {
+    if (signal.source !== 'companies_house_co_director') continue;
+    for (const rel of signal.discovered_relationships) {
+      const targetKey = normaliseKey(rel.target_name, rel.target_entity_type);
+      const targetEntityId = entityMap.get(targetKey);
+      if (!targetEntityId) continue;
+
+      const payload = signal.signal_payload as Record<string, unknown>;
+      await supabase.from('co_director_edges').upsert({
+        co_director_edge_id: generateId(),
+        seed_entity_id: sweep.entity_id,
+        co_director_entity_id: targetEntityId,
+        company_number: (payload.company_number as string) ?? '',
+        company_name: (payload.company_name as string) ?? '',
+        seed_role: (payload.seed_role as string) ?? null,
+        co_director_role: (payload.co_director_role as string) ?? null,
+        co_director_name: rel.target_name,
+        appointed_on: (payload.appointed_on as string) ?? null,
+        resigned_on: (payload.resigned_on as string) ?? null,
+        confidence: rel.confidence,
+        sweep_run_id: sweepRunId,
+      }, { onConflict: 'seed_entity_id,co_director_entity_id,company_number', ignoreDuplicates: true });
+    }
+  }
+
+  // 4c. Update wealth band on the canonical entity's attributes
   if (wealth) {
     const { data: existing } = await supabase
       .from('canonical_entities')
@@ -311,9 +351,9 @@ function normaliseKey(name: string, type: string): string {
 
 function inferLayer(source: string): 'A' | 'B' | 'C' {
   const layerA = [
-    'companies_house', 'companies_house_psc', 'charity_commission',
-    'charity_commission_bulk', 'electoral_commission', '360giving',
-    'fca_register', 'land_registry',
+    'companies_house', 'companies_house_psc', 'companies_house_co_director',
+    'charity_commission', 'charity_commission_bulk', 'electoral_commission',
+    '360giving', 'fca_register', 'land_registry',
   ];
   const layerC = ['manual_research', 'hnw_research', 'network_mapping'];
   if (layerA.includes(source)) return 'A';

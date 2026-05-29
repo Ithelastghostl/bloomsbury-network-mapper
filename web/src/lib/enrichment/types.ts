@@ -11,6 +11,7 @@ import type { CanonicalEntity, EnrichmentSignal } from '@/types/database';
 export type EnrichmentSource =
   | 'companies_house'
   | 'companies_house_psc'
+  | 'companies_house_co_director'
   | 'charity_commission'
   | 'charity_commission_bulk'
   | 'electoral_commission'
@@ -35,6 +36,7 @@ export type EnrichmentTier = 1 | 2 | 3;
 export const SOURCE_TIER: Record<EnrichmentSource, EnrichmentTier> = {
   companies_house: 1,
   companies_house_psc: 1,
+  companies_house_co_director: 1,
   charity_commission: 1,
   charity_commission_bulk: 1,
   electoral_commission: 1,
