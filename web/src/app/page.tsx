@@ -1,10 +1,20 @@
 import { getAdminClient } from '@/lib/supabase/admin';
 import { fetchStats } from '@/lib/crm/queries';
+import type { CrmStats } from '@/lib/crm/types';
 import Link from 'next/link';
+
+// Live stats from Supabase — render per request, not at build time.
+export const dynamic = 'force-dynamic';
+
+const EMPTY_STATS: CrmStats = {
+  total_entities: 0, total_persons: 0, total_companies: 0,
+  wealth_estimated: 0, evidence_entries: 0, connections: 0,
+  wealth_bands: { unknown: 0, '1m_5m': 0, '5m_25m': 0, '25m_100m': 0, '100m_plus': 0 },
+};
 
 export default async function Home() {
   const supabase = getAdminClient();
-  const stats = await fetchStats(supabase);
+  const stats = await fetchStats(supabase).catch(() => EMPTY_STATS);
 
   return (
     <div className="min-h-screen bg-pitch-black text-text-primary flex flex-col items-center justify-center px-6">

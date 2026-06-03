@@ -4,6 +4,11 @@ import { SidebarNav } from '@/components/crm/sidebar-nav';
 import { StatsBar } from '@/components/crm/stats-bar';
 import type { CrmStats } from '@/lib/crm/types';
 
+// The CRM is a live read-only view of Supabase — render per request, never
+// prerender at build time. This keeps `next build`/CI independent of the DB and
+// always shows current data. Applies to every route nested under /crm.
+export const dynamic = 'force-dynamic';
+
 const EMPTY_STATS: CrmStats = {
   total_entities: 0, total_persons: 0, total_companies: 0,
   wealth_estimated: 0, evidence_entries: 0, connections: 0,
