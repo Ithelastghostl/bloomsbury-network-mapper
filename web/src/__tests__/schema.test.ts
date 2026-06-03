@@ -1,20 +1,30 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import { execSync } from 'child_process';
 
 // =========================================================
 // Helper: query remote Supabase via CLI --linked flag
 // =========================================================
 
-async function sqlQuery(sql: string): Promise<Record<string, unknown>[]> {
-  const { execSync } = await import('child_process');
+// Repo root where the supabase CLI is linked.
+const REPO_ROOT = '/workspaces/bloomsbury-network-mapper';
+
+function runQuery(sql: string): string {
   const escaped = sql.replace(/'/g, "'\\''");
-  const raw = execSync(
+  return execSync(
     `npx supabase db query --linked --output json '${escaped}' 2>/dev/null`,
-    {
-      cwd: '/workspaces/bloomsbury-network-mapper',
-      encoding: 'utf-8',
-      timeout: 30000,
-    }
+    { cwd: REPO_ROOT, encoding: 'utf-8', timeout: 30000 },
   );
+}
+
+// This is a LOCAL integration suite: it shells out to `supabase db query
+// --linked`, which needs the Supabase CLI, a linked project, and a reachable
+// DB — none of which exist in CI. It is therefore OPT-IN: it only runs when
+// RUN_SCHEMA_TESTS=1 is set, so CI (and offline dev) skip it instead of failing.
+// Run it deliberately with: RUN_SCHEMA_TESTS=1 npx vitest run schema
+const SCHEMA_TESTS_AVAILABLE = process.env.RUN_SCHEMA_TESTS === '1';
+
+async function sqlQuery(sql: string): Promise<Record<string, unknown>[]> {
+  const raw = runQuery(sql);
   const parsed = JSON.parse(raw);
   // CLI wraps results in { rows: [...], boundary: ..., warning: ... }
   if (parsed && Array.isArray(parsed.rows)) {
@@ -61,7 +71,7 @@ const EXPECTED_TABLES = [
 // Test: All 23 tables exist
 // =========================================================
 
-describe('Schema: table existence', () => {
+describe.skipIf(!SCHEMA_TESTS_AVAILABLE)('Schema: table existence', () => {
   let existingTables: string[];
 
   beforeAll(async () => {
@@ -92,7 +102,7 @@ interface ColumnInfo {
   is_nullable: string;
 }
 
-describe('Schema: key columns and types', () => {
+describe.skipIf(!SCHEMA_TESTS_AVAILABLE)('Schema: key columns and types', () => {
   let columns: ColumnInfo[];
 
   beforeAll(async () => {
@@ -236,7 +246,7 @@ describe('Schema: key columns and types', () => {
 // Test: Expected indexes exist
 // =========================================================
 
-describe('Schema: indexes', () => {
+describe.skipIf(!SCHEMA_TESTS_AVAILABLE)('Schema: indexes', () => {
   let indexNames: string[];
 
   beforeAll(async () => {
@@ -282,7 +292,7 @@ describe('Schema: indexes', () => {
 // Test: RLS is enabled on every table
 // =========================================================
 
-describe('Schema: RLS enabled', () => {
+describe.skipIf(!SCHEMA_TESTS_AVAILABLE)('Schema: RLS enabled', () => {
   let rlsStatus: { tablename: string; rowsecurity: boolean }[];
 
   beforeAll(async () => {
