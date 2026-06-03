@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How the Platform Works — Bloomsbury Network Mapper</title>
+<link rel="stylesheet" href="https://use.typekit.net/you7djq.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Oswald:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/guide-style.css">
+</head>
+<body>
+
+<header class="hero">
+  <p class="eyebrow">Bloomsbury Football Foundation</p>
+  <h1>How the Platform Works</h1>
+  <p>A technical walkthrough of the Network Mapper — its data model, the seed/lead pipeline, the relationship graph, wealth augmentation, and the APIs behind each screen.</p>
+  <div class="meta">Technical Guide · Network Mapper</div>
+</header>
+
+<div class="wrap">
+<main>
+
+  <div class="guide-switch">
+    <a href="/how-it-works.html" class="active">How it works</a>
+    <a href="/getting-started.html">Getting started</a>
+  </div>
+
+  <nav class="toc">
+    <p class="toc-title">Contents</p>
+    <ol>
+      <li><a href="#overview">What the platform is</a></li>
+      <li><a href="#data">The data model</a></li>
+      <li><a href="#triage">Seeds, Leads, Pipeline, All</a></li>
+      <li><a href="#wealth">Wealth &amp; evidence</a></li>
+      <li><a href="#graph">The relationship graph</a></li>
+      <li><a href="#augment">Wealth augmentation loop</a></li>
+      <li><a href="#api">API surface</a></li>
+      <li><a href="#stack">Stack &amp; rendering</a></li>
+    </ol>
+  </nav>
+
+  <section id="overview">
+    <h2>Overview</h2>
+    <p class="section-title">What the platform is</p>
+    <p>The Network Mapper is a <strong>read-only intelligence dashboard</strong> over a graph of people and organisations connected to Bloomsbury Football Foundation. It exists to answer one question: <em>who are the high-net-worth individuals around us, how are they connected, and what is the warmest route to reach them?</em></p>
+    <p>Everything you see is data already stored in the database. The dashboard <strong>displays</strong> — it does not run enrichment on its own. The one action it offers (<span class="pill gold">Augment &amp; Persist</span>) is always triggered explicitly by a person clicking a button; nothing happens automatically in the background.</p>
+    <div class="card-grid">
+      <div class="card"><h3>~1,057</h3><p>person entities in the graph</p></div>
+      <div class="card"><h3>~550</h3><p>companies &amp; charities</p></div>
+      <div class="card"><h3>~2,900</h3><p>relationships &amp; shared boards</p></div>
+    </div>
+  </section>
+
+  <section id="data">
+    <h2>Foundations</h2>
+    <p class="section-title">The data model</p>
+    <p>All data lives in a Supabase Postgres database under the <code>app</code> schema. The dashboard reads a handful of core tables:</p>
+    <table>
+      <thead><tr><th>Table</th><th>What it holds</th></tr></thead>
+      <tbody>
+        <tr><td><code>canonical_entities</code></td><td>The master list of every person and company — id, display name, type, and a flexible <code>attributes</code> field (where wealth data and flags are stored).</td></tr>
+        <tr><td><code>wealth_estimates</code></td><td>Wealth assessments per entity: a band, a score, a confidence, and structured evidence.</td></tr>
+        <tr><td><code>enrichment_evidence</code></td><td>Supporting evidence rows — source, layer, text, URL, confidence — backing a wealth or status claim.</td></tr>
+        <tr><td><code>network_connections</code></td><td>Directed relationships between two entities (person→person and person→company), with a type and the organisation that links them.</td></tr>
+        <tr><td><code>co_director_edges</code></td><td>People who share a company board, sourced from Companies House filings.</td></tr>
+      </tbody>
+    </table>
+    <p>When a page needs to show people, it loads their canonical records and then calls <code>enrichEntities()</code>, which fetches wealth, evidence and connections for the whole batch in parallel and stitches them together into an <strong>EnrichedEntity</strong> — the shape every screen renders from.</p>
+  </section>
+
+  <section id="triage">
+    <h2>The funnel</h2>
+    <p class="section-title">Seeds → Leads → Pipeline → All</p>
+    <p>People are sorted into four buckets. This is the spine of the whole tool: it separates <em>who we already have</em> from <em>who we’ve discovered around them</em>.</p>
+
+    <div class="card">
+      <h3><span class="pill gold">Seeds</span> the people we already have</h3>
+      <p>The original supporter &amp; target list — the people the project started from, each with research reports and the prompts behind them. Membership is defined by name: a curated list of <strong>323 seed people</strong> (from the HNW and supporter spreadsheets) is shipped with the app as <code>seed-people.json</code>. A person is a seed when their name matches that list via <code>isSeedPerson()</code>, which normalises names (lowercases, strips titles like <em>Sir/Dr</em> and honours like <em>CBE</em>) so spelling variants still match. Of the 323, about <strong>47 currently exist in the database</strong> — the rest haven’t been ingested yet.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="pill blue">Leads</span> discovered &amp; already enriched</h3>
+      <p>People we found <em>through</em> the seeds (co-directors, fellow trustees, family) who are <strong>not</strong> seeds themselves but already carry a wealth estimate or evidence. Filter: <code>!isSeedPerson() &amp;&amp; (has wealth OR has evidence)</code>. These are the warm prospects.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="pill grey">Pipeline</span> discovered, not yet researched</h3>
+      <p>Discovered non-seed people with no wealth or evidence yet — the raw backlog awaiting research. Filter: <code>!isSeedPerson() &amp;&amp; no wealth &amp;&amp; no evidence</code>.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="pill grey">All</span> everyone</h3>
+      <p>Every person entity, unfiltered. The complete view.</p>
+    </div>
+
+    <div class="note"><strong>The buckets are a clean partition.</strong> Seeds + Leads + Pipeline = All — no person is counted twice, none is missed.</div>
+  </section>
+
+  <section id="wealth">
+    <h2>Signals</h2>
+    <p class="section-title">Wealth &amp; evidence</p>
+    <p>Each person can carry a <strong>wealth band</strong> — the headline signal used for prioritisation and sorting:</p>
+    <p>
+      <span class="pill gold">£100M+</span>
+      <span class="pill gold">£25M–100M</span>
+      <span class="pill blue">£5M–25M</span>
+      <span class="pill grey">£1M–5M</span>
+      <span class="pill grey">Unknown</span>
+    </p>
+    <p>A band is backed by a <strong>score</strong> (0–1), a <strong>confidence</strong> (0–1), an estimated net worth in GBP, a source of wealth, and a written summary with citations. The <strong>portfolio summary</strong> on the Leads view aggregates these — combined &amp; average net worth, band distribution, and the best-connected people — to give a one-glance read on a whole list.</p>
+  </section>
+
+  <section id="graph">
+    <h2>Connections</h2>
+    <p class="section-title">The relationship graph</p>
+    <p>The graph is the centrepiece. There are three views, each answering a different question.</p>
+
+    <h3>Orbit — how people cluster</h3>
+    <p>The Orbit view draws an edge <strong>between two people</strong> whenever they share something. It builds those person-to-person links from three sources, then merges duplicates:</p>
+    <ul>
+      <li><strong>Direct relationships</strong> — existing person→person links (co-director, family member, co-trustee, associate).</li>
+      <li><strong>Shared company</strong> — if two people are both attached to the same company, they’re linked (the company is collapsed into a direct bond). Companies with more than 50 members are skipped so a giant employer doesn’t create a hairball.</li>
+      <li><strong>Shared boards</strong> — Companies House co-director records.</li>
+    </ul>
+    <p>Each resulting bond carries a <strong>weight</strong> = the number of distinct reasons two people are linked, so stronger ties draw thicker. Nodes are coloured by <strong>community</strong> (connected-component), which is what turns a scattered cloud into readable clusters. A toggle switches to <strong>“+ Institutions”</strong> (bipartite) mode, which puts companies back in as visible connector nodes so you can see <em>which</em> organisation links a group.</p>
+
+    <h3>Institutions — individuals &amp; companies</h3>
+    <p>People linked to the (non-charity) companies they direct or advise — boards and directorships.</p>
+
+    <h3>Charities — charities at the centre</h3>
+    <p>People linked to charities and foundations, surfacing trustees and supporters. A company counts as a charity if its name contains words like <em>foundation, trust, charity, charitable, endowment</em>, <strong>or</strong> it has Charity Commission evidence — more reliable than keywords alone.</p>
+
+    <div class="note"><strong>Why the graph looks connected now.</strong> The underlying relationships were always there; earlier the view dropped the shared-board edges and used weak layout forces, so it looked like scattered dots. Folding in co-directorships and shared companies — plus community colouring — reveals the single large network underneath (~1,055 people in one connected map).</div>
+  </section>
+
+  <section id="augment">
+    <h2>Enrichment</h2>
+    <p class="section-title">The wealth augmentation loop</p>
+    <p>Research is done by a local Claude Code agent using web search — there is <strong>no API key</strong> in the app and the dashboard never calls a model itself. Instead it acts as the queue and the store. The loop:</p>
+    <ol class="steps">
+      <li><strong>Request</strong> — On a Lead’s detail page, a user clicks <span class="pill gold">Augment &amp; Persist</span>. This sets <code>augmentation_requested</code> on that person. (Explicit click only — nothing auto-fires.)</li>
+      <li><strong>Queue</strong> — The person now appears in <code>GET /api/crm/augment-queue</code>, returned in the exact shape the research tooling expects.</li>
+      <li><strong>Research</strong> — The local agent reads the queue and researches each person via web search (net worth, source of wealth, evidence with citations).</li>
+      <li><strong>Persist</strong> — The agent POSTs results to <code>/api/entities/{id}/augment</code>. The server writes evidence, upserts the wealth estimate, and stamps <code>wealth_augmented_at</code> — which removes the queue flag and <strong>promotes the Lead into a Seed-quality profile</strong>.</li>
+    </ol>
+    <p>The write endpoints are admin-gated. For local use a <code>CRM_LOCAL_MODE</code> flag bypasses that gate (only when not in production), so the tethered agent can persist without a login.</p>
+  </section>
+
+  <section id="api">
+    <h2>Interfaces</h2>
+    <p class="section-title">API surface</p>
+    <table>
+      <thead><tr><th>Endpoint</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /api/crm/augment-queue</code></td><td>List people requested for research.</td></tr>
+        <tr><td><code>POST /api/crm/entities/{id}/request-augmentation</code></td><td>Flag a person for research (the button).</td></tr>
+        <tr><td><code>POST /api/entities/{id}/augment</code></td><td>Persist researched wealth → promote to seed.</td></tr>
+        <tr><td><code>GET /api/crm/stats</code></td><td>Network-wide counts for the header bar.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="stack">
+    <h2>Under the hood</h2>
+    <p class="section-title">Stack &amp; rendering</p>
+    <ul>
+      <li><strong>Next.js (App Router)</strong> with React Server Components — pages fetch from Supabase on the server.</li>
+      <li><strong>Supabase Postgres</strong> (schema <code>app</code>) accessed with a service-role client; every request has an <strong>8-second timeout with retries</strong> so a flaky connection fails fast instead of hanging, and pages degrade to a friendly error card rather than crashing.</li>
+      <li><strong>D3</strong> for the force-directed graph; the layout is computed and then frozen, so nodes settle and stop rather than drifting forever.</li>
+      <li>The CRM is <strong>rendered per request</strong> (never prerendered at build), so it always reflects current data and the build never depends on the database.</li>
+      <li>Styling is a light theme — Bloomsbury gold on white — applied through CSS design tokens.</li>
+    </ul>
+  </section>
+
+</main>
+</div>
+
+<footer>
+  Bloomsbury Football Foundation — Network Mapper · Technical Guide ·
+  <a href="/getting-started.html">Read the getting-started guide →</a>
+</footer>
+
+</body>
+</html>

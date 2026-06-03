@@ -64,6 +64,16 @@ export default async function Home() {
             Leadership Roadmap
           </Link>
         </div>
+
+        <div className="flex items-center justify-center gap-4 mt-6 text-sm">
+          <a href="/getting-started.html" className="text-gold hover:text-gold-light transition-colors">
+            Getting Started Guide →
+          </a>
+          <span className="text-border-mid">·</span>
+          <a href="/how-it-works.html" className="text-text-muted hover:text-text-primary transition-colors">
+            How It Works
+          </a>
+        </div>
       </div>
     </div>
   );
