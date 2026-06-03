@@ -40,7 +40,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { readFileSync, writeFileSync } from 'fs';
-import { generateId } from '../src/lib/ulid';
+import { storeWealthResult, type WealthResearchResult } from '../src/lib/crm/wealth-persist';
 
 type AnySupabase = SupabaseClient<any, any, any>;
 
@@ -51,19 +51,6 @@ interface TargetEntity {
   attributes: Record<string, unknown>;
   connection_count: number;
   current_band: string | null;
-}
-
-export interface WealthResearchResult {
-  entity_id: string;
-  display_name: string;
-  estimated_net_worth_gbp: number | null;
-  wealth_band: string;
-  wealth_score: number;
-  confidence: number;
-  wealth_source: string;
-  wealth_origin: string;
-  evidence_summary: string;
-  sources: string[];
 }
 
 async function main() {
@@ -234,82 +221,6 @@ async function selectTargets(
 
   targets.sort((a, b) => b.connection_count - a.connection_count);
   return targets.slice(0, opts.limit);
-}
-
-async function storeWealthResult(
-  supabase: AnySupabase,
-  result: WealthResearchResult,
-): Promise<void> {
-  const evidenceId = generateId();
-
-  await supabase.from('enrichment_evidence').insert({
-    evidence_id: evidenceId,
-    entity_id: result.entity_id,
-    source: 'web_search',
-    source_layer: 'B',
-    evidence_text: result.evidence_summary.slice(0, 1000),
-    confidence: result.confidence,
-    raw_payload: {
-      estimated_net_worth_gbp: result.estimated_net_worth_gbp,
-      wealth_source: result.wealth_source,
-      wealth_origin: result.wealth_origin,
-      sources: result.sources,
-    },
-  });
-
-  const { error: weError } = await supabase.from('wealth_estimates').upsert({
-    wealth_estimate_id: generateId(),
-    entity_id: result.entity_id,
-    band: result.wealth_band,
-    score: result.wealth_score,
-    confidence: result.confidence,
-    evidence: [
-      {
-        signal: 'web_research_net_worth',
-        source_layer: 'B',
-        contribution: result.wealth_score,
-        detail: result.evidence_summary,
-        estimated_net_worth_gbp: result.estimated_net_worth_gbp,
-        wealth_source: result.wealth_source,
-        wealth_origin: result.wealth_origin,
-        sources: result.sources,
-      },
-    ],
-    assessed_at: new Date().toISOString(),
-  }, {
-    onConflict: 'entity_id,sweep_run_id',
-    ignoreDuplicates: false,
-  });
-
-  if (weError && !weError.code?.startsWith('23505')) {
-    console.warn(`    Warning: wealth_estimates upsert failed: ${weError.message}`);
-  }
-
-  const { data: existing } = await supabase
-    .from('canonical_entities')
-    .select('attributes')
-    .eq('canonical_entity_id', result.entity_id)
-    .single();
-
-  const attrs = (existing?.attributes ?? {}) as Record<string, unknown>;
-  const { error: updateErr } = await supabase
-    .from('canonical_entities')
-    .update({
-      attributes: {
-        ...attrs,
-        estimated_net_worth_gbp: result.estimated_net_worth_gbp,
-        wealth_band: result.wealth_band,
-        wealth_score: result.wealth_score,
-        wealth_source: result.wealth_source,
-        wealth_origin: result.wealth_origin,
-        wealth_augmented_at: new Date().toISOString(),
-      },
-    })
-    .eq('canonical_entity_id', result.entity_id);
-
-  if (updateErr) {
-    console.warn(`    Warning: entity attributes update failed: ${updateErr.message}`);
-  }
 }
 
 function formatGbp(n: number): string {

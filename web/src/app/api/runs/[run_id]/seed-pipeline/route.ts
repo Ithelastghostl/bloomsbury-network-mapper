@@ -5,10 +5,10 @@ import { runSeedAugmentation, type OrchestratorConfig } from '@/lib/augmentation
 
 export const POST = withIdempotency(async (
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ run_id: string }> },
 ) => {
   try {
-    const { id: runId } = await params;
+    const { run_id: runId } = await params;
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();

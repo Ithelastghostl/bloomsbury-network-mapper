@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/*
+ * Light "Bloomsbury" theme.
+ *
+ * Token NAMES are kept from the original dark palette so the ~hundreds of
+ * existing utility classes (bg-pitch-black, text-text-primary, border-border-subtle,
+ * bg-deep-charcoal, …) need no churn. Only the VALUES are remapped to a light,
+ * gold-on-white brand. Names like "pitch-black" are therefore intentional
+ * misnomers in this theme — read them as semantic slots, not literal colours.
+ *
+ *   pitch-black     → app background (white)
+ *   deep-charcoal   → raised card surface (off-white)
+ *   mid-charcoal    → chips / hover fills
+ *   warm-white      → inverted to a dark ink (used as text on gold buttons)
+ *   text-*          → near-black ink, re-tuned for a light ground
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-pitch-black: #ffffff;
+  --color-deep-charcoal: #f7f5f1;
+  --color-mid-charcoal: #ece9e3;
+  --color-warm-white: #1a1916;
+  --color-surface-raised: #ffffff;
+  --color-border-subtle: #e4e0d8;
+  --color-border-mid: #d4cfc4;
+  --color-gold: #a07d0a;
+  --color-gold-light: #b8920f;
+  --color-gold-dim: rgba(160, 125, 10, 0.18);
+  --color-text-primary: #1a1916;
+  --color-text-secondary: #4a463f;
+  --color-text-muted: #7a756c;
+  --color-status-active: #15803d;
+  --color-status-warning: #b45309;
+  --color-status-danger: #b91c1c;
+  --color-status-info: #2563eb;
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-pitch-black);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
 }

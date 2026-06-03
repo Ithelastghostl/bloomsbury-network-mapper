@@ -5,10 +5,10 @@ import { augmentSingleSeed } from '@/lib/augmentation/orchestrator';
 
 export const POST = withIdempotency(async (
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ seed_id: string }> },
 ) => {
   try {
-    const { id } = await params;
+    const { seed_id: id } = await params;
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();

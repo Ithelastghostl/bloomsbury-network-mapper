@@ -81,7 +81,7 @@ export async function getColdStartStatus(): Promise<ColdStartStatus> {
 
   const distinctSeeds = new Set(
     (seedRows ?? []).map((r) =>
-      (r as { candidate_recommendations: { seed_id: string } }).candidate_recommendations.seed_id,
+      (r as unknown as { candidate_recommendations: { seed_id: string } }).candidate_recommendations.seed_id,
     ),
   ).size;
 
