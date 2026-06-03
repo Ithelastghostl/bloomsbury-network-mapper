@@ -4,6 +4,7 @@ import { runHnwResearch } from './hnw-research';
 import { runNetworkMapping } from './network-mapping';
 import type { CanonicalEntity } from '@/types/database';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 const DEFAULT_MAX_CONCURRENT = 5;

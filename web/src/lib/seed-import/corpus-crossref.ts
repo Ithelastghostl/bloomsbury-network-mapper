@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ulid } from 'ulid';
 import { trigramSimilarity } from '@/lib/entity-resolution/match-confidence';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 const AUTO_MERGE_THRESHOLD = 0.90;

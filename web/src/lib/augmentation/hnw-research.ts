@@ -5,6 +5,7 @@ import { loadHnwResearchPrompt, buildResearchSystemPrompt } from './prompt-loade
 import { parseResearchOutput, type ParsedResearchProfile } from './output-parser';
 import type { CanonicalEntity } from '@/types/database';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 const MODEL = 'claude-sonnet-4-20250514';

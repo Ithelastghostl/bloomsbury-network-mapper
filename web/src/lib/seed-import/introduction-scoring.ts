@@ -3,6 +3,7 @@ import { ulid } from 'ulid';
 import { calculatePriorityScore, type PriorityInput } from '@/lib/ranking/priority';
 import { calculateConfidenceScore, type ConfidenceInput } from '@/lib/ranking/confidence';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 // Warmth tier → introability score mapping

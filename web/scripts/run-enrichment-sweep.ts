@@ -19,6 +19,7 @@ import { buildSweepConfig } from '../src/lib/enrichment/sweep-config';
 import { generateId } from '../src/lib/ulid';
 import type { CanonicalEntity } from '../src/types/database';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabase = SupabaseClient<any, any, any>;
 
 const CONCURRENCY = parseInt(process.env.SWEEP_CONCURRENCY ?? '3', 10);

@@ -6,6 +6,7 @@ import { runCorpusCrossRef } from './corpus-crossref';
 import { scoreIntroductionRoutes } from './introduction-scoring';
 import { runSeedAugmentation, type OrchestratorConfig } from '@/lib/augmentation/orchestrator';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 export interface FullPipelineConfig {

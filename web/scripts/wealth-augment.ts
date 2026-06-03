@@ -42,6 +42,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { readFileSync, writeFileSync } from 'fs';
 import { storeWealthResult, type WealthResearchResult } from '../src/lib/crm/wealth-persist';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabase = SupabaseClient<any, any, any>;
 
 interface TargetEntity {

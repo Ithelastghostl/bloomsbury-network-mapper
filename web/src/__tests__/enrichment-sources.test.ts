@@ -1,5 +1,5 @@
 /**
- * Enrichment source module tests (F8.2–F8.4).
+ * Enrichment source mod tests (F8.2–F8.4).
  *
  * Covers:
  * - Companies House signal extraction (F8.2-T1)
@@ -229,9 +229,9 @@ describe('Companies House module', () => {
 
   describe('createCompaniesHouseModule', () => {
     it('has correct source and tier', () => {
-      const module = createCompaniesHouseModule({ apiKey: 'test' });
-      expect(module.source).toBe('companies_house');
-      expect(module.tier).toBe(1);
+      const mod = createCompaniesHouseModule({ apiKey: 'test' });
+      expect(mod.source).toBe('companies_house');
+      expect(mod.tier).toBe(1);
     });
 
     it('returns empty array when API returns no results', async () => {
@@ -243,8 +243,8 @@ describe('Companies House module', () => {
       });
 
       try {
-        const module = createCompaniesHouseModule({ apiKey: 'test' });
-        const signals = await module.enrich(makeEntity());
+        const mod = createCompaniesHouseModule({ apiKey: 'test' });
+        const signals = await mod.enrich(makeEntity());
         expect(signals).toEqual([]);
       } finally {
         globalThis.fetch = originalFetch;
@@ -270,8 +270,8 @@ describe('Companies House module', () => {
       });
 
       try {
-        const module = createCompaniesHouseModule({ apiKey: 'test' });
-        const signals = await module.enrich(makeEntity());
+        const mod = createCompaniesHouseModule({ apiKey: 'test' });
+        const signals = await mod.enrich(makeEntity());
 
         expect(signals).toHaveLength(1);
         expect(signals[0].source).toBe('companies_house');
@@ -294,8 +294,8 @@ describe('Companies House module', () => {
       });
 
       try {
-        const module = createCompaniesHouseModule({ apiKey: 'test' });
-        await expect(module.enrich(makeEntity())).rejects.toMatchObject({ status: 500 });
+        const mod = createCompaniesHouseModule({ apiKey: 'test' });
+        await expect(mod.enrich(makeEntity())).rejects.toMatchObject({ status: 500 });
       } finally {
         globalThis.fetch = originalFetch;
       }
@@ -381,9 +381,9 @@ describe('Charity Commission module', () => {
 
   describe('createCharityCommissionModule', () => {
     it('has correct source and tier', () => {
-      const module = createCharityCommissionModule({});
-      expect(module.source).toBe('charity_commission');
-      expect(module.tier).toBe(1);
+      const mod = createCharityCommissionModule({});
+      expect(mod.source).toBe('charity_commission');
+      expect(mod.tier).toBe(1);
     });
 
     it('returns empty array when no charities found', async () => {
@@ -394,8 +394,8 @@ describe('Charity Commission module', () => {
       });
 
       try {
-        const module = createCharityCommissionModule({});
-        const signals = await module.enrich(makeEntity());
+        const mod = createCharityCommissionModule({});
+        const signals = await mod.enrich(makeEntity());
         expect(signals).toEqual([]);
       } finally {
         globalThis.fetch = originalFetch;
@@ -428,8 +428,8 @@ describe('Charity Commission module', () => {
       });
 
       try {
-        const module = createCharityCommissionModule({});
-        const signals = await module.enrich(makeEntity());
+        const mod = createCharityCommissionModule({});
+        const signals = await mod.enrich(makeEntity());
 
         expect(signals).toHaveLength(1);
         expect(signals[0].source).toBe('charity_commission');
@@ -541,9 +541,9 @@ describe('Wikidata module', () => {
 
   describe('createWikidataModule', () => {
     it('has correct source and tier', () => {
-      const module = createWikidataModule();
-      expect(module.source).toBe('wikidata');
-      expect(module.tier).toBe(2);
+      const mod = createWikidataModule();
+      expect(mod.source).toBe('wikidata');
+      expect(mod.tier).toBe(2);
     });
   });
 });
@@ -599,9 +599,9 @@ describe('Wikipedia module', () => {
 
   describe('createWikipediaModule', () => {
     it('has correct source and tier', () => {
-      const module = createWikipediaModule();
-      expect(module.source).toBe('wikipedia');
-      expect(module.tier).toBe(2);
+      const mod = createWikipediaModule();
+      expect(mod.source).toBe('wikipedia');
+      expect(mod.tier).toBe(2);
     });
 
     it('returns signals with summary extraction when API succeeds', async () => {
@@ -640,8 +640,8 @@ describe('Wikipedia module', () => {
       });
 
       try {
-        const module = createWikipediaModule();
-        const signals = await module.enrich(makeEntity());
+        const mod = createWikipediaModule();
+        const signals = await mod.enrich(makeEntity());
 
         expect(signals).toHaveLength(1);
         expect(signals[0].source).toBe('wikipedia');
@@ -770,8 +770,8 @@ describe('News module', () => {
       });
 
       try {
-        const module = createNewsModule({ apiKey: 'test' });
-        const signals = await module.enrich(makeEntity());
+        const mod = createNewsModule({ apiKey: 'test' });
+        const signals = await mod.enrich(makeEntity());
 
         expect(signals).toHaveLength(1);
         expect(signals[0].signal_payload.freshness_score).toBeGreaterThan(0);
@@ -785,9 +785,9 @@ describe('News module', () => {
 
   describe('createNewsModule', () => {
     it('has correct source and tier', () => {
-      const module = createNewsModule({ apiKey: 'test' });
-      expect(module.source).toBe('news');
-      expect(module.tier).toBe(2);
+      const mod = createNewsModule({ apiKey: 'test' });
+      expect(mod.source).toBe('news');
+      expect(mod.tier).toBe(2);
     });
 
     it('returns empty when no news results', async () => {
@@ -798,8 +798,8 @@ describe('News module', () => {
       });
 
       try {
-        const module = createNewsModule({ apiKey: 'test' });
-        const signals = await module.enrich(makeEntity());
+        const mod = createNewsModule({ apiKey: 'test' });
+        const signals = await mod.enrich(makeEntity());
         expect(signals).toEqual([]);
       } finally {
         globalThis.fetch = originalFetch;
@@ -814,21 +814,21 @@ describe('News module', () => {
 
 describe('Manual research module', () => {
   it('has correct source and tier', () => {
-    const module = createManualResearchModule({
+    const mod = createManualResearchModule({
       requestedBy: 'reviewer@example.com',
     });
-    expect(module.source).toBe('manual_research');
-    expect(module.tier).toBe(3);
+    expect(mod.source).toBe('manual_research');
+    expect(mod.tier).toBe(3);
   });
 
   it('returns a manual_note signal with status manual_required', async () => {
-    const module = createManualResearchModule({
+    const mod = createManualResearchModule({
       requestedBy: 'reviewer@example.com',
       researchNotes: 'Please verify board memberships',
       priority: 'high',
     });
 
-    const signals = await module.enrich(makeEntity());
+    const signals = await mod.enrich(makeEntity());
 
     expect(signals).toHaveLength(1);
     expect(signals[0].source).toBe('manual_research');
@@ -842,11 +842,11 @@ describe('Manual research module', () => {
   });
 
   it('defaults priority to medium', async () => {
-    const module = createManualResearchModule({
+    const mod = createManualResearchModule({
       requestedBy: 'reviewer@example.com',
     });
 
-    const signals = await module.enrich(makeEntity());
+    const signals = await mod.enrich(makeEntity());
     expect(signals[0].signal_payload.priority).toBe('medium');
   });
 
@@ -920,14 +920,14 @@ describe('Ambiguous match handling (R4.6)', () => {
     const registry = new EnrichmentRegistry();
     const cache = new EnrichmentCache();
 
-    const module = {
+    const mod = {
       source: 'companies_house' as const,
       tier: 1 as const,
       enrich: vi.fn().mockResolvedValue([
         makeSignal({ match_confidence: 0.55 }),
       ]),
     };
-    registry.register(module);
+    registry.register(mod);
 
     const result = await enrichCandidate(
       makeEntity(),
@@ -945,14 +945,14 @@ describe('Ambiguous match handling (R4.6)', () => {
     const registry = new EnrichmentRegistry();
     const cache = new EnrichmentCache();
 
-    const module = {
+    const mod = {
       source: 'companies_house' as const,
       tier: 1 as const,
       enrich: vi.fn().mockResolvedValue([
         makeSignal({ match_confidence: 0.75 }),
       ]),
     };
-    registry.register(module);
+    registry.register(mod);
 
     const result = await enrichCandidate(
       makeEntity(),
@@ -970,14 +970,14 @@ describe('Ambiguous match handling (R4.6)', () => {
     const registry = new EnrichmentRegistry();
     const cache = new EnrichmentCache();
 
-    const module = {
+    const mod = {
       source: 'companies_house' as const,
       tier: 1 as const,
       enrich: vi.fn().mockResolvedValue([
         makeSignal({ match_confidence: 0.40 }),
       ]),
     };
-    registry.register(module);
+    registry.register(mod);
 
     const result = await enrichCandidate(
       makeEntity(),
@@ -995,7 +995,7 @@ describe('Ambiguous match handling (R4.6)', () => {
     const registry = new EnrichmentRegistry();
     const cache = new EnrichmentCache();
 
-    const module = {
+    const mod = {
       source: 'companies_house' as const,
       tier: 1 as const,
       enrich: vi.fn().mockResolvedValue([
@@ -1003,7 +1003,7 @@ describe('Ambiguous match handling (R4.6)', () => {
         makeSignal({ match_confidence: 0.65, external_record_id: 'ambiguous' }),
       ]),
     };
-    registry.register(module);
+    registry.register(mod);
 
     const result = await enrichCandidate(
       makeEntity(),

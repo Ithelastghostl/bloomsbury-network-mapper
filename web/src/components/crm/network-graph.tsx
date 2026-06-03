@@ -68,7 +68,7 @@ export function NetworkGraph({
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const router = useRouter();
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; name: string; type: string; connections: number } | null>(null);
+  const [tooltip, setTooltip] = useState<{ left: number; top: number; name: string; type: string; connections: number } | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
 
   // Stable primitive deps so the simulation doesn't rebuild on every parent render.
@@ -173,7 +173,10 @@ export function NetworkGraph({
         }
       })
       .on('mouseover', (event, d) => {
-        setTooltip({ x: event.offsetX, y: event.offsetY, name: d.name, type: d.type, connections: d.connectionCount });
+        // Clamp position here (in the event handler, not during render) so we
+        // don't read the ref while rendering.
+        const maxLeft = (svgRef.current?.clientWidth ?? 800) - 200;
+        setTooltip({ left: Math.min(event.offsetX + 12, maxLeft), top: event.offsetY - 10, name: d.name, type: d.type, connections: d.connectionCount });
         d3.select(event.currentTarget).attr('stroke', goldColor).attr('stroke-width', 2.5);
       })
       .on('mouseout', (event) => {
@@ -264,7 +267,7 @@ export function NetworkGraph({
       {tooltip && (
         <div
           className="absolute pointer-events-none bg-surface-raised border border-gold/40 rounded px-3 py-2 text-xs z-10 max-w-xs shadow-md"
-          style={{ left: Math.min(tooltip.x + 12, (svgRef.current?.clientWidth ?? 800) - 200), top: tooltip.y - 10 }}
+          style={{ left: tooltip.left, top: tooltip.top }}
         >
           <p className="font-medium text-text-primary">{tooltip.name}</p>
           <p className="text-text-muted capitalize">{tooltip.type} · {tooltip.connections} connections</p>

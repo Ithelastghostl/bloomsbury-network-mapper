@@ -1,5 +1,6 @@
 import { ulid } from 'ulid';
 import type { SupabaseClient } from '@supabase/supabase-js';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>;
 import type { BootstrapMatch, BootstrapResult } from '@/types/seed-import';
 import type { SeedImportRow } from '@/types/database';

@@ -1,6 +1,6 @@
 /**
  * Enrichment framework tests (F8.1).
- * Covers: module interface, lifecycle state transitions, cache TTL,
+ * Covers: mod interface, lifecycle state transitions, cache TTL,
  * retry backoff, orchestrator flow.
  */
 
@@ -114,18 +114,18 @@ function makeModule(
 
 describe('EnrichmentModule interface', () => {
   it('has required source property', () => {
-    const module = makeModule('companies_house');
-    expect(module.source).toBe('companies_house');
+    const mod = makeModule('companies_house');
+    expect(mod.source).toBe('companies_house');
   });
 
   it('has required tier property', () => {
-    const module = makeModule('companies_house');
-    expect(module.tier).toBe(1);
+    const mod = makeModule('companies_house');
+    expect(mod.tier).toBe(1);
   });
 
   it('enrich returns structured signal payloads', async () => {
-    const module = makeModule('companies_house');
-    const signals = await module.enrich(makeEntity());
+    const mod = makeModule('companies_house');
+    const signals = await mod.enrich(makeEntity());
 
     expect(signals).toHaveLength(1);
     expect(signals[0]).toHaveProperty('source', 'companies_house');
@@ -567,8 +567,8 @@ describe('Enrichment orchestrator', () => {
   });
 
   it('runs enrichment module and returns signals', async () => {
-    const module = makeModule('companies_house');
-    registry.register(module);
+    const mod = makeModule('companies_house');
+    registry.register(mod);
 
     const result = await enrichCandidate(
       makeEntity(),
@@ -587,8 +587,8 @@ describe('Enrichment orchestrator', () => {
   });
 
   it('returns cached signals on cache hit', async () => {
-    const module = makeModule('companies_house');
-    registry.register(module);
+    const mod = makeModule('companies_house');
+    registry.register(mod);
 
     // Pre-populate cache
     cache.put('ent_001', 'companies_house', [makeCachedSignal()]);
@@ -604,12 +604,12 @@ describe('Enrichment orchestrator', () => {
     expect(result.results[0].fromCache).toBe(true);
     expect(result.results[0].state).toBe('matched');
     // Module should NOT have been called
-    expect(module.enrich).not.toHaveBeenCalled();
+    expect(mod.enrich).not.toHaveBeenCalled();
   });
 
   it('calls module when cache is stale', async () => {
-    const module = makeModule('companies_house');
-    registry.register(module);
+    const mod = makeModule('companies_house');
+    registry.register(mod);
 
     // Pre-populate with expired cache
     cache.put('ent_001', 'companies_house', [makeCachedSignal()], new Date('2025-01-01'));
@@ -623,7 +623,7 @@ describe('Enrichment orchestrator', () => {
     );
 
     expect(result.results[0].fromCache).toBe(false);
-    expect(module.enrich).toHaveBeenCalledTimes(1);
+    expect(mod.enrich).toHaveBeenCalledTimes(1);
   });
 
   it('handles missing module gracefully', async () => {
@@ -642,8 +642,8 @@ describe('Enrichment orchestrator', () => {
   });
 
   it('handles module failure with failed_retryable state', async () => {
-    const module = makeModule('companies_house', [], true);
-    registry.register(module);
+    const mod = makeModule('companies_house', [], true);
+    registry.register(mod);
 
     const result = await enrichCandidate(
       makeEntity(),
@@ -660,8 +660,8 @@ describe('Enrichment orchestrator', () => {
 
   it('marks ambiguous matches as ambiguous_match (R4.6)', async () => {
     const ambiguousSignal = makeSignalPayload({ match_confidence: 0.65 });
-    const module = makeModule('companies_house', [ambiguousSignal]);
-    registry.register(module);
+    const mod = makeModule('companies_house', [ambiguousSignal]);
+    registry.register(mod);
 
     const result = await enrichCandidate(
       makeEntity(),
@@ -677,8 +677,8 @@ describe('Enrichment orchestrator', () => {
   });
 
   it('marks no_result when module returns empty array', async () => {
-    const module = makeModule('companies_house', []);
-    registry.register(module);
+    const mod = makeModule('companies_house', []);
+    registry.register(mod);
 
     const result = await enrichCandidate(
       makeEntity(),
@@ -759,11 +759,11 @@ describe('filterSourcesByPriority', () => {
 describe('EnrichmentRegistry', () => {
   it('registers and retrieves modules', () => {
     const registry = new EnrichmentRegistry();
-    const module = makeModule('companies_house');
-    registry.register(module);
+    const mod = makeModule('companies_house');
+    registry.register(mod);
 
     expect(registry.has('companies_house')).toBe(true);
-    expect(registry.get('companies_house')).toBe(module);
+    expect(registry.get('companies_house')).toBe(mod);
   });
 
   it('returns undefined for unregistered source', () => {

@@ -43,8 +43,8 @@ export interface EnrichCandidateResult {
 export class EnrichmentRegistry {
   private modules = new Map<EnrichmentSource, EnrichmentModule>();
 
-  register(module: EnrichmentModule): void {
-    this.modules.set(module.source, module);
+  register(mod: EnrichmentModule): void {
+    this.modules.set(mod.source, mod);
   }
 
   get(source: EnrichmentSource): EnrichmentModule | undefined {
@@ -82,8 +82,8 @@ export async function enrichCandidate(
   const acceptedSignals: EnrichmentSignalPayload[] = [];
 
   for (const source of sources) {
-    const module = registry.get(source);
-    if (!module) {
+    const mod = registry.get(source);
+    if (!mod) {
       results.push({
         source,
         state: 'failed_final',
@@ -129,7 +129,7 @@ export async function enrichCandidate(
     state = transition(state, 'in_progress');
 
     const retryResult = await withRetry(
-      () => module.enrich(entity),
+      () => mod.enrich(entity),
       retryOptions,
     );
 

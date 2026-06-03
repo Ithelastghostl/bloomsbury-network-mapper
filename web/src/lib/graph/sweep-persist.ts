@@ -9,6 +9,7 @@ import type {
 } from '@/lib/enrichment/types';
 import type { WealthAssessment } from '@/lib/enrichment/unified-sweep';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 export interface PersistSweepOptions {

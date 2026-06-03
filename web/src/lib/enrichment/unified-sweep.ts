@@ -614,6 +614,7 @@ export async function runUnifiedSweep(
 export async function runAndPersistSweep(
   entity: CanonicalEntity,
   config: UnifiedSweepConfig,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any, any, any>,
   runId?: string,
 ): Promise<{ sweep: UnifiedSweepResult; persist: PersistSweepResult }> {
