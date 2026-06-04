@@ -70,6 +70,12 @@ export function NetworkGraph({
   const router = useRouter();
   const [tooltip, setTooltip] = useState<{ left: number; top: number; name: string; type: string; connections: number } | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
+  // Bumping this re-runs the layout effect (used by the "Re-layout" control).
+  const [relayoutKey, setRelayoutKey] = useState(0);
+
+  // Imperative handles so the control buttons can drive the zoom + fit the graph.
+  const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const fitRef = useRef<(() => void) | null>(null);
 
   // Stable primitive deps so the simulation doesn't rebuild on every parent render.
   const personColor = nodeColors?.person ?? '#a07d0a';
@@ -146,6 +152,7 @@ export function NetworkGraph({
       .scaleExtent([0.05, 10])
       .on('zoom', (event) => g.attr('transform', event.transform));
     svg.call(zoom);
+    zoomRef.current = zoom;
 
     const link = g.append('g')
       .selectAll('line')
@@ -236,8 +243,29 @@ export function NetworkGraph({
     for (let i = 0; i < settleTicks; i++) simulation.tick();
     render();
 
+    // Zoom-to-fit: frame all nodes with padding. Exposed so the "Reset view"
+    // control can recentre after the user has panned/zoomed/dragged around.
+    const fitToView = (animate = false) => {
+      const xs = simNodes.map(n => n.x!).filter(v => Number.isFinite(v));
+      const ys = simNodes.map(n => n.y!).filter(v => Number.isFinite(v));
+      if (!xs.length || !ys.length) return;
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const w = Math.max(maxX - minX, 1), h = Math.max(maxY - minY, 1);
+      const pad = 60;
+      const scale = Math.min(8, 0.95 / Math.max(w / (width - pad), h / (height - pad)));
+      const tx = width / 2 - scale * (minX + maxX) / 2;
+      const ty = height / 2 - scale * (minY + maxY) / 2;
+      const transform = d3.zoomIdentity.translate(tx, ty).scale(scale);
+      const sel = animate ? svg.transition().duration(400) : svg;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (sel as any).call(zoom.transform, transform);
+    };
+    fitRef.current = () => fitToView(true);
+    fitToView(false); // start framed
+
     return () => { simulation.stop(); };
-  }, [view, focusId, router, personColor, companyColor, colorByComponent]);
+  }, [view, focusId, relayoutKey, router, personColor, companyColor, colorByComponent]);
 
   const legendItems = legend ?? [
     { color: personColor, label: 'Person' },
@@ -246,21 +274,51 @@ export function NetworkGraph({
 
   const focusedName = focusId ? nodes.find(n => n.id === focusId)?.name : null;
 
+  function resetView() {
+    setFocusId(null);
+    fitRef.current?.();
+  }
+
+  function relayout() {
+    setRelayoutKey(k => k + 1);
+  }
+
   return (
     <div className="relative w-full h-full">
       <svg ref={svgRef} className="w-full h-full" />
 
-      {focusId && (
-        <div className="absolute top-3 left-3 flex items-center gap-3 bg-surface-raised border border-border-subtle rounded-md px-3 py-1.5 text-xs shadow-sm">
-          <span className="text-text-secondary">
-            Focused on <span className="font-medium text-text-primary">{focusedName}</span> · {view.nodes.length} in orbit
-          </span>
+      {/* Graph controls */}
+      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+        <button
+          onClick={resetView}
+          title="Recentre and fit the whole graph in view"
+          className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide rounded-md bg-surface-raised border border-border-subtle text-text-secondary hover:text-gold hover:border-gold/50 shadow-sm transition-colors"
+        >
+          Reset view
+        </button>
+        <button
+          onClick={relayout}
+          title="Re-run the layout (untangle the nodes)"
+          className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide rounded-md bg-surface-raised border border-border-subtle text-text-secondary hover:text-gold hover:border-gold/50 shadow-sm transition-colors"
+        >
+          Re-layout
+        </button>
+        {focusId && (
           <button
             onClick={() => setFocusId(null)}
-            className="text-gold font-medium uppercase tracking-wide hover:text-gold-light"
+            title="Exit focus and show the full graph"
+            className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide rounded-md bg-gold text-warm-white hover:bg-gold-light shadow-sm transition-colors"
           >
             Show all
           </button>
+        )}
+      </div>
+
+      {focusId && (
+        <div className="absolute top-3 left-3 flex items-center gap-2 bg-surface-raised border border-border-subtle rounded-md px-3 py-1.5 text-xs shadow-sm">
+          <span className="text-text-secondary">
+            Focused on <span className="font-medium text-text-primary">{focusedName}</span> · {view.nodes.length} in orbit
+          </span>
         </div>
       )}
 
@@ -284,7 +342,7 @@ export function NetworkGraph({
       </div>
 
       <div className="absolute bottom-3 right-3 text-[10px] text-text-muted bg-surface-raised/90 border border-border-subtle rounded px-2.5 py-1">
-        Click a node to focus · ⌘/Ctrl-click to open
+        Click a node to focus · ⌘/Ctrl-click to open · drag to move · scroll to zoom
       </div>
     </div>
   );
