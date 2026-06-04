@@ -12,6 +12,8 @@ type AnySupabase = SupabaseClient<any, any, any>;
 export class EntityCache {
   private byNormName = new Map<string, { id: string; displayName: string; entityType: string }>();
   private byCompanyNumber = new Map<string, string>();
+  /** Optional batch tag stamped into newly-created entities' attributes. */
+  batchId?: string;
 
   static async load(supabase: AnySupabase): Promise<EntityCache> {
     const cache = new EntityCache();
@@ -138,13 +140,15 @@ export async function resolveOrCreate(
 
   // Create new entity
   const entityId = generateId();
+  const newAttributes: Record<string, unknown> = companyNumber ? { company_number: companyNumber } : {};
+  if (cache.batchId) newAttributes.batch_id = cache.batchId;
   const { error } = await supabase.from('canonical_entities').insert({
     canonical_entity_id: entityId,
     entity_type: entityType,
     display_name: cleanedName,
     first_seen_run_id: runId,
     last_seen_run_id: runId,
-    attributes: companyNumber ? { company_number: companyNumber } : {},
+    attributes: newAttributes,
     source: 'augmentation',
   });
 

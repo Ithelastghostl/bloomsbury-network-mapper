@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Mapper — Strategic Roadmap | BFF Leadership</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #0d0c0a;
+    --card: #1a1916;
+    --card-hover: #21201c;
+    --border: #2e2c28;
+    --border-hover: #3d3a34;
+    --gold: #b8920f;
+    --gold-light: #d4a820;
+    --gold-dim: rgba(184,146,15,.12);
+    --gold-glow: rgba(184,146,15,.25);
+    --text: #f5f3ef;
+    --muted: #7a756c;
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,.1);
+    --amber: #f59e0b;
+    --amber-dim: rgba(245,158,11,.1);
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,.1);
+    --blue: #3b82f6;
+    --blue-dim: rgba(59,130,246,.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #1a1508 0%, #0d0c0a 40%, #0f0e0b 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 56px 0 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    right: -100px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(184,146,15,.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -150px;
+    left: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(184,146,15,.03) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 32px;
+    position: relative;
+    z-index: 1;
+  }
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: #0d0c0a;
+    box-shadow: 0 0 24px var(--gold-glow);
+  }
+  .logo-text {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .hero h1 {
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  .hero h1 span {
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.7;
+    max-width: 700px;
+  }
+
+  .confidential-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 20px;
+    padding: 6px 14px;
+    background: rgba(184,146,15,.08);
+    border: 1px solid rgba(184,146,15,.2);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  /* ── Container ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+  }
+
+  /* ── Section heads ── */
+  .section-head {
+    margin: 48px 0 24px;
+  }
+  .section-head h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-head h2 .section-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(184,146,15,.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .section-head p {
+    color: var(--muted);
+    font-size: 14px;
+    max-width: 700px;
+  }
+
+  /* ── Executive Summary ── */
+  .exec-summary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-top: 24px;
+  }
+  .exec-summary ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .exec-summary li {
+    padding-left: 24px;
+    position: relative;
+    font-size: 15px;
+    line-height: 1.65;
+    color: #ddd9d0;
+  }
+  .exec-summary li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 9px;
+    width: 8px;
+    height: 8px;
+    background: var(--gold);
+    border-radius: 2px;
+    transform: rotate(45deg);
+  }
+  .exec-summary li strong {
+    color: var(--text);
+  }
+
+  /* ── Stats grid ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+    transition: border-color .2s, transform .2s;
+  }
+  .stat-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+  }
+  .stat-val {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold-light);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    font-weight: 600;
+  }
+  .stat-card.accent-green .stat-val { color: var(--green); }
+  .stat-card.accent-blue .stat-val { color: var(--blue); }
+  .stat-card.accent-amber .stat-val { color: var(--amber); }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .filter-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+    background: rgba(255,255,255,.03);
+  }
+  .filter-btn.active {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    color: var(--gold-light);
+  }
+
+  /* ── Improvement cards ── */
+  .improvements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .imp-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color .25s, box-shadow .25s;
+  }
+  .imp-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 24px rgba(0,0,0,.3);
+  }
+  .imp-card.hidden {
+    display: none;
+  }
+  .imp-header {
+    padding: 20px 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    user-select: none;
+  }
+  .imp-number {
+    width: 36px;
+    height: 36px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(184,146,15,.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gold-light);
+    flex-shrink: 0;
+  }
+  .imp-header-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .imp-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .imp-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .imp-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .tag-category {
+    background: rgba(255,255,255,.06);
+    color: var(--muted);
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .tag-quickwin {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid rgba(34,197,94,.2);
+  }
+  .tag-strategic {
+    background: var(--blue-dim);
+    color: var(--blue);
+    border: 1px solid rgba(59,130,246,.2);
+  }
+  .tag-high {
+    background: var(--gold-dim);
+    color: var(--gold-light);
+    border: 1px solid rgba(184,146,15,.2);
+  }
+  .tag-medium {
+    background: var(--amber-dim);
+    color: var(--amber);
+    border: 1px solid rgba(245,158,11,.2);
+  }
+
+  .imp-desc {
+    font-size: 14px;
+    color: #a09a90;
+    line-height: 1.5;
+  }
+
+  .imp-impact-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .impact-track {
+    width: 80px;
+    height: 4px;
+    background: rgba(255,255,255,.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .impact-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--gold);
+    transition: width .4s ease;
+  }
+  .impact-fill.high { width: 100%; }
+  .impact-fill.medium { width: 60%; }
+  .impact-fill.low { width: 30%; }
+  .impact-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+
+  .imp-chevron {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--muted);
+    transition: transform .25s, color .25s;
+    margin-top: 6px;
+  }
+  .imp-card.open .imp-chevron {
+    transform: rotate(180deg);
+    color: var(--gold);
+  }
+
+  .imp-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .35s ease;
+  }
+  .imp-body-inner {
+    padding: 0 24px 24px;
+    padding-left: 76px;
+  }
+
+  .imp-section {
+    margin-bottom: 18px;
+  }
+  .imp-section:last-child {
+    margin-bottom: 0;
+  }
+  .imp-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .imp-section-text {
+    font-size: 14px;
+    color: #b5b0a5;
+    line-height: 1.65;
+  }
+
+  .before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .ba-box {
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .ba-before {
+    background: rgba(239,68,68,.06);
+    border: 1px solid rgba(239,68,68,.12);
+    color: #c4a89a;
+  }
+  .ba-after {
+    background: rgba(34,197,94,.06);
+    border: 1px solid rgba(34,197,94,.12);
+    color: #a0c4a8;
+  }
+  .ba-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-bottom: 6px;
+  }
+  .ba-before .ba-label { color: var(--red); }
+  .ba-after .ba-label { color: var(--green); }
+
+  /* ── Timeline / Phases ── */
+  .timeline {
+    margin-top: 24px;
+  }
+  .phase-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+    position: relative;
+    transition: border-color .2s;
+  }
+  .phase-card:hover {
+    border-color: var(--border-hover);
+  }
+  .phase-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 12px 0 0 12px;
+  }
+  .phase-card.phase-1::before { background: var(--green); }
+  .phase-card.phase-2::before { background: var(--gold); }
+  .phase-card.phase-3::before { background: var(--blue); }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .phase-title {
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .phase-card.phase-1 .phase-title { color: var(--green); }
+  .phase-card.phase-2 .phase-title { color: var(--gold-light); }
+  .phase-card.phase-3 .phase-title { color: var(--blue); }
+
+  .phase-period {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 4px 12px;
+    background: rgba(255,255,255,.04);
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,.06);
+  }
+  .phase-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .phase-item {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--border);
+    color: #b5b0a5;
+    transition: all .2s;
+    cursor: default;
+  }
+  .phase-item:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+  }
+  .phase-item .item-num {
+    color: var(--gold);
+    margin-right: 4px;
+  }
+
+  /* ── Investment section ── */
+  .invest-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-top: 24px;
+  }
+  .invest-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color .2s, transform .2s;
+  }
+  .invest-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+  }
+  .invest-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(184,146,15,.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+  .invest-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .invest-text {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 32px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: .3px;
+  }
+  .footer-divider {
+    color: rgba(255,255,255,.15);
+    margin: 0 10px;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .hero { padding: 36px 0 32px; }
+    .hero h1 { font-size: 26px; }
+    .hero-sub { font-size: 14px; }
+    .container { padding: 0 20px 60px; }
+    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+    .imp-header { padding: 16px 18px; gap: 12px; }
+    .imp-body-inner { padding-left: 18px; padding-right: 18px; }
+    .before-after { grid-template-columns: 1fr; }
+    .invest-grid { grid-template-columns: 1fr; }
+    .phase-header { flex-direction: column; align-items: flex-start; }
+    .imp-number { width: 32px; height: 32px; font-size: 12px; }
+    .section-head { margin: 36px 0 20px; }
+  }
+
+  @media (max-width: 480px) {
+    .hero h1 { font-size: 22px; }
+    .stat-val { font-size: 22px; }
+    .logo-row { gap: 10px; }
+    .logo-icon { width: 40px; height: 40px; font-size: 18px; }
+    .filter-btn { padding: 6px 12px; font-size: 12px; }
+  }
+
+  /* ── Scroll animation ── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ Hero ═══ -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="logo-row">
+      <div class="logo-icon">BFF</div>
+      <div class="logo-text">Bloomsbury Football Foundation</div>
+    </div>
+    <h1>Network Mapper &mdash; <span>Strategic Roadmap</span></h1>
+    <p class="hero-sub">From intelligence platform to fundraising engine: the path to maximising HNW engagement for Bloomsbury Football Foundation</p>
+    <div class="confidential-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Confidential &mdash; BFF Leadership
+    </div>
+  </div>
+</section>
+
+<div class="container">
+
+  <!-- ═══ Executive Summary ═══ -->
+  <div class="section-head fade-in">
+    <h2><span class="section-icon">&#9672;</span> Executive Summary</h2>
+  </div>
+  <div class="exec-summary fade-in">
+    <ul>
+      <li>The <strong>Network Mapper</strong> has ingested and analysed thousands of Charity Commission filings to build a structured intelligence layer of people, organisations, and their interconnections relevant to BFF fundraising.</li>
+      <li>Over <strong>1,000 person entities</strong> have been mapped with wealth profiles, board memberships, and philanthropic histories — creating a searchable database of potential HNW supporters and their networks.</li>
+      <li>The platform already surfaces <strong>warm introduction routes</strong> through shared connections, enabling the fundraising team to approach prospects through trusted intermediaries rather than cold outreach.</li>
+      <li>This roadmap outlines <strong>15 targeted improvements</strong> — from quick-win automations to strategic intelligence capabilities — that will transform the platform from a research tool into an active fundraising engine with measurable ROI.</li>
+    </ul>
+  </div>
+
+  <!-- ═══ Current Capabilities ═══ -->
+  <div class="section-head fade-in">
+    <h2><span class="section-icon">&#9670;</span> Current Capabilities</h2>
+    <p>What the platform has already delivered</p>
+  </div>
+  <div class="stats-grid fade-in">
+    <div class="stat-card">
+      <div class="stat-val">1,000+</div>
+      <div class="stat-label">Person Entities</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">302</div>
+      <div class="stat-label">Wealth Profiles</div>
+    </div>
+    <div class="stat-card accent-green">
+      <div class="stat-val">2,169</div>
+      <div class="stat-label">Connections</div>
+    </div>
+    <div class="stat-card accent-blue">
+      <div class="stat-val">1,648</div>
+      <div class="stat-label">Evidence Entries</div>
+    </div>
+    <div class="stat-card accent-amber">
+      <div class="stat-val">5</div>
+      <div class="stat-label">CRM Views</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">D3</div>
+      <div class="stat-label">Social Graph</div>
+    </div>
+  </div>
+
+  <!-- ═══ Improvement Concepts ═══ -->
+  <div class="section-head fade-in">
+    <h2><span class="section-icon">&#9733;</span> 15 Improvement Concepts</h2>
+    <p>Each concept is designed to increase the quality, speed, or conversion rate of BFF's HNW fundraising pipeline</p>
+  </div>
+
+  <div class="filter-bar fade-in">
+    <button class="filter-btn active" data-filter="all">All (15)</button>
+    <button class="filter-btn" data-filter="quickwin">Quick Wins (6)</button>
+    <button class="filter-btn" data-filter="strategic">Strategic (9)</button>
+    <button class="filter-btn" data-filter="high">High Impact</button>
+    <button class="filter-btn" data-filter="medium">Medium Impact</button>
+  </div>
+
+  <div class="improvements-list" id="improvements-list">
+    <!-- Cards injected by JS -->
+  </div>
+
+  <!-- ═══ Implementation Phases ═══ -->
+  <div class="section-head fade-in">
+    <h2><span class="section-icon">&#9654;</span> Recommended Implementation Phases</h2>
+    <p>A sequenced delivery plan — quick wins first to demonstrate value, then strategic capabilities</p>
+  </div>
+
+  <div class="timeline fade-in">
+    <div class="phase-card phase-1">
+      <div class="phase-header">
+        <div class="phase-title">Phase 1: Quick Wins</div>
+        <div class="phase-period">Month 1 &ndash; 2</div>
+      </div>
+      <div class="phase-items">
+        <div class="phase-item"><span class="item-num">#1</span> Live Wealth Enrichment</div>
+        <div class="phase-item"><span class="item-num">#2</span> Multi-Source Registry Sweep</div>
+        <div class="phase-item"><span class="item-num">#5</span> Automated Dossier Generation</div>
+        <div class="phase-item"><span class="item-num">#6</span> Duplicate Entity Resolution</div>
+        <div class="phase-item"><span class="item-num">#9</span> Event &amp; Gala Intelligence</div>
+        <div class="phase-item"><span class="item-num">#12</span> Pipeline Analytics Dashboard</div>
+      </div>
+    </div>
+
+    <div class="phase-card phase-2">
+      <div class="phase-header">
+        <div class="phase-title">Phase 2: Core Intelligence</div>
+        <div class="phase-period">Month 2 &ndash; 4</div>
+      </div>
+      <div class="phase-items">
+        <div class="phase-item"><span class="item-num">#3</span> Introduction Route Scoring</div>
+        <div class="phase-item"><span class="item-num">#4</span> Affinity Matching</div>
+        <div class="phase-item"><span class="item-num">#8</span> Board &amp; Committee Mapping</div>
+        <div class="phase-item"><span class="item-num">#10</span> Giving Pattern Analysis</div>
+        <div class="phase-item"><span class="item-num">#13</span> Network Influence Scoring</div>
+      </div>
+    </div>
+
+    <div class="phase-card phase-3">
+      <div class="phase-header">
+        <div class="phase-title">Phase 3: Strategic Engagement</div>
+        <div class="phase-period">Month 4 &ndash; 6</div>
+      </div>
+      <div class="phase-items">
+        <div class="phase-item"><span class="item-num">#7</span> Relationship Strength Decay</div>
+        <div class="phase-item"><span class="item-num">#11</span> Email Campaign Integration</div>
+        <div class="phase-item"><span class="item-num">#14</span> Competitor Charity Analysis</div>
+        <div class="phase-item"><span class="item-num">#15</span> Predictive Engagement Timing</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Investment & Returns ═══ -->
+  <div class="section-head fade-in">
+    <h2><span class="section-icon">&#9650;</span> Investment &amp; Returns</h2>
+    <p>What focused development effort returns in fundraising efficiency</p>
+  </div>
+
+  <div class="invest-grid fade-in">
+    <div class="invest-card">
+      <div class="invest-icon">&#9201;</div>
+      <div class="invest-title">Time Saved Per Engagement</div>
+      <div class="invest-text">Automated dossiers and enrichment eliminate hours of manual research before each meeting. The fundraising team spends time building relationships, not searching Companies House.</div>
+    </div>
+    <div class="invest-card">
+      <div class="invest-icon">&#9650;</div>
+      <div class="invest-title">Higher Conversion Rates</div>
+      <div class="invest-text">Introduction route scoring and affinity matching ensure prospects are approached through the warmest possible channel with messaging aligned to their interests. Warmer intros convert at multiples of cold outreach.</div>
+    </div>
+    <div class="invest-card">
+      <div class="invest-icon">&#9673;</div>
+      <div class="invest-title">Better-Targeted Asks</div>
+      <div class="invest-text">Giving pattern analysis and wealth profiling inform appropriate ask amounts and timing. No more guesswork on whether to request five or six figures — the data guides the conversation.</div>
+    </div>
+    <div class="invest-card">
+      <div class="invest-icon">&#9644;</div>
+      <div class="invest-title">Reduced Wastage from Cold Approaches</div>
+      <div class="invest-text">Every hour spent on an unqualified lead is an hour not spent on a warm prospect. The pipeline dashboard and qualification scoring ensure effort flows to the highest-probability opportunities.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ Footer ═══ -->
+<footer class="footer">
+  Prepared for BFF Leadership
+  <span class="footer-divider">|</span>
+  Bloomsbury Network Mapper
+  <span class="footer-divider">|</span>
+  Confidential
+</footer>
+
+<script>
+(function() {
+  // ── Improvement data ──
+  const improvements = [
+    {
+      num: 1,
+      title: "Live Wealth Enrichment",
+      category: "Enrichment",
+      impact: "high",
+      type: "quickwin",
+      desc: "Real-time web search to update and expand wealth profiles with current financial data, property holdings, company directorships, and recent transactions.",
+      valueBFF: "Currently 202 of 302 wealth profiles were manually augmented — a painstaking process that can't scale. Automating enrichment means every lead in the pipeline gets current financial intelligence within minutes, not days. The fundraising team always walks into meetings with up-to-date knowledge of a prospect's capacity.",
+      before: "302 wealth profiles, 202 manually enriched. New leads wait days for research. Data goes stale between meetings.",
+      after: "Every entity automatically enriched with live financial data. Profiles refresh before scheduled engagements. Team has current intelligence at all times."
+    },
+    {
+      num: 2,
+      title: "Multi-Source Registry Sweep",
+      category: "Data Quality",
+      impact: "high",
+      type: "quickwin",
+      desc: "Cross-reference Companies House, Charity Commission, Electoral Roll, and land registry data to build comprehensive profiles of individuals and their formal roles.",
+      valueBFF: "The platform currently draws from Companies House data. Adding Charity Commission trustee records, property ownership, and political donation data creates a 360-degree view of each prospect. Discovering that a target is also a trustee of three education charities — that's actionable intelligence for BFF's pitch.",
+      before: "Single-source data from Companies House. Missing trustee roles at other charities, property records, and political donation history.",
+      after: "Multi-registry profiles showing all formal roles, property holdings, and public financial commitments. Complete picture of each prospect's footprint."
+    },
+    {
+      num: 3,
+      title: "Introduction Route Scoring",
+      category: "Intelligence",
+      impact: "high",
+      type: "strategic",
+      desc: "Score every possible introduction path to a target by measuring connection warmth, intermediary influence, and estimated likelihood of success.",
+      valueBFF: "Having 2,169 connections is powerful, but knowing which path to take is the difference between a warm handshake and a dead end. Route scoring ranks every possible chain of introductions so the team always pursues the highest-probability path to each target. If there are three ways to reach a major donor, you want the one most likely to result in a meeting.",
+      before: "Raw connection data with 2,169 links. Team manually traces introduction routes and relies on intuition for which to pursue.",
+      after: "Every target has ranked introduction paths with warmth scores. Team pursues the highest-probability route first, with fallback options if the primary path stalls."
+    },
+    {
+      num: 4,
+      title: "Affinity Matching",
+      category: "Intelligence",
+      impact: "high",
+      type: "strategic",
+      desc: "Match prospect philanthropic interests against BFF's specific mission areas — youth football, inner-city communities, education through sport, and social mobility.",
+      valueBFF: "A prospect who already funds youth sports programmes in London is a fundamentally warmer lead than one who gives exclusively to medical research. Affinity matching automatically flags prospects whose existing philanthropy aligns with BFF's mission, so the team focuses on people predisposed to care about what BFF does.",
+      before: "Manual assessment of whether a prospect's interests align with BFF. Relies on whoever researched the lead remembering to check.",
+      after: "Every prospect scored on mission alignment. High-affinity leads automatically prioritised. Outreach messaging tailored to specific areas of overlap."
+    },
+    {
+      num: 5,
+      title: "Automated Dossier Generation",
+      category: "Engagement",
+      impact: "high",
+      type: "quickwin",
+      desc: "Generate comprehensive briefing documents before every meeting, call, or event — pulling together wealth data, connection history, giving patterns, and suggested talking points.",
+      valueBFF: "Before every donor meeting, someone currently spends hours pulling together background information. Automated dossiers deliver a polished briefing pack in seconds: who they are, what they care about, how you're connected, what they've given before, and suggested conversation angles. This is the single biggest time-saver for the fundraising team.",
+      before: "Hours of manual research per prospect. Inconsistent preparation quality. Key intelligence sometimes missed because it wasn't in the researcher's line of sight.",
+      after: "One-click briefing packs with wealth profile, connection map, giving history, mutual contacts, and tailored talking points. Consistent quality for every engagement."
+    },
+    {
+      num: 6,
+      title: "Duplicate Entity Resolution",
+      category: "Data Quality",
+      impact: "medium",
+      type: "quickwin",
+      desc: "ML-powered deduplication that identifies and merges variant entity records — matching \"Mike Danson\" with \"Michael Danson\", resolving maiden/married names, and consolidating scattered intelligence.",
+      valueBFF: "Duplicate records mean split intelligence and the risk of double-approaching someone — or worse, two team members contacting the same person with contradictory information. Deduplication consolidates all intelligence about each individual into a single canonical record, giving the team one definitive view per prospect.",
+      before: "Name variants create duplicate records. Intelligence about the same person split across entries. Risk of inconsistent or duplicate outreach.",
+      after: "Single canonical record per person. All evidence, connections, and history consolidated. Confident that the profile is complete and the team won't duplicate effort."
+    },
+    {
+      num: 7,
+      title: "Relationship Strength Decay",
+      category: "Intelligence",
+      impact: "medium",
+      type: "strategic",
+      desc: "Track how connection strength weakens over time without active engagement. Model decay curves and alert when warm introduction routes are cooling.",
+      valueBFF: "A warm introduction is a perishable asset. If a mutual contact hasn't spoken to the target in two years, that route has lost much of its value. Decay modelling surfaces connections that are still warm and flags those going cold — prompting the team to either act now or re-warm the intermediary before the window closes.",
+      before: "All connections treated as equally current regardless of when last active. No visibility into which introduction routes are still warm.",
+      after: "Connection strength updates dynamically based on last engagement. Alerts when key routes are decaying. Team acts on warm windows and invests in re-warming strategic relationships."
+    },
+    {
+      num: 8,
+      title: "Board & Committee Mapping",
+      category: "Enrichment",
+      impact: "high",
+      type: "strategic",
+      desc: "Map the full board composition of relevant charities, companies, and institutions. Identify shared board memberships that create natural introduction opportunities.",
+      valueBFF: "If a BFF trustee sits on the same charity board as a target donor, that shared governance role creates a natural, credible reason for introduction. Board mapping systematically discovers these overlaps across thousands of organisations — surfacing warm routes that nobody knew existed because the connections span different parts of the network.",
+      before: "Board memberships tracked ad hoc. Shared governance roles discovered by chance. Major introduction opportunities hidden in plain sight.",
+      after: "Complete board/committee map for all entities. Shared memberships automatically flagged as high-value introduction routes. Every governance overlap is a potential warm introduction."
+    },
+    {
+      num: 9,
+      title: "Event & Gala Intelligence",
+      category: "Enrichment",
+      impact: "medium",
+      type: "quickwin",
+      desc: "Track attendance at charity galas, fundraising dinners, awards ceremonies, and industry events. Co-attendance is a strong signal for potential introductions.",
+      valueBFF: "When two people attend the same gala dinner, they've shared a social context — even if they didn't speak, they move in the same circles. Tracking event attendance identifies these co-presence signals and creates natural conversation starters: \"I saw you were both at the XYZ Foundation dinner — shall I introduce you?\"",
+      before: "Event attendance not tracked systematically. Co-presence signals lost. The team misses natural contexts for introductions.",
+      after: "Event attendance database with co-presence scoring. When preparing to introduce a prospect, the system surfaces shared events as conversation context."
+    },
+    {
+      num: 10,
+      title: "Giving Pattern Analysis",
+      category: "Intelligence",
+      impact: "high",
+      type: "strategic",
+      desc: "Analyse historical charitable giving patterns from commission filings to predict future donation likelihood, estimate capacity, and identify optimal ask amounts.",
+      valueBFF: "With 1,648 evidence entries from charity filings, the platform already contains significant giving history. Pattern analysis transforms this raw data into actionable predictions: who is likely to give, how much they typically commit, and what triggers their generosity. This means the team can calibrate asks precisely rather than guessing.",
+      before: "Raw filing data shows what people gave in the past but requires manual interpretation. Ask amounts based on gut feel and incomplete information.",
+      after: "Predictive giving profiles showing capacity, typical gift size, frequency, and triggers. Ask amounts calibrated to evidence. Prospects ranked by likely conversion value."
+    },
+    {
+      num: 11,
+      title: "Email Campaign Integration",
+      category: "Engagement",
+      impact: "medium",
+      type: "strategic",
+      desc: "Connect to email and CRM tools to enable automated outreach sequences, track engagement metrics, and attribute meetings to specific communication touchpoints.",
+      valueBFF: "Moving from platform intelligence to actual outreach currently requires manual effort — exporting data, drafting emails, tracking responses in a separate system. Integration closes this loop: enriched data flows directly into personalised outreach, and response tracking feeds back into the platform to improve targeting.",
+      before: "Intelligence and outreach are disconnected. Manually export data to draft emails. No tracking of which communications drive meetings.",
+      after: "Personalised outreach sequences powered by platform intelligence. Full tracking from email sent to meeting booked. Response data feeds back to improve future targeting."
+    },
+    {
+      num: 12,
+      title: "Pipeline Analytics Dashboard",
+      category: "Infrastructure",
+      impact: "medium",
+      type: "quickwin",
+      desc: "Visual reporting on the full fundraising funnel: leads discovered, profiles enriched, prospects qualified, introductions made, meetings held, commitments secured.",
+      valueBFF: "You can't improve what you can't measure. A pipeline dashboard shows exactly where prospects are in the journey from discovery to donation, where the bottlenecks are, and what conversion rates look like at each stage. If enrichment is fast but introductions are stalling, the team knows where to focus.",
+      before: "No unified view of the fundraising pipeline. Progress tracked informally. No visibility into conversion rates between stages.",
+      after: "Real-time funnel visualisation showing volume and velocity at each stage. Conversion rate metrics highlight bottlenecks. Leadership can track ROI on platform investment."
+    },
+    {
+      num: 13,
+      title: "Network Influence Scoring",
+      category: "Intelligence",
+      impact: "high",
+      type: "strategic",
+      desc: "Apply PageRank-style graph algorithms to identify the most influential nodes in the network — individuals who serve as gateways to large clusters of potential donors.",
+      valueBFF: "Not all connections are equal. Some individuals sit at the intersection of multiple donor networks — cultivating a relationship with them unlocks access to an entire cluster. Influence scoring identifies these gateway individuals so the team can prioritise relationship-building with the people who open the most doors.",
+      before: "All nodes treated with equal weight. No systematic way to identify which individuals unlock the most additional connections.",
+      after: "Every person scored by network influence. Gateway individuals flagged for priority cultivation. Investing in one relationship that opens access to 30 prospects is more efficient than pursuing 30 individually."
+    },
+    {
+      num: 14,
+      title: "Competitor Charity Analysis",
+      category: "Enrichment",
+      impact: "medium",
+      type: "strategic",
+      desc: "Map which charities are competing for the same donor base and analyse donor overlap. Identify prospects already giving to similar causes who may have capacity and inclination for BFF.",
+      valueBFF: "If someone donates to three youth sports charities but not BFF, they're a high-probability prospect — the affinity is already proven, BFF just needs the right introduction. Competitor analysis also reveals which organisations are cultivating the same individuals, so the team can differentiate BFF's approach.",
+      before: "No systematic view of which charities compete for the same donors. Prospect overlap discovered by accident. No competitive positioning.",
+      after: "Donor overlap maps showing which prospects give to similar causes. Competitive positioning insights. High-affinity prospects who give to competitors flagged for targeted outreach."
+    },
+    {
+      num: 15,
+      title: "Predictive Engagement Timing",
+      category: "Intelligence",
+      impact: "medium",
+      type: "strategic",
+      desc: "Analyse patterns in when donors are most receptive — fiscal year-ends, post-company-exit liquidity events, after receiving awards or honours — and time outreach for maximum impact.",
+      valueBFF: "Asking at the right moment dramatically increases the chance of a yes. After a company exit, a founder has new liquidity and often new philanthropic ambitions. At fiscal year-end, tax-efficient giving is top of mind. Timing intelligence ensures the team reaches out when prospects are most receptive, not when it happens to be convenient.",
+      before: "Outreach timing based on team availability, not prospect readiness. Major receptivity windows (post-exit, year-end, post-award) missed or caught by luck.",
+      after: "Calendar of optimal engagement windows per prospect. Alerts when timing signals trigger (company exit, year-end, honour announced). Outreach synchronised to prospect receptivity."
+    }
+  ];
+
+  // ── Render cards ──
+  const list = document.getElementById('improvements-list');
+
+  improvements.forEach(imp => {
+    const card = document.createElement('div');
+    card.className = 'imp-card fade-in';
+    card.dataset.type = imp.type;
+    card.dataset.impact = imp.impact;
+
+    const typeLabel = imp.type === 'quickwin' ? 'Quick Win' : 'Strategic';
+    const typeClass = imp.type === 'quickwin' ? 'tag-quickwin' : 'tag-strategic';
+    const impactClass = imp.impact === 'high' ? 'tag-high' : 'tag-medium';
+
+    card.innerHTML = `
+      <div class="imp-header" onclick="toggleCard(this)">
+        <div class="imp-number">${imp.num}</div>
+        <div class="imp-header-content">
+          <div class="imp-title-row">
+            <span class="imp-title">${imp.title}</span>
+            <div class="imp-tags">
+              <span class="tag tag-category">${imp.category}</span>
+              <span class="tag ${typeClass}">${typeLabel}</span>
+              <span class="tag ${impactClass}">${imp.impact} impact</span>
+            </div>
+          </div>
+          <div class="imp-desc">${imp.desc}</div>
+          <div class="imp-impact-bar">
+            <div class="impact-track"><div class="impact-fill ${imp.impact}"></div></div>
+            <span class="impact-label">${imp.impact} impact</span>
+          </div>
+        </div>
+        <div class="imp-chevron">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="imp-body">
+        <div class="imp-body-inner">
+          <div class="imp-section">
+            <div class="imp-section-label">Value to BFF</div>
+            <div class="imp-section-text">${imp.valueBFF}</div>
+          </div>
+          <div class="imp-section">
+            <div class="before-after">
+              <div class="ba-box ba-before">
+                <div class="ba-label">Before</div>
+                ${imp.before}
+              </div>
+              <div class="ba-box ba-after">
+                <div class="ba-label">After</div>
+                ${imp.after}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    list.appendChild(card);
+  });
+
+  // ── Toggle expand/collapse ──
+  window.toggleCard = function(header) {
+    const card = header.closest('.imp-card');
+    const body = card.querySelector('.imp-body');
+
+    if (card.classList.contains('open')) {
+      body.style.maxHeight = '0';
+      card.classList.remove('open');
+    } else {
+      // Close others
+      document.querySelectorAll('.imp-card.open').forEach(c => {
+        c.querySelector('.imp-body').style.maxHeight = '0';
+        c.classList.remove('open');
+      });
+      card.classList.add('open');
+      body.style.maxHeight = body.scrollHeight + 'px';
+    }
+  };
+
+  // ── Filters ──
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+
+      const filter = this.dataset.filter;
+      document.querySelectorAll('.imp-card').forEach(card => {
+        let show = false;
+        if (filter === 'all') show = true;
+        else if (filter === 'quickwin') show = card.dataset.type === 'quickwin';
+        else if (filter === 'strategic') show = card.dataset.type === 'strategic';
+        else if (filter === 'high') show = card.dataset.impact === 'high';
+        else if (filter === 'medium') show = card.dataset.impact === 'medium';
+
+        card.classList.toggle('hidden', !show);
+
+        // Close open cards when filtering
+        if (card.classList.contains('open')) {
+          card.querySelector('.imp-body').style.maxHeight = '0';
+          card.classList.remove('open');
+        }
+      });
+    });
+  });
+
+  // ── Scroll fade-in animation ──
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+})();
+</script>
+</body>
+</html>

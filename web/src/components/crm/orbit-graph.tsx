@@ -1,8 +1,32 @@
 'use client';
 
-import { useState } from 'react';
-import { NetworkGraph } from './network-graph';
+import { useMemo, useState } from 'react';
+import { NetworkGraph, componentColor } from './network-graph';
 import type { GraphData } from '@/lib/crm/graph-queries';
+
+// Build a legend for component-coloured (orbit) mode: one entry per colour
+// actually painted on the canvas, ranked by cluster size so the largest
+// communities lead. Colours wrap at the palette length, so distinct components
+// sharing a colour are merged into a single legend row (their sizes summed).
+function buildClusterLegend(nodes: GraphData['nodes']): Array<{ color: string; label: string }> {
+  const sizeByComponent = new Map<number, number>();
+  for (const n of nodes) {
+    if (n.component == null) continue;
+    sizeByComponent.set(n.component, (sizeByComponent.get(n.component) ?? 0) + 1);
+  }
+  // Merge by the colour each component resolves to.
+  const sizeByColor = new Map<string, number>();
+  for (const [comp, size] of sizeByComponent) {
+    const color = componentColor(comp);
+    sizeByColor.set(color, (sizeByColor.get(color) ?? 0) + size);
+  }
+  const ranked = [...sizeByColor.entries()].sort((a, b) => b[1] - a[1]);
+  const ordinal = ['Largest', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
+  return ranked.map(([color, size], i) => ({
+    color,
+    label: `${ordinal[i] ?? `${i + 1}th`} cluster (${size})`,
+  }));
+}
 
 export function OrbitGraph({
   orbit,
@@ -15,6 +39,7 @@ export function OrbitGraph({
   const active = mode === 'orbit' ? orbit : bipartite;
 
   const orbitCompanies = bipartite.nodes.filter(n => n.type === 'company').length;
+  const clusterLegend = useMemo(() => buildClusterLegend(orbit.nodes), [orbit.nodes]);
 
   return (
     <div>
@@ -59,7 +84,7 @@ export function OrbitGraph({
           nodeColors={{ person: '#a07d0a', company: '#3b5a8a' }}
           legend={
             mode === 'orbit'
-              ? [{ color: '#a07d0a', label: 'Cluster (colour = community)' }]
+              ? clusterLegend
               : [
                   { color: '#a07d0a', label: 'Person' },
                   { color: '#3b5a8a', label: 'Institution' },

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Mapper — Augmentation Roadmap</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  :root {
+    --bg: #0a0c10;
+    --card: #12151c;
+    --card-hover: #181c26;
+    --border: #1e2230;
+    --border-hover: #2d3348;
+    --text: #e8eaf0;
+    --muted: #7c8298;
+    --bff-orange: #f97316;
+    --bff-orange-dim: rgba(249,115,22,.12);
+    --bff-amber: #f59e0b;
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,.1);
+    --blue: #3b82f6;
+    --blue-dim: rgba(59,130,246,.1);
+    --purple: #a855f7;
+    --purple-dim: rgba(168,85,247,.1);
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,.1);
+    --cyan: #06b6d4;
+    --cyan-dim: rgba(6,182,212,.1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  .hero {
+    background: linear-gradient(135deg, #1a0f05 0%, #0a0c10 40%, #0c1020 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 0 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content:''; position:absolute; top:-200px; right:-100px; width:600px; height:600px;
+    background:radial-gradient(circle, rgba(249,115,22,.06) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .hero-inner { max-width:1200px; margin:0 auto; padding:0 32px; position:relative; z-index:1; }
+  .logo-row { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+  .logo-icon {
+    width:48px; height:48px; background:var(--bff-orange); border-radius:12px;
+    display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; color:#fff;
+    box-shadow: 0 0 24px rgba(249,115,22,.25);
+  }
+  .logo-text { font-size:15px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--bff-orange); }
+  .hero h1 { font-size:36px; font-weight:800; line-height:1.2; margin-bottom:12px; }
+  .hero h1 span { background:linear-gradient(90deg, var(--bff-orange), var(--bff-amber)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .hero-sub { color:var(--muted); font-size:16px; line-height:1.6; max-width:680px; }
+
+  .stats-bar {
+    max-width:1200px; margin:-24px auto 40px; padding:0 32px; position:relative; z-index:2;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px;
+  }
+  .mini-stat {
+    background:var(--card); border:1px solid var(--border); border-radius:10px;
+    padding:16px; text-align:center;
+  }
+  .mini-stat .val { font-size:24px; font-weight:700; color:var(--bff-orange); }
+  .mini-stat .lbl { font-size:11px; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:.3px; }
+  .mini-stat.g .val { color:var(--green); }
+  .mini-stat.b .val { color:var(--blue); }
+  .mini-stat.p .val { color:var(--purple); }
+
+  .container { max-width:1200px; margin:0 auto; padding:0 32px 64px; }
+  .section-head { margin:40px 0 24px; }
+  .section-head h2 { font-size:22px; font-weight:700; margin-bottom:6px; }
+  .section-head p { color:var(--muted); font-size:14px; }
+
+  .filter-bar {
+    display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;
+  }
+  .filter-btn {
+    padding:7px 16px; border-radius:20px; cursor:pointer;
+    background:var(--card); border:1px solid var(--border);
+    color:var(--muted); font-size:12px; font-weight:600; transition:all .2s;
+    text-transform:uppercase; letter-spacing:.3px;
+  }
+  .filter-btn:hover { color:var(--text); border-color:var(--border-hover); }
+  .filter-btn.active { background:var(--bff-orange); color:#fff; border-color:var(--bff-orange); }
+
+  .roadmap-grid {
+    display:grid; grid-template-columns:1fr; gap:16px;
+  }
+
+  .card {
+    background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:28px; transition:all .3s; cursor:default; position:relative; overflow:hidden;
+  }
+  .card:hover { background:var(--card-hover); border-color:var(--border-hover); transform:translateY(-2px); }
+  .card::before {
+    content:''; position:absolute; top:0; left:0; width:4px; height:100%;
+    border-radius:14px 0 0 14px;
+  }
+  .card[data-cat="enrich"]::before { background:var(--bff-orange); }
+  .card[data-cat="graph"]::before { background:var(--purple); }
+  .card[data-cat="intro"]::before { background:var(--green); }
+  .card[data-cat="intel"]::before { background:var(--cyan); }
+  .card[data-cat="ops"]::before { background:var(--blue); }
+
+  .card-top { display:flex; align-items:flex-start; gap:16px; margin-bottom:14px; }
+  .card-num {
+    flex-shrink:0; width:36px; height:36px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:800; color:#fff;
+  }
+  .card[data-cat="enrich"] .card-num { background:var(--bff-orange); }
+  .card[data-cat="graph"] .card-num { background:var(--purple); }
+  .card[data-cat="intro"] .card-num { background:var(--green); }
+  .card[data-cat="intel"] .card-num { background:var(--cyan); }
+  .card[data-cat="ops"] .card-num { background:var(--blue); }
+
+  .card-title { font-size:17px; font-weight:700; line-height:1.3; margin-bottom:2px; }
+  .card-subtitle { font-size:12px; color:var(--muted); font-weight:500; }
+
+  .card-body { color:var(--muted); font-size:13.5px; line-height:1.65; margin-bottom:16px; padding-left:52px; }
+
+  .card-meta { display:flex; gap:10px; flex-wrap:wrap; padding-left:52px; }
+  .tag {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:3px 10px; border-radius:6px; font-size:11px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.3px;
+  }
+  .tag-impact { background:var(--bff-orange-dim); color:var(--bff-orange); }
+  .tag-effort-low { background:var(--green-dim); color:var(--green); }
+  .tag-effort-med { background:var(--blue-dim); color:var(--blue); }
+  .tag-effort-high { background:var(--purple-dim); color:var(--purple); }
+  .tag-cat { background:rgba(255,255,255,.04); color:var(--muted); }
+  .tag-data { background:var(--cyan-dim); color:var(--cyan); }
+
+  .impact-bar-wrap { padding-left:52px; margin-top:12px; display:flex; align-items:center; gap:10px; }
+  .impact-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; flex-shrink:0; width:48px; }
+  .impact-bar { flex:1; height:6px; background:rgba(255,255,255,.04); border-radius:3px; overflow:hidden; }
+  .impact-fill { height:100%; border-radius:3px; transition:width .6s ease; }
+  .impact-fill.orange { background:linear-gradient(90deg,var(--bff-orange),var(--bff-amber)); }
+
+  .footer {
+    max-width:1200px; margin:0 auto; padding:32px; border-top:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center;
+    color:var(--muted); font-size:12px;
+  }
+  .footer a { color:var(--bff-orange); text-decoration:none; }
+
+  @media(max-width:640px) {
+    .hero h1 { font-size:26px; }
+    .hero-inner, .container, .stats-bar, .footer { padding-left:16px; padding-right:16px; }
+    .card { padding:20px; }
+    .card-body, .card-meta, .impact-bar-wrap { padding-left:0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="logo-row">
+      <div class="logo-icon">BF</div>
+      <div class="logo-text">Bloomsbury Football Foundation</div>
+    </div>
+    <h1>Network Augmentation <span>Roadmap</span></h1>
+    <p class="hero-sub">15 improvements to deepen the connection graph, sharpen introduction routes, and surface the warmest paths to potential supporters for BFF.</p>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="mini-stat"><div class="val">259</div><div class="lbl">Persons Augmented</div></div>
+  <div class="mini-stat g"><div class="val">164</div><div class="lbl">With Net Worth</div></div>
+  <div class="mini-stat b"><div class="val">2,169</div><div class="lbl">Connections</div></div>
+  <div class="mini-stat p"><div class="val">15</div><div class="lbl">Improvements</div></div>
+</div>
+
+<div class="container">
+  <div class="section-head">
+    <h2>Proposed Improvements</h2>
+    <p>Ordered by estimated impact on BFF's ability to identify and reach potential supporters. Filter by category below.</p>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-btn active" data-filter="all" onclick="filterCards('all',this)">All (15)</div>
+    <div class="filter-btn" data-filter="enrich" onclick="filterCards('enrich',this)">Enrichment</div>
+    <div class="filter-btn" data-filter="graph" onclick="filterCards('graph',this)">Graph Analysis</div>
+    <div class="filter-btn" data-filter="intro" onclick="filterCards('intro',this)">Intro Routes</div>
+    <div class="filter-btn" data-filter="intel" onclick="filterCards('intel',this)">Intelligence</div>
+    <div class="filter-btn" data-filter="ops" onclick="filterCards('ops',this)">Operations</div>
+  </div>
+
+  <div class="roadmap-grid">
+
+    <!-- 1 -->
+    <div class="card" data-cat="intro">
+      <div class="card-top">
+        <div class="card-num">1</div>
+        <div><div class="card-title">Warm Introduction Path Generator</div>
+        <div class="card-subtitle">Route the shortest, strongest path from a BFF seed to any lead</div></div>
+      </div>
+      <div class="card-body">
+        For each high-value lead, compute the best introduction chain: which seed knows someone who knows the target, via which shared organisation. Output a human-readable sentence like <em>"Ask Howard Shore to introduce you to Peter Ogden &mdash; they co-serve as trustees of the Prince's Trust."</em> Rank paths by combined edge weight and recency.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">Highest Impact</span>
+        <span class="tag tag-effort-med">Med Effort</span>
+        <span class="tag tag-cat">Intro Routes</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:98%"></div></div></div>
+    </div>
+
+    <!-- 2 -->
+    <div class="card" data-cat="enrich">
+      <div class="card-top">
+        <div class="card-num">2</div>
+        <div><div class="card-title">Philanthropy & Giving History Enrichment</div>
+        <div class="card-subtitle">Map donation patterns, charity trusteeships, and giving signals</div></div>
+      </div>
+      <div class="card-body">
+        Augment each lead with their charitable giving profile: which charities they support, how much, how frequently, and in what domains (youth, sport, education, arts). Cross-reference Charity Commission trustee data with 990/annual report disclosures. Leads who already give to youth or sport charities are the warmest prospects for BFF.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">Highest Impact</span>
+        <span class="tag tag-effort-med">Med Effort</span>
+        <span class="tag tag-cat">Enrichment</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:95%"></div></div></div>
+    </div>
+
+    <!-- 3 -->
+    <div class="card" data-cat="graph">
+      <div class="card-top">
+        <div class="card-num">3</div>
+        <div><div class="card-title">Affinity Scoring &mdash; BFF Alignment Index</div>
+        <div class="card-subtitle">Score each lead on how likely they are to care about BFF's mission</div></div>
+      </div>
+      <div class="card-body">
+        Combine philanthropy signals, sector overlap (sport, youth, education, inner-city), geography (London focus), and stated interests into a single 0&ndash;100 affinity score. A hedge fund manager who already funds a youth football programme in Hackney scores far higher than one who only gives to opera. This directly prioritises the outreach list.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">Highest Impact</span>
+        <span class="tag tag-effort-med">Med Effort</span>
+        <span class="tag tag-cat">Graph Analysis</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:93%"></div></div></div>
+    </div>
+
+    <!-- 4 -->
+    <div class="card" data-cat="enrich">
+      <div class="card-top">
+        <div class="card-num">4</div>
+        <div><div class="card-title">Expand to 2nd-Degree Connections</div>
+        <div class="card-subtitle">Harvest connections-of-connections to find hidden bridges</div></div>
+      </div>
+      <div class="card-body">
+        Currently we map seeds &rarr; direct contacts only. Run a second pass: for the top 50 highest-value leads, pull <em>their</em> co-directorships and charity trusteeships. This reveals bridge nodes &mdash; people who connect two otherwise-separate clusters &mdash; and surfaces leads who are 2 hops from multiple seeds, dramatically increasing reachability.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">High Impact</span>
+        <span class="tag tag-effort-high">High Effort</span>
+        <span class="tag tag-cat">Enrichment</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:88%"></div></div></div>
+    </div>
+
+    <!-- 5 -->
+    <div class="card" data-cat="intel">
+      <div class="card-top">
+        <div class="card-num">5</div>
+        <div><div class="card-title">Event & Social Proximity Mapping</div>
+        <div class="card-subtitle">Detect who attends the same events, clubs, and social circles</div></div>
+      </div>
+      <div class="card-body">
+        Scrape public event attendee lists (charity galas, Chatham House events, CBI dinners, sports events) and membership directories to identify social co-presence. If a seed and a target both attended the same charity ball last month, that's a warmer intro than a shared Companies House filing from 2019.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">High Impact</span>
+        <span class="tag tag-effort-high">High Effort</span>
+        <span class="tag tag-cat">Intelligence</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:84%"></div></div></div>
+    </div>
+
+    <!-- 6 -->
+    <div class="card" data-cat="graph">
+      <div class="card-top">
+        <div class="card-num">6</div>
+        <div><div class="card-title">Community Detection & Cluster Labels</div>
+        <div class="card-subtitle">Identify natural groups within the network</div></div>
+      </div>
+      <div class="card-body">
+        Run Louvain or Leiden community detection on the full graph to identify clusters (e.g. "Shore Capital cluster", "Ronson family orbit", "NatWest board network"). Label each cluster by its dominant affiliation. This tells BFF which communities they already have a foothold in, and which high-value clusters they lack any connection to.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">High Impact</span>
+        <span class="tag tag-effort-low">Low Effort</span>
+        <span class="tag tag-cat">Graph Analysis</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:82%"></div></div></div>
+    </div>
+
+    <!-- 7 -->
+    <div class="card" data-cat="intro">
+      <div class="card-top">
+        <div class="card-num">7</div>
+        <div><div class="card-title">Seed Effectiveness Ranking</div>
+        <div class="card-subtitle">Score each seed by how many high-value leads they can reach</div></div>
+      </div>
+      <div class="card-body">
+        Not all seeds are equal. Rank the 62 seeds by: (a) number of 100m+ leads within 2 hops, (b) diversity of clusters they bridge into, (c) strength of their connections. The top 10 seeds become BFF's priority relationship-maintenance targets &mdash; these are the people whose networks unlock the most fundraising potential.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">High Impact</span>
+        <span class="tag tag-effort-low">Low Effort</span>
+        <span class="tag tag-cat">Intro Routes</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:80%"></div></div></div>
+    </div>
+
+    <!-- 8 -->
+    <div class="card" data-cat="enrich">
+      <div class="card-top">
+        <div class="card-num">8</div>
+        <div><div class="card-title">News & Trigger Event Monitoring</div>
+        <div class="card-subtitle">Surface timely reasons to reach out</div></div>
+      </div>
+      <div class="card-body">
+        Set up rolling news monitoring for the top 100 leads. Flag events like: new business sale (liquidity event), appointment to a charity board (signals giving intent), honour or award (good-news moment), company IPO, or retirement. Each trigger generates a time-sensitive outreach prompt: <em>"Tony Bloom's Brighton just qualified for Europe &mdash; he may be receptive to other football causes."</em>
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">High Impact</span>
+        <span class="tag tag-effort-med">Med Effort</span>
+        <span class="tag tag-cat">Enrichment</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:78%"></div></div></div>
+    </div>
+
+    <!-- 9 -->
+    <div class="card" data-cat="intel">
+      <div class="card-top">
+        <div class="card-num">9</div>
+        <div><div class="card-title">Spouse & Family Network Expansion</div>
+        <div class="card-subtitle">Map family connections that often drive philanthropy decisions</div></div>
+      </div>
+      <div class="card-body">
+        Many large donations are household decisions. For each lead, identify their spouse/partner (if publicly known) and map <em>their</em> charity involvements separately. If Gail Ronson sits on a children's charity board while Gerald manages the family fortune, the approach should reference her interests. We already have Katinka Gissing (Naess heir + Ocado spouse) &mdash; scale this across the dataset.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">High Impact</span>
+        <span class="tag tag-effort-med">Med Effort</span>
+        <span class="tag tag-cat">Intelligence</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:76%"></div></div></div>
+    </div>
+
+    <!-- 10 -->
+    <div class="card" data-cat="graph">
+      <div class="card-top">
+        <div class="card-num">10</div>
+        <div><div class="card-title">Betweenness Centrality &mdash; Find the Super-Connectors</div>
+        <div class="card-subtitle">Identify people who bridge otherwise disconnected groups</div></div>
+      </div>
+      <div class="card-body">
+        Compute betweenness centrality for every node. People with high betweenness are "super-connectors" &mdash; they bridge separate clusters. If a single person connects the Tetragon/Polygon finance cluster to the Ronson property cluster, getting them onside opens two worlds. These are high-leverage intro targets even if their personal wealth is modest.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">Med Impact</span>
+        <span class="tag tag-effort-low">Low Effort</span>
+        <span class="tag tag-cat">Graph Analysis</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:72%"></div></div></div>
+    </div>
+
+    <!-- 11 -->
+    <div class="card" data-cat="enrich">
+      <div class="card-top">
+        <div class="card-num">11</div>
+        <div><div class="card-title">Property & Postcode Enrichment</div>
+        <div class="card-subtitle">Geo-tag leads for London-proximity and neighbourhood clustering</div></div>
+      </div>
+      <div class="card-body">
+        Use Land Registry and Companies House registered addresses to geo-locate leads. Tag those within the Bloomsbury/Central London catchment as higher-priority (they're more likely to attend events). Cluster leads by postcode to find neighbourhood-based introduction opportunities &mdash; neighbours in Hampstead or Notting Hill often know each other socially.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">Med Impact</span>
+        <span class="tag tag-effort-med">Med Effort</span>
+        <span class="tag tag-cat">Enrichment</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:68%"></div></div></div>
+    </div>
+
+    <!-- 12 -->
+    <div class="card" data-cat="ops">
+      <div class="card-top">
+        <div class="card-num">12</div>
+        <div><div class="card-title">Briefing Pack Auto-Generation</div>
+        <div class="card-subtitle">One-page dossier for every meeting</div></div>
+      </div>
+      <div class="card-body">
+        Before any outreach, auto-generate a PDF briefing: the lead's wealth profile, their philanthropy interests, their connection path to BFF, recent news about them, suggested talking points, and the specific ask. This turns the database into an actionable tool that anyone on the BFF team can use, not just the person who built the network map.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">Med Impact</span>
+        <span class="tag tag-effort-med">Med Effort</span>
+        <span class="tag tag-cat">Operations</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:65%"></div></div></div>
+    </div>
+
+    <!-- 13 -->
+    <div class="card" data-cat="ops">
+      <div class="card-top">
+        <div class="card-num">13</div>
+        <div><div class="card-title">Outreach Pipeline & CRM Sync</div>
+        <div class="card-subtitle">Track who's been approached, outcomes, and next steps</div></div>
+      </div>
+      <div class="card-body">
+        Add a Kanban-style pipeline: Identified &rarr; Researched &rarr; Intro Requested &rarr; Meeting Scheduled &rarr; Cultivating &rarr; Asked &rarr; Committed. Track conversion rates at each stage. Feed outcomes back into the model: if introductions via a particular seed keep converting, boost that seed's effectiveness score. Optional Salesforce/HubSpot sync.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">Med Impact</span>
+        <span class="tag tag-effort-high">High Effort</span>
+        <span class="tag tag-cat">Operations</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:62%"></div></div></div>
+    </div>
+
+    <!-- 14 -->
+    <div class="card" data-cat="intel">
+      <div class="card-top">
+        <div class="card-num">14</div>
+        <div><div class="card-title">Peer Comparison & "People Like Them" Model</div>
+        <div class="card-subtitle">Find un-connected leads who match the profile of existing donors</div></div>
+      </div>
+      <div class="card-body">
+        Build a profile of BFF's ideal supporter from the seeds who are already engaged (wealth band, sector, philanthropy domain, geography). Then scan the wider enrichment data for people who match that profile but aren't yet in the network. This is lookalike modelling for philanthropy &mdash; finding the next Tony Bloom before you have a connection to them.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">Med Impact</span>
+        <span class="tag tag-effort-high">High Effort</span>
+        <span class="tag tag-cat">Intelligence</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:58%"></div></div></div>
+    </div>
+
+    <!-- 15 -->
+    <div class="card" data-cat="graph">
+      <div class="card-top">
+        <div class="card-num">15</div>
+        <div><div class="card-title">Interactive Network Explorer</div>
+        <div class="card-subtitle">Visual, clickable graph with filters and drill-down</div></div>
+      </div>
+      <div class="card-body">
+        Replace the static D3 graph with a full interactive explorer: zoom, search, filter by wealth band or cluster, click a node to see their profile, highlight paths between any two people. Colour-code by affinity score. Let BFF's team visually explore the network and discover connections the algorithms might miss. Built as a Next.js page within the existing app.
+      </div>
+      <div class="card-meta">
+        <span class="tag tag-impact">Med Impact</span>
+        <span class="tag tag-effort-high">High Effort</span>
+        <span class="tag tag-cat">Graph Analysis</span>
+      </div>
+      <div class="impact-bar-wrap"><span class="impact-label">Impact</span><div class="impact-bar"><div class="impact-fill orange" style="width:55%"></div></div></div>
+    </div>
+
+  </div><!-- /roadmap-grid -->
+</div>
+
+<div class="footer">
+  <div>Bloomsbury Network Mapper &mdash; Augmentation Roadmap &mdash; June 2026</div>
+  <div>Built with <a href="https://claude.com/claude-code">Claude Code</a></div>
+</div>
+
+<script>
+function filterCards(cat, el) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.card').forEach(c => {
+    c.style.display = (cat === 'all' || c.dataset.cat === cat) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

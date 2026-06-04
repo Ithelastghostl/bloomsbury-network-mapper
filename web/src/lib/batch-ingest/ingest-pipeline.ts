@@ -14,6 +14,8 @@ type AnySupabase = SupabaseClient<any, any, any>;
 export interface IngestOptions {
   sourcePath: string;
   dryRun?: boolean;
+  /** Stamped into every newly-created entity's attributes for traceability. */
+  batchId?: string;
 }
 
 /**
@@ -61,6 +63,8 @@ export async function runBatchIngest(
     cache = await EntityCache.load(supabase);
     console.log(`Entity cache loaded: ${cache.size} entities`);
   }
+  // Tag new entities created in this run for traceability/reversibility.
+  cache.batchId = options.batchId;
 
   // Process seeds sequentially
   for (const output of outputs) {

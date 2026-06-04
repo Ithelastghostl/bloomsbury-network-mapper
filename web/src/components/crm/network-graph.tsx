@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as d3 from 'd3';
+import { EntityPanel } from './entity-panel';
 
 interface GraphNode {
   id: string;
@@ -44,10 +45,16 @@ function cssVar(name: string, fallback: string): string {
 
 // A categorical palette for connected components (cluster colouring), built
 // from the brand gold plus complementary hues that read on a light ground.
-const COMPONENT_PALETTE = [
+// Exported so the legend can mirror the exact colours the canvas assigns.
+export const COMPONENT_PALETTE = [
   '#a07d0a', '#2f6f6b', '#9a4b2e', '#3b5a8a', '#6b5b95',
   '#7a8b2e', '#8a3b5a', '#b8920f', '#4a7a4a', '#7a6a4a',
 ];
+
+// The colour a given connected-component index maps to (same logic as fillFor).
+export function componentColor(c: number | undefined): string {
+  return c == null ? COMPONENT_PALETTE[0] : COMPONENT_PALETTE[c % COMPONENT_PALETTE.length];
+}
 
 function nodeRadius(d: { connectionCount: number }): number {
   return Math.sqrt(d.connectionCount) * 2.5 + 4;
@@ -70,12 +77,22 @@ export function NetworkGraph({
   const router = useRouter();
   const [tooltip, setTooltip] = useState<{ left: number; top: number; name: string; type: string; connections: number } | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
+  // The node whose profile is open in the slide-in panel.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   // Bumping this re-runs the layout effect (used by the "Re-layout" control).
   const [relayoutKey, setRelayoutKey] = useState(0);
+
+  // d3 fires `click` before `dblclick`, so a single click is deferred briefly
+  // and cancelled if a double-click follows. Single → open panel, double → isolate.
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Imperative handles so the control buttons can drive the zoom + fit the graph.
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const fitRef = useRef<(() => void) | null>(null);
+  // Selection ring: a ref mirror of selectedId (read inside d3 event handlers
+  // without re-binding them) plus a helper to repaint the ring on change.
+  const selectedIdRef = useRef<string | null>(null);
+  const applySelectionRef = useRef<((id: string | null) => void) | null>(null);
 
   // Stable primitive deps so the simulation doesn't rebuild on every parent render.
   const personColor = nodeColors?.person ?? '#a07d0a';
@@ -118,9 +135,6 @@ export function NetworkGraph({
     const edgeColor = cssVar('--color-border-mid', '#d4cfc4');
     const familyColor = cssVar('--color-gold', '#a07d0a');
 
-    const componentColor = (c: number | undefined) =>
-      c == null ? personColor : COMPONENT_PALETTE[c % COMPONENT_PALETTE.length];
-
     const fillFor = (d: SimNode) => {
       if (colorByComponent) return componentColor(d.component);
       return d.type === 'person' ? personColor : companyColor;
@@ -152,6 +166,9 @@ export function NetworkGraph({
       .scaleExtent([0.05, 10])
       .on('zoom', (event) => g.attr('transform', event.transform));
     svg.call(zoom);
+    // Disable d3's default double-click-to-zoom so it doesn't fight the
+    // double-click-to-isolate behaviour on nodes.
+    svg.on('dblclick.zoom', null);
     zoomRef.current = zoom;
 
     const link = g.append('g')
@@ -172,12 +189,26 @@ export function NetworkGraph({
       .attr('stroke-width', 1)
       .attr('cursor', 'pointer')
       .on('click', (event, d) => {
-        // Plain click → focus this node's neighbourhood. Cmd/Ctrl-click → open detail.
+        // Cmd/Ctrl-click → open the full detail page immediately.
         if ((event.metaKey || event.ctrlKey) && d.type === 'person') {
           router.push(`/crm/entity/${d.id}`);
-        } else {
-          setFocusId(curr => (curr === d.id ? null : d.id));
+          return;
         }
+        // Plain click → open the profile panel, but defer so a double-click
+        // (which isolates) can cancel it first.
+        if (clickTimer.current) clearTimeout(clickTimer.current);
+        clickTimer.current = setTimeout(() => {
+          setSelectedId(d.id);
+          clickTimer.current = null;
+        }, 220);
+      })
+      .on('dblclick', (event, d) => {
+        // Double-click → isolate this node's neighbourhood. Cancel the pending
+        // single-click so the panel doesn't also open.
+        if (clickTimer.current) { clearTimeout(clickTimer.current); clickTimer.current = null; }
+        event.preventDefault();
+        event.stopPropagation();
+        setFocusId(curr => (curr === d.id ? null : d.id));
       })
       .on('mouseover', (event, d) => {
         // Clamp position here (in the event handler, not during render) so we
@@ -186,10 +217,25 @@ export function NetworkGraph({
         setTooltip({ left: Math.min(event.offsetX + 12, maxLeft), top: event.offsetY - 10, name: d.name, type: d.type, connections: d.connectionCount });
         d3.select(event.currentTarget).attr('stroke', goldColor).attr('stroke-width', 2.5);
       })
-      .on('mouseout', (event) => {
+      .on('mouseout', (event, d) => {
         setTooltip(null);
-        d3.select(event.currentTarget).attr('stroke', strokeColor).attr('stroke-width', 1);
+        // Keep the gold ring on the selected node; otherwise revert to default.
+        const sel = d3.select(event.currentTarget);
+        if (d.id === selectedIdRef.current) {
+          sel.attr('stroke', goldColor).attr('stroke-width', 3);
+        } else {
+          sel.attr('stroke', strokeColor).attr('stroke-width', 1);
+        }
       });
+
+    // Apply / move the persistent selection ring. Stored in a ref-driven helper
+    // so selecting a node doesn't rebuild the whole simulation.
+    applySelectionRef.current = (id: string | null) => {
+      node
+        .attr('stroke', d => (d.id === id ? goldColor : strokeColor))
+        .attr('stroke-width', d => (d.id === id ? 3 : 1));
+    };
+    applySelectionRef.current(selectedIdRef.current);
 
     const drag = d3.drag<SVGCircleElement, SimNode>()
       .on('start', (event, d) => {
@@ -267,6 +313,16 @@ export function NetworkGraph({
     return () => { simulation.stop(); };
   }, [view, focusId, relayoutKey, router, personColor, companyColor, colorByComponent]);
 
+  // Repaint the selection ring when the selected node changes, without
+  // rebuilding the simulation.
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+    applySelectionRef.current?.(selectedId);
+  }, [selectedId]);
+
+  // Clear any pending single-click timer on unmount.
+  useEffect(() => () => { if (clickTimer.current) clearTimeout(clickTimer.current); }, []);
+
   const legendItems = legend ?? [
     { color: personColor, label: 'Person' },
     { color: companyColor, label: 'Company' },
@@ -332,18 +388,20 @@ export function NetworkGraph({
         </div>
       )}
 
-      <div className="absolute bottom-3 left-3 flex items-center gap-4 text-xs text-text-muted bg-surface-raised/90 border border-border-subtle rounded px-3 py-1.5">
+      <div className="absolute bottom-3 left-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 max-w-[60%] text-xs text-text-muted bg-surface-raised/90 border border-border-subtle rounded px-3 py-1.5">
         {legendItems.map((item, i) => (
           <span key={i} className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
             {item.label}
           </span>
         ))}
       </div>
 
       <div className="absolute bottom-3 right-3 text-[10px] text-text-muted bg-surface-raised/90 border border-border-subtle rounded px-2.5 py-1">
-        Click a node to focus · ⌘/Ctrl-click to open · drag to move · scroll to zoom
+        Click a node for profile · double-click to isolate · ⌘/Ctrl-click to open · drag · scroll to zoom
       </div>
+
+      <EntityPanel entityId={selectedId} onClose={() => setSelectedId(null)} />
     </div>
   );
 }

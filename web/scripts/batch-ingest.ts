@@ -22,6 +22,7 @@ async function main() {
   const transcriptDir = args.find(a => !a.startsWith('--'));
   const dryRun = args.includes('--dry-run');
   const seedFilter = getArg(args, '--seed');
+  const batchId = getArg(args, '--batch-id');
 
   if (!transcriptDir) {
     console.error('Usage: npx tsx web/scripts/batch-ingest.ts <transcript-dir> [--dry-run] [--seed "Name"]');
@@ -76,6 +77,7 @@ async function main() {
   const result = await runBatchIngest(supabase, outputs, {
     sourcePath: transcriptDir,
     dryRun,
+    batchId: batchId ?? undefined,
   });
 
   // 3. Print report
