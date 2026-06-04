@@ -75,6 +75,8 @@ async function main() {
       // repoint evidence + estimates
       await sb.from('enrichment_evidence').update({ entity_id: keep }).eq('entity_id', drop);
       await sb.from('wealth_estimates').update({ entity_id: keep }).eq('entity_id', drop);
+      // repoint sweep_runs (has its own FK to canonical_entities.entity_id)
+      await sb.from('sweep_runs').update({ entity_id: keep }).eq('entity_id', drop);
       edgesRepointed++;
     }
 
@@ -87,7 +89,7 @@ async function main() {
     // delete the now-empty duplicate entities
     for (const drop of drops) {
       // safety: confirm nothing still references it
-      const refs = (await countFor(sb, 'network_connections', 'source_entity_id', drop)) + (await countFor(sb, 'network_connections', 'connected_entity_id', drop)) + (await countFor(sb, 'co_director_edges', 'seed_entity_id', drop)) + (await countFor(sb, 'co_director_edges', 'co_director_entity_id', drop)) + (await countFor(sb, 'enrichment_evidence', 'entity_id', drop)) + (await countFor(sb, 'wealth_estimates', 'entity_id', drop));
+      const refs = (await countFor(sb, 'network_connections', 'source_entity_id', drop)) + (await countFor(sb, 'network_connections', 'connected_entity_id', drop)) + (await countFor(sb, 'co_director_edges', 'seed_entity_id', drop)) + (await countFor(sb, 'co_director_edges', 'co_director_entity_id', drop)) + (await countFor(sb, 'enrichment_evidence', 'entity_id', drop)) + (await countFor(sb, 'wealth_estimates', 'entity_id', drop)) + (await countFor(sb, 'sweep_runs', 'entity_id', drop));
       if (refs > 0) { console.log(`    ! ${drop} still has ${refs} refs — leaving it`); continue; }
       const { error } = await sb.from('canonical_entities').delete().eq('canonical_entity_id', drop);
       if (error) console.log(`    ! delete ${drop}: ${error.message}`); else deleted++;

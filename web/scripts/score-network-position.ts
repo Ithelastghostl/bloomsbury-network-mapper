@@ -19,6 +19,7 @@
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { generateId } from '../src/lib/ulid';
+import { isSeedPerson } from '../src/lib/crm/seed-reference';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DB = SupabaseClient<any, any, any>;
@@ -53,6 +54,10 @@ async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
   const scoreAll = args.includes('--all');
+  // Write an explicit `unknown`-band estimate for SEEDS that have evidence but
+  // no wealth signal, so the Seeds page shows a deliberate "assessed: unknown"
+  // rather than a blank that looks like missing data.
+  const markUnknownSeeds = args.includes('--mark-unknown-seeds');
 
   const sb = createClient(requireEnv('SUPABASE_URL'), requireEnv('SUPABASE_SERVICE_ROLE_KEY'), {
     db: { schema: 'app' }, auth: { persistSession: false },
@@ -141,14 +146,21 @@ async function main() {
       if (/hedge fund|private equity|\bfund\b|investment/.test(text)) { evidenceArr.push({ signal: 'fund_management', source_layer: 'B', contribution: 0.10, detail: 'Fund / investment references' }); score += 0.10; }
     }
 
-    // Only persist where there is genuine signal. Bare names → skip (stay unknown, no row).
-    if (evidenceArr.length === 0) { skippedNoSignal++; continue; }
-
     score = Math.min(score, 1.0);
     const band = bandFromScore(score);
-    // An `unknown` band carries no ranking value — don't write a noise row for it.
-    // Keep the person unscored (they show as Pipeline, awaiting research).
-    if (band === 'unknown') { skippedNoSignal++; continue; }
+
+    // A seed that has evidence but no wealth signal → write an explicit `unknown`
+    // row (deliberate "assessed: no wealth signal") so the Seeds page isn't blank.
+    const isSeedWithEvidence = markUnknownSeeds && isSeedPerson(p.display_name as string) && (evText.get(id) ?? '').trim().length > 0;
+
+    if (band === 'unknown') {
+      if (!isSeedWithEvidence) { skippedNoSignal++; continue; }
+      // ensure the unknown row carries at least one evidence note for context
+      if (evidenceArr.length === 0) evidenceArr.push({ signal: 'assessed_no_wealth_signal', source_layer: 'A', contribution: 0, detail: 'Evidence present but no wealth signal — connector/sector contact, not HNW' });
+    } else if (evidenceArr.length === 0) {
+      // banded but somehow no evidence array (shouldn't happen) — skip
+      skippedNoSignal++; continue;
+    }
     const confidence = Math.min(0.35 + evidenceArr.length * 0.08, 0.85); // network-only is slightly lower confidence than researched
     bandTally[band] = (bandTally[band] ?? 0) + 1;
 
