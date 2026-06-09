@@ -145,6 +145,46 @@ export function EntityPanel({
 
           {entity && (
             <>
+              {/* Human-review flag — surfaced when augmentation was low-quality
+                  (e.g. an unconfirmed identity) so reviewers look closer. */}
+              {(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const a = (entity.attributes ?? {}) as Record<string, any>;
+                if (!a.needs_human_review) return null;
+                const d = a.dossier as Record<string, unknown> | undefined;
+                const leads = Array.isArray(d?.candidate_leads) ? d!.candidate_leads as Array<{ lead: string; url?: string }> : [];
+                return (
+                  <div className="rounded-md border border-gold/40 bg-gold/[0.06] px-3 py-2.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-gold">⚠ Needs human review</span>
+                      <span className="text-[10px] text-text-muted">
+                        {a.augmentation_quality ? `${a.augmentation_quality} augmentation` : 'low augmentation'}
+                        {a.dossier_attempts ? ` · ${a.dossier_attempts} attempt(s)` : ''}
+                      </span>
+                    </div>
+                    {a.review_reason && <p className="text-xs text-text-secondary mt-1.5 leading-relaxed">{String(a.review_reason)}</p>}
+                    {typeof d?.summary === 'string' && d.summary && <p className="text-xs text-text-muted mt-1.5 leading-relaxed">{d.summary}</p>}
+                    {leads.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Leads to chase</p>
+                        <ul className="space-y-1">
+                          {leads.map((l, i) => (
+                            <li key={i} className="text-xs text-text-secondary">
+                              {l.url
+                                ? <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-gold hover:text-gold-light transition-colors">{l.lead}</a>
+                                : l.lead}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {typeof d?.reviewer_notes === 'string' && d.reviewer_notes && (
+                      <p className="text-[11px] text-text-muted mt-2 italic leading-relaxed">{d.reviewer_notes}</p>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Augment action + full-page link */}
               <div className="flex items-center justify-between gap-3">
                 <Link
@@ -160,6 +200,34 @@ export function EntityPanel({
                   />
                 )}
               </div>
+
+              {/* How to introduce — the warm path from one of our donors. */}
+              {(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const intro = (entity.attributes ?? {})?.introduction as Record<string, any> | undefined;
+                if (!intro) return null;
+                return (
+                  <div className="rounded-md border border-border-subtle bg-mid-charcoal/40 px-3 py-2.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">How to introduce</p>
+                    {intro.degree === 0 ? (
+                      <p className="text-sm text-gold">Core donor — direct relationship.</p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-text-secondary leading-relaxed">
+                          {intro.degree === 1 ? (
+                            <>Ask <span className="text-gold font-medium">{intro.root_donor}</span> to introduce you{intro.via ? <> — via {intro.via}</> : null}.</>
+                          ) : (
+                            <>Reach via <span className="text-gold font-medium">{intro.root_donor}</span> → <span className="text-text-primary">{intro.introducer}</span>{intro.via ? <> (via {intro.via})</> : null}.</>
+                          )}
+                        </p>
+                        {Array.isArray(intro.path) && intro.path.length > 1 && (
+                          <p className="text-xs text-text-muted mt-1">{intro.path.join('  →  ')}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Wealth */}
               {entity.wealth && (

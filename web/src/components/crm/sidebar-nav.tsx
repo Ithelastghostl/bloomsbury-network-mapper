@@ -16,6 +16,10 @@ const GRAPH_TABS = [
   { href: '/crm/graph/charities', label: 'Charities', icon: '♦' },
 ];
 
+const INTRODUCTIONS_TABS = [
+  { href: '/crm/introductions', label: 'Introduction Graph', icon: '⇄' },
+];
+
 const TOOLS = [
   { href: '/crm/augment-queue', label: 'Augment Queue' },
   { href: '/review', label: 'Review Queue' },
@@ -66,6 +70,27 @@ export function SidebarNav() {
           <span className="text-[10px] font-semibold tracking-widest uppercase text-text-muted">Social Graph</span>
         </div>
         {GRAPH_TABS.map(tab => {
+          const active = isActive(tab.href);
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
+                active
+                  ? 'bg-gold/10 text-gold border-r-2 border-gold'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-deep-charcoal'
+              }`}
+            >
+              <span className="text-xs">{tab.icon}</span>
+              {tab.label}
+            </Link>
+          );
+        })}
+
+        <div className="px-3 mt-6 mb-2">
+          <span className="text-[10px] font-semibold tracking-widest uppercase text-text-muted">Introductions</span>
+        </div>
+        {INTRODUCTIONS_TABS.map(tab => {
           const active = isActive(tab.href);
           return (
             <Link

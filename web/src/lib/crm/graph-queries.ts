@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { seedInfo } from './seed-reference';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any;
@@ -14,6 +15,8 @@ export interface GraphNode {
   connectionCount: number;
   /** Connected-component id (for cluster colouring). Set by projection builders. */
   component?: number;
+  /** Which seed-reference list this person came from, if any (drives the HNW highlight). */
+  seedSource?: 'hnw_targets' | 'supporters';
 }
 
 export interface GraphEdge {
@@ -271,6 +274,7 @@ export function buildOrbitGraph(
       type: 'person',
       connectionCount: degree.get(id) ?? 0,
       component: components.get(id),
+      seedSource: seedInfo(e.display_name)?.source,
     };
   });
 
@@ -304,6 +308,7 @@ function buildNodes(
       name: e.display_name,
       type: e.entity_type as 'person' | 'company',
       connectionCount: connCounts.get(id) ?? 0,
+      seedSource: e.entity_type === 'person' ? seedInfo(e.display_name)?.source : undefined,
     };
   });
   return { nodes, edges };

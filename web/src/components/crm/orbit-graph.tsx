@@ -28,6 +28,10 @@ function buildClusterLegend(nodes: GraphData['nodes']): Array<{ color: string; l
   }));
 }
 
+// The colour the freshly-mapped HNW-target cohort is painted on the canvas.
+// Kept in sync with NetworkGraph's default highlightColor.
+const HNW_COLOR = '#c2410c';
+
 export function OrbitGraph({
   orbit,
   bipartite,
@@ -40,6 +44,14 @@ export function OrbitGraph({
 
   const orbitCompanies = bipartite.nodes.filter(n => n.type === 'company').length;
   const clusterLegend = useMemo(() => buildClusterLegend(orbit.nodes), [orbit.nodes]);
+
+  // The HNW-target seeds, highlighted in a single distinct colour on top of the
+  // normal cluster/type fill. Memoised so the simulation isn't rebuilt each render.
+  const hnwIds = useMemo(
+    () => new Set(active.nodes.filter(n => n.seedSource === 'hnw_targets').map(n => n.id)),
+    [active.nodes],
+  );
+  const hnwLegendEntry = { color: HNW_COLOR, label: `HNW targets (${hnwIds.size})` };
 
   return (
     <div>
@@ -82,10 +94,13 @@ export function OrbitGraph({
           edges={active.edges}
           colorByComponent={mode === 'orbit'}
           nodeColors={{ person: '#a07d0a', company: '#3b5a8a' }}
+          highlightIds={hnwIds}
+          highlightColor={HNW_COLOR}
           legend={
             mode === 'orbit'
-              ? clusterLegend
+              ? [hnwLegendEntry, ...clusterLegend]
               : [
+                  hnwLegendEntry,
                   { color: '#a07d0a', label: 'Person' },
                   { color: '#3b5a8a', label: 'Institution' },
                 ]

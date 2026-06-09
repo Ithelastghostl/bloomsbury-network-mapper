@@ -66,12 +66,24 @@ export function NetworkGraph({
   nodeColors,
   legend,
   colorByComponent = false,
+  highlightIds,
+  highlightColor = '#c2410c',
+  nodeColorById,
 }: {
   nodes: GraphNode[];
   edges: GraphEdge[];
   nodeColors?: { person: string; company: string };
   legend?: Array<{ color: string; label: string }>;
   colorByComponent?: boolean;
+  /**
+   * Node ids to paint in a single distinct colour, overriding the
+   * component/type fill (e.g. a freshly network-mapped cohort). Empty/undefined
+   * leaves every node coloured as normal.
+   */
+  highlightIds?: Set<string>;
+  highlightColor?: string;
+  /** Per-node colour overrides by id (e.g. introduction-degree colouring). */
+  nodeColorById?: Record<string, string>;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const router = useRouter();
@@ -136,6 +148,8 @@ export function NetworkGraph({
     const familyColor = cssVar('--color-gold', '#a07d0a');
 
     const fillFor = (d: SimNode) => {
+      if (highlightIds?.has(d.id)) return highlightColor;
+      if (nodeColorById && nodeColorById[d.id]) return nodeColorById[d.id];
       if (colorByComponent) return componentColor(d.component);
       return d.type === 'person' ? personColor : companyColor;
     };
@@ -311,7 +325,7 @@ export function NetworkGraph({
     fitToView(false); // start framed
 
     return () => { simulation.stop(); };
-  }, [view, focusId, relayoutKey, router, personColor, companyColor, colorByComponent]);
+  }, [view, focusId, relayoutKey, router, personColor, companyColor, colorByComponent, highlightIds, highlightColor, nodeColorById]);
 
   // Repaint the selection ring when the selected node changes, without
   // rebuilding the simulation.

@@ -34,7 +34,9 @@
       <li><a href="#triage">Seeds, Leads, Pipeline, All</a></li>
       <li><a href="#wealth">Wealth &amp; evidence</a></li>
       <li><a href="#graph">The relationship graph</a></li>
+      <li><a href="#introductions">Introductions &amp; warm paths</a></li>
       <li><a href="#augment">Wealth augmentation loop</a></li>
+      <li><a href="#review">Dossier retry &amp; review flags</a></li>
       <li><a href="#api">API surface</a></li>
       <li><a href="#stack">Stack &amp; rendering</a></li>
     </ol>
@@ -59,11 +61,13 @@
     <table>
       <thead><tr><th>Table</th><th>What it holds</th></tr></thead>
       <tbody>
-        <tr><td><code>canonical_entities</code></td><td>The master list of every person and company — id, display name, type, and a flexible <code>attributes</code> field (where wealth data and flags are stored).</td></tr>
+        <tr><td><code>canonical_entities</code></td><td>The master list of every person and company — id, display name, type, and a flexible <code>attributes</code> field (wealth data, the warm-path <code>introduction</code> route, the retry <code>dossier</code>, and review flags).</td></tr>
         <tr><td><code>wealth_estimates</code></td><td>Wealth assessments per entity: a band, a score, a confidence, and structured evidence.</td></tr>
         <tr><td><code>enrichment_evidence</code></td><td>Supporting evidence rows — source, layer, text, URL, confidence — backing a wealth or status claim.</td></tr>
         <tr><td><code>network_connections</code></td><td>Directed relationships between two entities (person→person and person→company), with a type and the organisation that links them.</td></tr>
         <tr><td><code>co_director_edges</code></td><td>People who share a company board, sourced from Companies House filings.</td></tr>
+        <tr><td><code>staged_entities</code></td><td>Outward contacts surfaced by network mapping, pending promotion — the &ldquo;new individuals&rdquo; a donor could introduce us to.</td></tr>
+        <tr><td><code>introduction_routes</code></td><td>Warm introduction paths to a target, with the introducer and the organisation that links them.</td></tr>
       </tbody>
     </table>
     <p>When a page needs to show people, it loads their canonical records and then calls <code>enrichEntities()</code>, which fetches wealth, evidence and connections for the whole batch in parallel and stitches them together into an <strong>EnrichedEntity</strong> — the shape every screen renders from.</p>
@@ -124,6 +128,7 @@
       <li><strong>Shared boards</strong> — Companies House co-director records.</li>
     </ul>
     <p>Each resulting bond carries a <strong>weight</strong> = the number of distinct reasons two people are linked, so stronger ties draw thicker. Nodes are coloured by <strong>community</strong> (connected-component), which is what turns a scattered cloud into readable clusters. A toggle switches to <strong>“+ Institutions”</strong> (bipartite) mode, which puts companies back in as visible connector nodes so you can see <em>which</em> organisation links a group.</p>
+    <p>Our <strong>62 HNW donors</strong> (the <code>hnw_targets</code> cohort) are painted a distinct burnt-orange across the graphs, with their own legend entry, so the people we already have a relationship with stand out from everyone discovered around them.</p>
 
     <h3>Institutions — individuals &amp; companies</h3>
     <p>People linked to the (non-charity) companies they direct or advise — boards and directorships.</p>
@@ -132,6 +137,20 @@
     <p>People linked to charities and foundations, surfacing trustees and supporters. A company counts as a charity if its name contains words like <em>foundation, trust, charity, charitable, endowment</em>, <strong>or</strong> it has Charity Commission evidence — more reliable than keywords alone.</p>
 
     <div class="note"><strong>Why the graph looks connected now.</strong> The underlying relationships were always there. The earlier view dropped the shared-board edges and used weak layout forces, so it rendered as scattered dots. Folding in co-directorships and shared companies, then colouring by community, reveals the single large network underneath — most people sit in one connected map.</div>
+  </section>
+
+  <section id="introductions">
+    <h2>Warm paths</h2>
+    <p class="section-title">Introductions — who can introduce us</p>
+    <p>Knowing a prospect is wealthy is only half the job; the other half is <strong>who of ours can get us in the room</strong>. The <strong>Introductions</strong> section (its own item in the sidebar) answers that with a donor-rooted graph.</p>
+    <p>It roots on the <strong>62 HNW donors</strong> and walks outward two degrees over a people-only graph — two people are linked when they share a board/company or have a direct tie, and freshly-staged outward contacts hang off the donor that surfaced them. Each degree is a distinct colour:</p>
+    <ul>
+      <li><span class="pill gold">Degree 0 — donor</span> someone we already have a relationship with (gold).</li>
+      <li><span class="pill blue">Degree 1 — first order</span> a person a donor knows directly → <em>ask the donor to introduce us</em> (teal).</li>
+      <li><span class="pill grey">Degree 2 — second order</span> a person known by a first-order contact → <em>we meet the first-order person, who introduces us onward</em> (orange).</li>
+    </ul>
+    <p>Two tabs render the same paths differently: <strong>People chain</strong> (person→person, coloured by degree) and <strong>Via organisations</strong> (the linking boards shown as their own nodes).</p>
+    <p>The same routing is written onto each person for their dossier. <code>compute-introductions.ts</code> runs the donor-rooted breadth-first search and stores <code>attributes.introduction = { degree, introducer, via, root_donor, path[] }</code> on every person within two hops of a donor. Their profile panel then shows a <strong>“How to introduce”</strong> line — e.g. <em>“Ask Howard Shore to introduce you — via Shore Capital,”</em> or for a second-order contact the full chain <em>donor → first-order person → target</em>.</p>
   </section>
 
   <section id="augment">
@@ -145,6 +164,15 @@
       <li><strong>Persist</strong> — The agent POSTs results to <code>/api/entities/{id}/augment</code>. The server writes evidence, upserts the wealth estimate, and stamps <code>wealth_augmented_at</code> — which removes the queue flag and <strong>promotes the Lead into a Seed-quality profile</strong>.</li>
     </ol>
     <p>The write endpoints are admin-gated. For local use a <code>CRM_LOCAL_MODE</code> flag bypasses that gate (only when not in production), so the tethered agent can persist without a login.</p>
+    <div class="note"><strong>The same local-agent model powers the deeper passes.</strong> <em>Network mapping</em> walks outward from a donor to discover their contacts (written to <code>staged_entities</code> and the introduction routes above); the <em>pipeline augmentation</em> stamps general-level context on the discovered backlog from stored relationships only. All of it runs on the local Claude Code subscription — never a metered API key.</div>
+  </section>
+
+  <section id="review">
+    <h2>Quality</h2>
+    <p class="section-title">Dossier retry &amp; review flags</p>
+    <p>Some discovered people — often private supporters with no public footprint — can’t be confidently identified on a first pass. Rather than guess or invent a profile, the platform runs a <strong>charity-anchored retry</strong> and flags them for a human.</p>
+    <p><code>dossier-retry.ts</code> is a two-step harness: <code>--list</code> prints the queue (anyone carrying <code>needs_human_review</code>, or an unconfirmed identity), the local agent researches each one anchored on Bloomsbury Football itself (its Charity Commission record, trustees, donor pages, board co-occurrence), and <code>--apply</code> writes a best-effort <code>attributes.dossier</code> — summary, candidate leads, sources, reviewer notes — and sets the flags. The flag only clears when a confident identity is found; otherwise the person stays queued for the next retry.</p>
+    <p>When <code>needs_human_review</code> is set, the profile panel shows a <span class="pill gold">⚠ Needs human review</span> banner with the reason, the dossier summary, and <strong>“leads to chase”</strong> — so a fundraiser opening the record immediately knows it needs care and what to check next.</p>
   </section>
 
   <section id="api">
@@ -156,6 +184,7 @@
         <tr><td><code>GET /api/crm/augment-queue</code></td><td>List people requested for research.</td></tr>
         <tr><td><code>POST /api/crm/entities/{id}/request-augmentation</code></td><td>Flag a person for research (the button).</td></tr>
         <tr><td><code>POST /api/entities/{id}/augment</code></td><td>Persist researched wealth → promote to seed.</td></tr>
+        <tr><td><code>GET /api/introduction-routes</code></td><td>Warm introduction routes to a target (or from an introducer).</td></tr>
         <tr><td><code>GET /api/crm/stats</code></td><td>Network-wide counts for the header bar.</td></tr>
       </tbody>
     </table>
