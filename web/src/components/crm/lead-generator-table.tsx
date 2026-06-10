@@ -6,7 +6,7 @@ import type { ScoredLead, IntroPathDetail } from '@/lib/crm/lead-score';
 import type { EnrichedEntity } from '@/lib/crm/types';
 import { ExportCsvButton } from './export-csv-button';
 
-type SortKey = 'composite' | 'connectivity' | 'wealth' | 'paths' | 'affinity' | 'name' | 'hops';
+type SortKey = 'priority' | 'confidence' | 'introability' | 'affinity' | 'capacity' | 'influence' | 'name' | 'hops';
 type CategoryFilter = 'all' | 'hnw_target' | 'wealth_identified' | 'charity_donor' | 'discovered';
 
 const CAT_LABELS: Record<string, string> = { hnw_target: 'HNW Target', wealth_identified: 'Wealth ID', charity_donor: 'Charity Donor', discovered: 'Discovered' };
@@ -14,35 +14,41 @@ const CAT_COLORS: Record<string, string> = { hnw_target: 'text-orange-400 bg-ora
 
 /** Per-ranking-method presentation: heading, default sort, and which extra sub-signal columns to surface. */
 const METHODS: Record<string, { title: string; description: string; sortKey: SortKey; subColumns: Array<'connections' | 'estimatedNw' | 'pathCount' | 'bestPathScore' | 'charityOverlap' | 'sector'> }> = {
-  composite: {
+  priority: {
     title: 'Lead Generator',
-    description: 'ranked by composite of connectivity (20%), wealth (30%), introduction paths (30%), and donor affinity (20%).',
-    sortKey: 'composite',
+    description: 'ranked by PRD §18.1 priority (introability 30%, affinity 25%, capacity 20%, influence 15%, strategic fit 10%).',
+    sortKey: 'priority',
     subColumns: [],
   },
-  connectivity: {
-    title: 'Leads by Connectivity',
-    description: 'ranked by network connectivity — how many mapped connections each lead has.',
-    sortKey: 'connectivity',
-    subColumns: ['connections'],
-  },
-  wealth: {
-    title: 'Leads by Network Worth',
-    description: 'ranked by estimated personal wealth (researched figures and band estimates).',
-    sortKey: 'wealth',
-    subColumns: ['estimatedNw'],
-  },
-  paths: {
-    title: 'Leads by Introduction Paths',
-    description: 'ranked by introduction-path quality — how warm and how many routes our supporters have to them.',
-    sortKey: 'paths',
+  introability: {
+    title: 'Leads by Introability',
+    description: 'ranked by §18.1 introability — how warm and how many routes our supporters have to them.',
+    sortKey: 'introability',
     subColumns: ['pathCount', 'bestPathScore'],
   },
   affinity: {
-    title: 'Leads by Donor Affinity',
-    description: 'ranked by donor affinity — charity overlaps, donor category, and sector signals.',
+    title: 'Leads by Affinity',
+    description: 'ranked by §18.1 affinity — charity overlaps, donor category, and sector signals.',
     sortKey: 'affinity',
     subColumns: ['charityOverlap', 'sector'],
+  },
+  capacity: {
+    title: 'Leads by Capacity',
+    description: 'ranked by §18.1 capacity — observable giving capacity from researched figures and band estimates.',
+    sortKey: 'capacity',
+    subColumns: ['estimatedNw'],
+  },
+  influence: {
+    title: 'Leads by Influence',
+    description: 'ranked by §18.1 influence — how many mapped network connections each lead has.',
+    sortKey: 'influence',
+    subColumns: ['connections'],
+  },
+  confidence: {
+    title: 'Leads by Confidence',
+    description: 'ranked by §18.2 evidence confidence — how trustworthy each lead\'s priority is.',
+    sortKey: 'confidence',
+    subColumns: [],
   },
 };
 
@@ -157,8 +163,8 @@ function LeadEvidence({ entityId }: { entityId: string }) {
   );
 }
 
-export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: ScoredLead[]; method?: string }) {
-  const cfg = METHODS[method] ?? METHODS.composite;
+export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: ScoredLead[]; method?: string }) {
+  const cfg = METHODS[method] ?? METHODS.priority;
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [hopFilter, setHopFilter] = useState<'all' | '1' | '2'>('all');
@@ -216,11 +222,12 @@ export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: Sco
     arr.sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
-        case 'composite': cmp = b.compositeScore - a.compositeScore; break;
-        case 'connectivity': cmp = b.connectivity - a.connectivity; break;
-        case 'wealth': cmp = b.networkWorth - a.networkWorth; break;
-        case 'paths': cmp = b.breakdown.paths - a.breakdown.paths; break;
-        case 'affinity': cmp = b.donorAffinity - a.donorAffinity; break;
+        case 'priority': cmp = b.priority - a.priority; break;
+        case 'confidence': cmp = b.confidence - a.confidence; break;
+        case 'introability': cmp = b.dimensions.introability - a.dimensions.introability; break;
+        case 'affinity': cmp = b.dimensions.affinity - a.dimensions.affinity; break;
+        case 'capacity': cmp = b.dimensions.capacity - a.dimensions.capacity; break;
+        case 'influence': cmp = b.dimensions.influence - a.dimensions.influence; break;
         case 'hops': cmp = (a.minHops ?? 99) - (b.minHops ?? 99); break;
         case 'name': cmp = a.name.localeCompare(b.name); break;
       }
@@ -245,7 +252,8 @@ export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: Sco
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          compositeScore: lead.compositeScore,
+          compositeScore: lead.priority,
+          confidence: lead.confidence,
           category: lead.category,
           bestPath: lead.bestPath,
           rootSupporter: lead.rootSupporter,
@@ -253,7 +261,7 @@ export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: Sco
           estimatedNw: lead.estimatedNw,
           sector: lead.sector,
           bio: lead.bio,
-          breakdown: lead.breakdown,
+          breakdown: lead.dimensions,
           explanations: lead.explanations,
           affinityRationale: lead.explanations.affinity,
           bestPathReason: lead.introPaths[0]?.reason ?? null,
@@ -361,11 +369,12 @@ export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: Sco
               {cfg.subColumns.includes('bestPathScore') && <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-20">Best route</th>}
               {cfg.subColumns.includes('charityOverlap') && <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-20">Charity links</th>}
               {cfg.subColumns.includes('sector') && <th className="text-left px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-24">Sector</th>}
-              <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('composite')}>Score{si('composite')}</th>
-              <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('connectivity')}>Connect.{si('connectivity')}</th>
-              <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('wealth')}>Wealth{si('wealth')}</th>
-              <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('paths')}>Paths{si('paths')}</th>
+              <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('priority')}>Priority{si('priority')}</th>
+              <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('confidence')}>Confidence{si('confidence')}</th>
+              <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('introability')}>Introability{si('introability')}</th>
               <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('affinity')}>Affinity{si('affinity')}</th>
+              <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('capacity')}>Capacity{si('capacity')}</th>
+              <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('influence')}>Influence{si('influence')}</th>
               <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-14" onClick={() => handleSort('hops')}>Hops{si('hops')}</th>
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted">Best route</th>
               <th className="px-3 py-2.5 w-16"></th>
@@ -374,7 +383,7 @@ export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: Sco
           <tbody className="divide-y divide-border-subtle">
             {paged.map((l, i) => {
               const isOpen = expandedId === l.id;
-              const colCount = 11 + cfg.subColumns.length;
+              const colCount = 12 + cfg.subColumns.length;
               const donorBadge = l.existingDonor ? DONOR_BADGE[l.existingDonor.kind] : null;
               return (
                 <tr key={l.id} className={`transition-colors cursor-pointer ${isOpen ? 'bg-deep-charcoal' : 'hover:bg-deep-charcoal/60'} ${l.existingDonor ? 'opacity-75' : ''}`} onClick={() => setExpandedId(isOpen ? null : l.id)}>
@@ -429,13 +438,14 @@ export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: Sco
 
                         {/* Score explainability */}
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2">Score breakdown (composite: {l.compositeScore}/100)</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2">Priority breakdown (§18.1: {l.priority}/100, confidence {l.confidence}/100)</p>
                           <div className="grid grid-cols-2 gap-2">
                             {([
-                              ['Connectivity (20%)', l.breakdown.connectivity, l.explanations.connectivity],
-                              ['Wealth (30%)', l.breakdown.wealth, l.explanations.wealth],
-                              ['Paths (30%)', l.breakdown.paths, l.explanations.paths],
-                              ['Donor Affinity (20%)', l.breakdown.affinity, l.explanations.affinity],
+                              ['Introability (30%)', l.dimensions.introability, l.explanations.introability],
+                              ['Affinity (25%)', l.dimensions.affinity, l.explanations.affinity],
+                              ['Capacity (20%)', l.dimensions.capacity, l.explanations.capacity],
+                              ['Influence (15%)', l.dimensions.influence, l.explanations.influence],
+                              ['Strategic Fit (10%)', l.dimensions.strategicFit, l.explanations.strategicFit],
                             ] as [string, number, string][]).map(([label, score, explanation]) => (
                               <div key={label} className="rounded border border-border-subtle px-2.5 py-2 bg-mid-charcoal/30">
                                 <div className="flex items-center justify-between mb-1">
@@ -445,6 +455,23 @@ export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: Sco
                                 <p className="text-[10px] text-text-muted leading-relaxed">{explanation}</p>
                               </div>
                             ))}
+                          </div>
+                          {/* §18.2 confidence sub-panel */}
+                          <div className="mt-2 rounded border border-border-subtle px-2.5 py-2 bg-mid-charcoal/20">
+                            <p className="text-[10px] text-text-muted mb-1.5">§18.2 confidence: how trustworthy this priority is ({l.confidence}/100).</p>
+                            <div className="grid grid-cols-4 gap-2">
+                              {([
+                                ['Identity', l.confidenceDimensions.identity],
+                                ['Relationship', l.confidenceDimensions.relationship],
+                                ['Corroboration', l.confidenceDimensions.corroboration],
+                                ['Freshness', l.confidenceDimensions.freshness],
+                              ] as [string, number][]).map(([label, score]) => (
+                                <div key={label} className="flex items-center justify-between gap-1.5">
+                                  <span className="text-[10px] text-text-secondary">{label}</span>
+                                  <ScoreBar value={score} />
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
 
@@ -540,11 +567,12 @@ export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: Sco
                       {cfg.subColumns.includes('bestPathScore') && <td className="px-3 py-2.5 text-center text-xs font-mono text-text-secondary">{l.bestPathScore || '—'}</td>}
                       {cfg.subColumns.includes('charityOverlap') && <td className="px-3 py-2.5 text-center text-xs font-mono text-text-secondary">{l.charityOverlap}</td>}
                       {cfg.subColumns.includes('sector') && <td className="px-3 py-2.5 text-[10px] text-text-muted">{l.sector ?? '—'}</td>}
-                      <td className="px-3 py-2.5"><ScoreBar value={l.compositeScore} /></td>
-                      <td className="px-3 py-2.5"><ScoreBar value={l.connectivity} /></td>
-                      <td className="px-3 py-2.5"><ScoreBar value={l.networkWorth} /></td>
-                      <td className="px-3 py-2.5"><ScoreBar value={l.breakdown.paths} /></td>
-                      <td className="px-3 py-2.5"><ScoreBar value={l.donorAffinity} /></td>
+                      <td className="px-3 py-2.5"><ScoreBar value={l.priority} /></td>
+                      <td className="px-3 py-2.5"><ScoreBar value={l.confidence} /></td>
+                      <td className="px-3 py-2.5"><ScoreBar value={l.dimensions.introability} /></td>
+                      <td className="px-3 py-2.5"><ScoreBar value={l.dimensions.affinity} /></td>
+                      <td className="px-3 py-2.5"><ScoreBar value={l.dimensions.capacity} /></td>
+                      <td className="px-3 py-2.5"><ScoreBar value={l.dimensions.influence} /></td>
                       <td className="px-3 py-2.5 text-center">
                         <span className={`text-xs font-mono ${l.minHops === 1 ? 'text-teal-400' : l.minHops === 2 ? 'text-text-secondary' : 'text-text-muted'}`}>{l.minHops ?? '—'}</span>
                       </td>

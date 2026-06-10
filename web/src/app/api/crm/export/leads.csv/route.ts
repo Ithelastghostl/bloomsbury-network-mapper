@@ -1,5 +1,6 @@
 import { getAdminClient } from '@/lib/supabase/admin';
 import { computeScoredLeads } from '@/lib/crm/lead-loader';
+import { rankingValue, type RankingMethod } from '@/lib/crm/lead-score';
 import { serverError } from '@/lib/api-error';
 import { requireAdminOrLocal } from '@/lib/crm/auth';
 
@@ -11,8 +12,10 @@ import { requireAdminOrLocal } from '@/lib/crm/auth';
  * Existing donors / excluded entries are omitted unless includeExisting=1.
  */
 
+// PRD §18.1 priority + §18.2 confidence model.
 const COLUMNS = [
-  'Rank', 'Name', 'Category', 'Composite Score', 'Connectivity', 'Wealth', 'Paths', 'Affinity',
+  'Rank', 'Name', 'Category', 'Priority Score', 'Confidence Score',
+  'Introability', 'Affinity', 'Capacity', 'Influence', 'Strategic Fit',
   'Min Hops', 'Path Count', 'Best Route', 'Root Supporter', 'Via Organisations',
   'Wealth Band', 'Estimated Net Worth GBP', 'Sector', 'Affinity Rationale',
   'Existing Donor Flag', 'Action Status',
@@ -35,7 +38,7 @@ export async function GET(request: Request) {
     if (denied) return denied;
 
     const url = new URL(request.url);
-    const method = url.searchParams.get('method') ?? 'composite';
+    const method = (url.searchParams.get('method') ?? 'priority') as RankingMethod;
     const scope = url.searchParams.get('scope') ?? 'all';
     const includeExisting = url.searchParams.get('includeExisting') === '1';
 
@@ -43,15 +46,7 @@ export async function GET(request: Request) {
     if (!includeExisting) leads = leads.filter(l => !l.existingDonor);
     if (scope === 'actions') leads = leads.filter(l => l.actionStatus);
 
-    const sortField: Record<string, (l: typeof leads[number]) => number> = {
-      composite: l => l.compositeScore,
-      connectivity: l => l.connectivity,
-      wealth: l => l.networkWorth,
-      paths: l => l.breakdown.paths,
-      affinity: l => l.donorAffinity,
-    };
-    const keyFn = sortField[method] ?? sortField.composite;
-    leads.sort((a, b) => keyFn(b) - keyFn(a));
+    leads.sort((a, b) => rankingValue(b, method) - rankingValue(a, method));
 
     // Hard cap so the export can't silently grow into a slow/huge response.
     const MAX_ROWS = 50_000;
@@ -66,11 +61,13 @@ export async function GET(request: Request) {
         String(i + 1),
         l.name,
         l.category,
-        String(l.compositeScore),
-        String(l.connectivity),
-        String(l.networkWorth),
-        String(l.breakdown.paths),
-        String(l.donorAffinity),
+        String(l.priority),
+        String(l.confidence),
+        String(l.dimensions.introability),
+        String(l.dimensions.affinity),
+        String(l.dimensions.capacity),
+        String(l.dimensions.influence),
+        String(l.dimensions.strategicFit),
         l.minHops != null ? String(l.minHops) : '',
         String(l.pathCount),
         l.bestPath ?? '',

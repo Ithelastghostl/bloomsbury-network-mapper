@@ -1,13 +1,19 @@
 import { isHnwTarget } from './seed-reference';
+import { calculatePriorityScore, PRIORITY_WEIGHTS } from '@/lib/ranking/priority';
+import { calculateConfidenceScore } from '@/lib/ranking/confidence';
+import { toPriorityInput, toConfidenceInput, type CrmSignals } from './crm-priority';
 
 /**
- * Version tag + weights for the composite lead-scoring formula. The Lead
- * Generator computes scores live (see lead-loader.ts); these document the
- * current formula version for provenance and let the UI/tests reference it.
- * Bump the version when weights or inputs change.
+ * The CRM Lead Generator ranks by the canonical PRD §18.1 priority score
+ * (introability/affinity/capacity/influence/strategic-fit), with the §18.2
+ * confidence score shown alongside. This replaced an off-PRD composite so the
+ * CRM and the candidate pipeline use one model (build rule 6). The actual
+ * weights/formulae live in @/lib/ranking; this file maps live CRM data through
+ * @/lib/crm/crm-priority and shapes the result for the UI.
  */
-export const SCORING_CONFIG_VERSION = 'crm-composite-v1';
-export const SCORING_WEIGHTS = { connectivity: 0.2, wealth: 0.3, paths: 0.3, affinity: 0.2 } as const;
+export const SCORING_CONFIG_VERSION = 'prd-18.1-v1';
+/** Canonical §18.1 weights, re-exported for the UI/tests (source of truth in ranking/priority.ts). */
+export const SCORING_WEIGHTS = PRIORITY_WEIGHTS;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Attrs = Record<string, any>;
@@ -25,19 +31,39 @@ export interface IntroPathDetail {
   score_breakdown: { hops: number; shared_orgs: number; introducer_reach: number; supporter_tier: number };
 }
 
+/** The five §18.1 priority dimensions, each scored 0–100 for display. */
+export interface PriorityDimensions {
+  introability: number;
+  affinity: number;
+  capacity: number;
+  influence: number;
+  strategicFit: number;
+}
+
+/** The four §18.2 confidence dimensions, each 0–100 for display. */
+export interface ConfidenceDimensions {
+  identity: number;
+  relationship: number;
+  corroboration: number;
+  freshness: number;
+}
+
 export interface ScoredLead {
   id: string;
   name: string;
   category: 'hnw_target' | 'wealth_identified' | 'charity_donor' | 'discovered';
-  connectivity: number;
-  networkWorth: number;
+  /** §18.1 priority score 0–100 — the ranking score. */
+  priority: number;
+  /** §18.2 evidence confidence score 0–100 — how trustworthy the priority is. */
+  confidence: number;
+  /** §18.1 per-dimension scores (0–100). */
+  dimensions: PriorityDimensions;
+  /** §18.2 per-dimension scores (0–100). */
+  confidenceDimensions: ConfidenceDimensions;
+  explanations: { introability: string; affinity: string; capacity: string; influence: string; strategicFit: string };
   pathCount: number;
   bestPathScore: number;
   minHops: number | null;
-  donorAffinity: number;
-  compositeScore: number;
-  breakdown: { connectivity: number; wealth: number; paths: number; affinity: number };
-  explanations: { connectivity: string; wealth: string; paths: string; affinity: string };
   bestPath: string | null;
   rootSupporter: string | null;
   introPaths: IntroPathDetail[];
@@ -58,74 +84,90 @@ export interface ScoredLead {
   existingDonor: { matchName: string; kind: 'exact' | 'variant' | 'excluded' } | null;
 }
 
+/** Human label for the strategic-fit explanation. */
+function STRATEGIC_FIT_LABEL(attrs: Attrs, cat: string): string {
+  const sector = String(attrs.sector ?? '');
+  if (/sport|football|youth|children|young people|education|social mobility|community/i.test(sector)) {
+    return `Sector (${sector}) aligns with the cause.`;
+  }
+  if (cat === 'hnw_target') return 'On the HNW target list (priority fit).';
+  return 'No specific cause alignment recorded.';
+}
+
 export function scoreLead(
   id: string,
   name: string,
   attrs: Attrs,
   connectionCount: number,
   charityOverlap: number,
+  extra: { evidenceCount?: number; newestEvidenceAt?: string | null; directorshipCount?: number } = {},
 ): ScoredLead {
   const intro = attrs.introduction;
   const paths = Array.isArray(attrs.intro_paths) ? attrs.intro_paths : [];
   const cat = attrs.target_category ?? (isHnwTarget(name) ? 'hnw_target' : 'discovered');
   const nw = attrs.estimated_net_worth_gbp ?? null;
   const band = attrs.wealth_band ?? null;
-
-  // Connectivity: how many network connections this person has (normalised 0-100)
-  const connScore = Math.min(100, Math.round((connectionCount / 20) * 100));
-
-  // Network worth: the person's own estimated wealth (normalised 0-100)
-  const wealthScore = nw ? Math.min(100, Math.round(Math.log10(Math.max(nw, 1)) / 9 * 100)) : 0;
-
-  // Path count & quality: how many introduction paths exist and their best score
   const bestScore = paths.length > 0 ? paths[0].score ?? 0 : 0;
-  const pathScore = Math.min(100, Math.round((paths.length / 3) * 50 + (bestScore / 100) * 50));
 
-  // Donor affinity: charity overlap + whether they're already tagged as a donor type
-  const affinityBase = Math.min(50, charityOverlap * 15);
-  const catBonus = cat === 'hnw_target' ? 40 : cat === 'charity_donor' ? 30 : cat === 'wealth_identified' ? 20 : 0;
-  const affinityScore = Math.min(100, affinityBase + catBonus + (attrs.sector === 'philanthropy' ? 10 : 0));
+  const signals: CrmSignals = {
+    connectionCount,
+    charityOverlap,
+    evidenceCount: extra.evidenceCount ?? 0,
+    newestEvidenceAt: extra.newestEvidenceAt ?? null,
+    directorshipCount: extra.directorshipCount ?? 0,
+  };
 
-  // Composite: weighted blend
-  const composite = Math.round(
-    connScore * 0.2 +
-    wealthScore * 0.3 +
-    pathScore * 0.3 +
-    affinityScore * 0.2
-  );
+  // §18.1 priority + §18.2 confidence (canonical formulae, reused verbatim).
+  const pr = calculatePriorityScore(toPriorityInput(attrs, signals));
+  const cf = calculateConfidenceScore(toConfidenceInput(attrs, signals));
+  const pct = (v: number) => Math.round(v * 100);
+
+  const dimensions: PriorityDimensions = {
+    introability: pct(pr.breakdown.introability.raw),
+    affinity: pct(pr.breakdown.affinity.raw),
+    capacity: pct(pr.breakdown.capacity_signal.raw),
+    influence: pct(pr.breakdown.influence.raw),
+    strategicFit: pct(pr.breakdown.strategic_fit.raw),
+  };
+  const confidenceDimensions: ConfidenceDimensions = {
+    identity: pct(cf.breakdown.identity.raw),
+    relationship: pct(cf.breakdown.relationship.raw),
+    corroboration: pct(cf.breakdown.source_corroboration.raw),
+    freshness: pct(cf.breakdown.freshness.raw),
+  };
 
   const minHops = paths.length > 0
     ? Math.min(...paths.map((p: { hops?: number }) => p.hops ?? 99))
     : (intro?.degree != null && intro.degree > 0 ? intro.degree : null);
 
   const explanations = {
-    connectivity: connectionCount === 0
-      ? 'No mapped connections yet.'
-      : `${connectionCount} network connection${connectionCount > 1 ? 's' : ''} (score ${connScore}/100). ${connectionCount >= 20 ? 'Very well connected.' : connectionCount >= 10 ? 'Well connected.' : connectionCount >= 5 ? 'Moderately connected.' : 'Few connections.'}`,
-    wealth: nw
-      ? `Estimated net worth £${nw >= 1e9 ? (nw / 1e9).toFixed(1) + 'B' : nw >= 1e6 ? (nw / 1e6).toFixed(0) + 'M' : (nw / 1e3).toFixed(0) + 'K'} (band: ${band ?? 'unknown'}). Score ${wealthScore}/100.`
-      : band && band !== 'unknown'
-        ? `Wealth band: ${band}. No specific figure available. Score ${wealthScore}/100.`
-        : 'No wealth data. Score 0/100.',
-    paths: paths.length > 0
-      ? `${paths.length} introduction path${paths.length > 1 ? 's' : ''} found. Best path scores ${bestScore}/100. ${minHops === 1 ? 'Direct 1-hop connection from a supporter.' : 'Reachable within 2 hops.'} Score ${pathScore}/100.`
+    introability: paths.length > 0
+      ? `Best introduction path scores ${bestScore}/100${minHops === 1 ? ' (direct 1-hop from a supporter)' : minHops === 2 ? ' (reachable within 2 hops)' : ''}. §18.1 introability ${dimensions.introability}/100 (weight 30%).`
       : intro?.degree
-        ? `Reachable at ${intro.degree} hop${intro.degree > 1 ? 's' : ''} from ${intro.root_supporter ?? 'a supporter'}. No scored paths computed yet.`
-        : 'No introduction paths found from our supporters.',
-    affinity: `${cat === 'hnw_target' ? 'On our HNW target list (+40).' : cat === 'charity_donor' ? 'Connected to charities we track (+30).' : cat === 'wealth_identified' ? 'Has identified wealth (+20).' : 'Discovered through network mapping.'} ${charityOverlap > 0 ? `Shares ${charityOverlap} charity connection${charityOverlap > 1 ? 's' : ''} (+${Math.min(50, charityOverlap * 15)}).` : ''} ${attrs.sector === 'philanthropy' ? 'Works in philanthropy (+10).' : ''} Score ${affinityScore}/100.`,
+        ? `Reachable at ${intro.degree} hop${intro.degree > 1 ? 's' : ''} from ${intro.root_supporter ?? 'a supporter'}, no scored path yet. Introability ${dimensions.introability}/100.`
+        : `No introduction path from our supporters. Introability ${dimensions.introability}/100.`,
+    affinity: `${cat === 'charity_donor' ? 'Connected to charities we track. ' : cat === 'hnw_target' ? 'On our HNW target list. ' : cat === 'wealth_identified' ? 'Has identified wealth. ' : ''}${charityOverlap > 0 ? `Shares ${charityOverlap} charity connection${charityOverlap > 1 ? 's' : ''}. ` : ''}§18.1 affinity ${dimensions.affinity}/100 (weight 25%).`,
+    capacity: nw
+      ? `Observable capacity from £${nw >= 1e9 ? (nw / 1e9).toFixed(1) + 'B' : nw >= 1e6 ? (nw / 1e6).toFixed(0) + 'M' : (nw / 1e3).toFixed(0) + 'K'} (band ${band ?? 'unknown'})${signals.directorshipCount ? ` + ${signals.directorshipCount} directorship${signals.directorshipCount > 1 ? 's' : ''}` : ''}. §18.3 capacity ${dimensions.capacity}/100 (weight 20%).`
+      : band && band !== 'unknown'
+        ? `Wealth band ${band}${signals.directorshipCount ? ` + ${signals.directorshipCount} directorships` : ''}. §18.3 capacity ${dimensions.capacity}/100.`
+        : `No observable wealth signal. Capacity ${dimensions.capacity}/100.`,
+    influence: connectionCount === 0
+      ? `No mapped connections. §18.1 influence ${dimensions.influence}/100 (weight 15%).`
+      : `${connectionCount} network connection${connectionCount > 1 ? 's' : ''}. §18.1 influence ${dimensions.influence}/100 (weight 15%).`,
+    strategicFit: `${STRATEGIC_FIT_LABEL(attrs, cat)} §18.1 strategic fit ${dimensions.strategicFit}/100 (weight 10%).`,
   };
 
   return {
     id, name,
     category: cat,
-    connectivity: connScore,
-    networkWorth: wealthScore,
+    priority: pct(pr.score),
+    confidence: pct(cf.score),
+    dimensions,
+    confidenceDimensions,
     pathCount: paths.length,
     bestPathScore: bestScore,
     minHops,
-    donorAffinity: affinityScore,
-    compositeScore: composite,
-    breakdown: { connectivity: connScore, wealth: wealthScore, paths: pathScore, affinity: affinityScore },
     explanations,
     bestPath: paths.length > 0 ? paths[0].path_names?.join(' → ') : (intro?.path?.join(' → ') ?? null),
     rootSupporter: paths.length > 0 ? paths[0].root_supporter : (intro?.root_supporter ?? null),
@@ -144,4 +186,22 @@ export function scoreLead(
     actionStatus: attrs.action_item?.status ?? null,
     existingDonor: null,
   };
+}
+
+/**
+ * Ranking methods exposed in the Decide "By X" views and the CSV export, each
+ * keyed to a §18.1 dimension (plus the default overall priority). Single source
+ * of truth so the table, the by-X pages, and the export agree.
+ */
+export type RankingMethod = 'priority' | 'introability' | 'affinity' | 'capacity' | 'influence' | 'confidence';
+
+export function rankingValue(l: ScoredLead, method: RankingMethod): number {
+  switch (method) {
+    case 'introability': return l.dimensions.introability;
+    case 'affinity': return l.dimensions.affinity;
+    case 'capacity': return l.dimensions.capacity;
+    case 'influence': return l.dimensions.influence;
+    case 'confidence': return l.confidence;
+    default: return l.priority;
+  }
 }

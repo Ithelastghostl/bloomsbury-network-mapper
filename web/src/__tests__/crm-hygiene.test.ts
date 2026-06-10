@@ -448,19 +448,27 @@ describe('matchExistingDonor', () => {
 // scoreLead
 // ===================================================================
 
-describe('scoreLead', () => {
-  it('exposes the config version and weights', () => {
-    expect(SCORING_CONFIG_VERSION).toBe('crm-composite-v1');
-    expect(SCORING_WEIGHTS).toEqual({ connectivity: 0.2, wealth: 0.3, paths: 0.3, affinity: 0.2 });
+describe('scoreLead (PRD §18.1 priority + §18.2 confidence)', () => {
+  it('exposes the §18.1 config version and canonical weights', () => {
+    expect(SCORING_CONFIG_VERSION).toBe('prd-18.1-v1');
+    // Re-exported PRIORITY_WEIGHTS from ranking/priority.
+    expect(SCORING_WEIGHTS).toEqual({ introability: 0.30, affinity: 0.25, capacity_signal: 0.20, influence: 0.15, strategic_fit: 0.10 });
     const sum = Object.values(SCORING_WEIGHTS).reduce((a, b) => a + b, 0);
     expect(sum).toBeCloseTo(1.0, 10);
   });
 
   it('handles an empty attributes object without crashing', () => {
     const s = scoreLead('id1', 'Nobody Inparticular', {}, 0, 0);
-    expect(s.compositeScore).toBe(0);
-    expect(s.connectivity).toBe(0);
-    expect(s.networkWorth).toBe(0);
+    // An empty lead still scores a low non-zero priority: strategic_fit has a
+    // 0.3 baseline (§18), so priority = 0.10 * 0.3 * 100 = 3. The other four
+    // dimensions are 0.
+    expect(s.priority).toBe(3);
+    expect(s.dimensions.strategicFit).toBe(30);
+    expect(s.confidence).toBeGreaterThanOrEqual(0);
+    expect(s.dimensions.influence).toBe(0);
+    expect(s.dimensions.capacity).toBe(0);
+    expect(s.dimensions.introability).toBe(0);
+    expect(s.dimensions.affinity).toBe(0);
     expect(s.pathCount).toBe(0);
     expect(s.minHops).toBeNull();
     expect(s.bestPath).toBeNull();
@@ -470,69 +478,95 @@ describe('scoreLead', () => {
     expect(s.category).toBe('discovered');
   });
 
-  // --- connectivity ---
-  it('connectivity normalises connectionCount/20*100', () => {
-    expect(scoreLead('i', 'n', {}, 0, 0).connectivity).toBe(0);
-    expect(scoreLead('i', 'n', {}, 10, 0).connectivity).toBe(50);
-    expect(scoreLead('i', 'n', {}, 20, 0).connectivity).toBe(100);
+  // --- influence dimension (was connectivity): connectionCount/20, saturates at 20 ---
+  it('influence normalises connection count and saturates at 20', () => {
+    expect(scoreLead('i', 'n', {}, 0, 0).dimensions.influence).toBe(0);
+    expect(scoreLead('i', 'n', {}, 10, 0).dimensions.influence).toBe(50);
+    expect(scoreLead('i', 'n', {}, 20, 0).dimensions.influence).toBe(100);
+    expect(scoreLead('i', 'n', {}, 1000, 0).dimensions.influence).toBe(100);
   });
 
-  it('connectivity is capped at 100', () => {
-    expect(scoreLead('i', 'n', {}, 40, 0).connectivity).toBe(100);
-    expect(scoreLead('i', 'n', {}, 1000, 0).connectivity).toBe(100);
+  // --- capacity dimension (§18.3): observable wealth band + directorships ---
+  it('capacity is 0 with no observable wealth signal', () => {
+    expect(scoreLead('i', 'n', {}, 0, 0).dimensions.capacity).toBe(0);
+    expect(scoreLead('i', 'n', { wealth_band: 'unknown' }, 0, 0).dimensions.capacity).toBe(0);
   });
 
-  // --- wealth ---
-  it('wealth is 0 when there is no estimated_net_worth_gbp', () => {
-    expect(scoreLead('i', 'n', {}, 0, 0).networkWorth).toBe(0);
-    expect(scoreLead('i', 'n', { wealth_band: 'high' }, 0, 0).networkWorth).toBe(0);
+  it('capacity rises with wealth band and saturates at the top band', () => {
+    expect(scoreLead('i', 'n', { wealth_band: '1m_5m' }, 0, 0).dimensions.capacity).toBe(40);
+    expect(scoreLead('i', 'n', { wealth_band: '25m_100m' }, 0, 0).dimensions.capacity).toBe(80);
+    expect(scoreLead('i', 'n', { wealth_band: '100m_plus' }, 0, 0).dimensions.capacity).toBe(100);
+    // Monotonic across bands.
+    const lo = scoreLead('i', 'n', { wealth_band: '1m_5m' }, 0, 0).dimensions.capacity;
+    const hi = scoreLead('i', 'n', { wealth_band: '5m_25m' }, 0, 0).dimensions.capacity;
+    expect(hi).toBeGreaterThan(lo);
   });
 
-  it('wealth is log-scaled when a figure is present', () => {
-    // log10(1e6)/9*100 = 6/9*100 ≈ 67
-    expect(scoreLead('i', 'n', { estimated_net_worth_gbp: 1_000_000 }, 0, 0).networkWorth).toBe(67);
-    // log10(1e9)/9*100 = 100
-    expect(scoreLead('i', 'n', { estimated_net_worth_gbp: 1_000_000_000 }, 0, 0).networkWorth).toBe(100);
-    // Monotonic: more wealth never scores lower.
-    const a = scoreLead('i', 'n', { estimated_net_worth_gbp: 1_000_000 }, 0, 0).networkWorth;
-    const b = scoreLead('i', 'n', { estimated_net_worth_gbp: 100_000_000 }, 0, 0).networkWorth;
-    expect(b).toBeGreaterThan(a);
+  it('capacity adds a directorship signal (§18.3 observable roles)', () => {
+    // band 1m_5m (0.4) + 2 directorships (0.1) = 0.5 -> 50
+    const s = scoreLead('i', 'n', { wealth_band: '1m_5m' }, 0, 0, { directorshipCount: 2 });
+    expect(s.dimensions.capacity).toBe(50);
   });
 
-  // --- affinity ---
-  it('affinity applies category bonuses', () => {
-    expect(scoreLead('i', 'n', { target_category: 'hnw_target' }, 0, 0).donorAffinity).toBe(40);
-    expect(scoreLead('i', 'n', { target_category: 'charity_donor' }, 0, 0).donorAffinity).toBe(30);
-    expect(scoreLead('i', 'n', { target_category: 'wealth_identified' }, 0, 0).donorAffinity).toBe(20);
-    expect(scoreLead('i', 'n', { target_category: 'discovered' }, 0, 0).donorAffinity).toBe(0);
+  // --- affinity dimension ---
+  it('affinity applies category weighting', () => {
+    expect(scoreLead('i', 'n', { target_category: 'charity_donor' }, 0, 0).dimensions.affinity).toBe(40);
+    expect(scoreLead('i', 'n', { target_category: 'hnw_target' }, 0, 0).dimensions.affinity).toBe(30);
+    expect(scoreLead('i', 'n', { target_category: 'wealth_identified' }, 0, 0).dimensions.affinity).toBe(15);
+    expect(scoreLead('i', 'n', { target_category: 'discovered' }, 0, 0).dimensions.affinity).toBe(0);
   });
 
-  it('affinity adds charityOverlap*15 and the philanthropy sector bonus', () => {
-    // discovered (0) + overlap 2*15 (30) + philanthropy (10) = 40
-    expect(
-      scoreLead('i', 'n', { target_category: 'discovered', sector: 'philanthropy' }, 0, 2).donorAffinity,
-    ).toBe(40);
-    // charity overlap component is capped at 50: 10*15 -> 50, not 150.
-    expect(scoreLead('i', 'n', { target_category: 'discovered' }, 0, 10).donorAffinity).toBe(50);
+  it('affinity adds charity overlap (capped) and philanthropy sector', () => {
+    // discovered (0) + overlap 2*0.15 (0.3) + philanthropy sector (0.1) = 0.4 -> 40
+    expect(scoreLead('i', 'n', { target_category: 'discovered', sector: 'philanthropy' }, 0, 2).dimensions.affinity).toBe(40);
+    // overlap caps at 0.5: 10*0.15 -> 0.5 -> 50
+    expect(scoreLead('i', 'n', { target_category: 'discovered' }, 0, 10).dimensions.affinity).toBe(50);
   });
 
-  it('affinity is capped at 100', () => {
-    // hnw_target (40) + overlap cap (50) + philanthropy (10) = 100 exactly.
-    const s = scoreLead('i', 'n', { target_category: 'hnw_target', sector: 'philanthropy' }, 0, 10);
-    expect(s.donorAffinity).toBe(100);
+  // --- introability dimension (was paths) ---
+  it('introability comes from the best path score', () => {
+    const attrs = { intro_paths: [introPath({ hops: 1, score: 90 })] };
+    expect(scoreLead('i', 'n', attrs, 0, 0).dimensions.introability).toBe(90);
   });
 
-  // --- composite blend ---
-  it('composite is the rounded weighted blend of the four components', () => {
-    const attrs = { target_category: 'hnw_target', estimated_net_worth_gbp: 1_000_000 };
+  it('introability falls back to hop distance with no scored path', () => {
+    expect(scoreLead('i', 'n', { introduction: { degree: 1 } }, 0, 0).dimensions.introability).toBe(60);
+    expect(scoreLead('i', 'n', { introduction: { degree: 2 } }, 0, 0).dimensions.introability).toBe(35);
+    expect(scoreLead('i', 'n', {}, 0, 0).dimensions.introability).toBe(0);
+  });
+
+  // --- §18.1 priority blend ---
+  it('priority is the §18.1 weighted blend of the five dimensions', () => {
+    const attrs = { target_category: 'hnw_target', wealth_band: '5m_25m', intro_paths: [introPath({ hops: 1, score: 80 })] };
     const s = scoreLead('i', 'n', attrs, 10, 0);
-    const expected = Math.round(
-      s.connectivity * 0.2 + s.networkWorth * 0.3 + s.breakdown.paths * 0.3 + s.donorAffinity * 0.2,
-    );
-    expect(s.compositeScore).toBe(expected);
-    // Also assert against the literal numbers: 50*.2 + 67*.3 + 0*.3 + 40*.2 = 38.1 -> 38
-    expect(s.compositeScore).toBe(38);
-    expect(s.breakdown).toEqual({ connectivity: 50, wealth: 67, paths: 0, affinity: 40 });
+    // priority = (.30*introability + .25*affinity + .20*capacity + .15*influence + .10*strategicFit)
+    // computed on the 0-1 dimension raws, then scaled to 0-100.
+    const blend =
+      0.30 * (s.dimensions.introability / 100) +
+      0.25 * (s.dimensions.affinity / 100) +
+      0.20 * (s.dimensions.capacity / 100) +
+      0.15 * (s.dimensions.influence / 100) +
+      0.10 * (s.dimensions.strategicFit / 100);
+    const expected = Math.round(blend * 100);
+    // Allow ±1: dimensions are rounded for display, the priority is rounded from raws.
+    expect(Math.abs(s.priority - expected)).toBeLessThanOrEqual(1);
+    expect(s.priority).toBeGreaterThan(0);
+    expect(s.priority).toBeLessThanOrEqual(100);
+  });
+
+  // --- §18.2 confidence ---
+  it('confidence reflects identity confirmation', () => {
+    const unconfirmed = scoreLead('i', 'n', {}, 0, 0).confidenceDimensions.identity;
+    const confirmed = scoreLead('i', 'n', { identity_confirmed: true }, 0, 0).confidenceDimensions.identity;
+    expect(confirmed).toBeGreaterThan(unconfirmed);
+    expect(confirmed).toBe(100);
+  });
+
+  it('confidence corroboration rises with distinct evidence', () => {
+    expect(scoreLead('i', 'n', {}, 0, 0, { evidenceCount: 0 }).confidenceDimensions.corroboration).toBe(10);
+    expect(scoreLead('i', 'n', {}, 0, 0, { evidenceCount: 1 }).confidenceDimensions.corroboration).toBe(40);
+    expect(scoreLead('i', 'n', {}, 0, 0, { evidenceCount: 2 }).confidenceDimensions.corroboration).toBe(70);
+    expect(scoreLead('i', 'n', {}, 0, 0, { evidenceCount: 5 }).confidenceDimensions.corroboration).toBe(100);
   });
 
   // --- paths / minHops ---

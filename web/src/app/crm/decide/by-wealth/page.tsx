@@ -4,5 +4,5 @@ import { LeadGeneratorTable } from '@/components/crm/lead-generator-table';
 
 export default async function ByWealthPage() {
   const leads = await loadScoredLeads(getAdminClient());
-  return <LeadGeneratorTable leads={leads} method="wealth" />;
+  return <LeadGeneratorTable leads={leads} method="capacity" />;
 }

@@ -4,5 +4,5 @@ import { LeadGeneratorTable } from '@/components/crm/lead-generator-table';
 
 export default async function DecidePage() {
   const leads = await loadScoredLeads(getAdminClient());
-  return <LeadGeneratorTable leads={leads} method="composite" />;
+  return <LeadGeneratorTable leads={leads} method="priority" />;
 }

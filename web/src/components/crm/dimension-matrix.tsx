@@ -21,10 +21,14 @@ interface Dim {
 const fmtGbp = (v: number) => v >= 1e9 ? `£${(v / 1e9).toFixed(1)}B` : v >= 1e6 ? `£${(v / 1e6).toFixed(0)}M` : v > 0 ? `£${(v / 1e3).toFixed(0)}K` : '—';
 
 const DIMS: Dim[] = [
-  { key: 'composite', label: 'Composite', get: l => l.compositeScore },
+  { key: 'priority', label: 'Priority /100', get: l => l.priority },
+  { key: 'confidence', label: 'Confidence /100', get: l => l.confidence },
+  { key: 'introability', label: 'Introability /100', get: l => l.dimensions.introability },
+  { key: 'affinity', label: 'Affinity /100', get: l => l.dimensions.affinity },
+  { key: 'capacity', label: 'Capacity /100', get: l => l.dimensions.capacity },
+  { key: 'influence', label: 'Influence /100', get: l => l.dimensions.influence },
+  { key: 'strategicFit', label: 'Strategic fit /100', get: l => l.dimensions.strategicFit },
   { key: 'connections', label: 'Connections', get: l => l.connectionCount },
-  { key: 'connectivity', label: 'Connectivity /100', get: l => l.connectivity },
-  { key: 'wealthScore', label: 'Wealth /100', get: l => l.networkWorth },
   { key: 'estimatedNw', label: 'Est. worth', get: l => l.estimatedNw, format: fmtGbp },
   { key: 'pathCount', label: 'Paths', get: l => l.pathCount },
   { key: 'bestPath', label: 'Best path /100', get: l => l.bestPathScore || null },
@@ -32,7 +36,6 @@ const DIMS: Dim[] = [
   { key: 'sharedOrgs', label: 'Shared orgs /25', get: l => l.introPaths[0]?.score_breakdown.shared_orgs ?? null },
   { key: 'reach', label: 'Intro reach /20', get: l => l.introPaths[0]?.score_breakdown.introducer_reach ?? null },
   { key: 'tier', label: 'Supp. tier /15', get: l => l.introPaths[0]?.score_breakdown.supporter_tier ?? null },
-  { key: 'affinity', label: 'Affinity /100', get: l => l.donorAffinity },
   { key: 'charity', label: 'Charity links', get: l => l.charityOverlap },
 ];
 
@@ -71,7 +74,7 @@ function Sparkline({ bins }: { bins: number[] }) {
 export function DimensionMatrix({ leads }: { leads: ScoredLead[] }) {
   const [search, setSearch] = useState('');
   const [hopFilter, setHopFilter] = useState<'all' | '1' | '2'>('all');
-  const [sortDim, setSortDim] = useState('composite');
+  const [sortDim, setSortDim] = useState('priority');
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(0);
   const pageSize = 50;

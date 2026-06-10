@@ -23,7 +23,9 @@ interface ActionItem {
   sector: string | null;
   bio: string | null;
   isHumanValidated: boolean;
-  breakdown: { connectivity: number; wealth: number; paths: number; affinity: number } | null;
+  // Frozen score snapshot. New actions carry the §18.1 dimensions; older ones
+  // may carry the legacy {connectivity,wealth,paths,affinity} composite keys.
+  breakdown: Record<string, number> | null;
   affinityRationale: string | null;
   bestPathReason: string | null;
   viaOrgs: string[] | null;
@@ -254,8 +256,8 @@ export function ActionBacklog({ items }: { items: ActionItem[] }) {
                               )}
                               {item.breakdown && (
                                 <p className="text-[9px] text-text-muted mt-1.5">
-                                  Score {item.leadScore}/100 · connectivity {item.breakdown.connectivity} · wealth {item.breakdown.wealth} · paths {item.breakdown.paths} · affinity {item.breakdown.affinity}
-                                  {item.rankingMethod && item.rankingMethod !== 'composite' ? ` · ranked by ${item.rankingMethod}` : ''}
+                                  Score {item.leadScore}/100 · {Object.entries(item.breakdown).map(([k, v]) => `${k} ${v}`).join(' · ')}
+                                  {item.rankingMethod && item.rankingMethod !== 'priority' && item.rankingMethod !== 'composite' ? ` · ranked by ${item.rankingMethod}` : ''}
                                 </p>
                               )}
                             </div>

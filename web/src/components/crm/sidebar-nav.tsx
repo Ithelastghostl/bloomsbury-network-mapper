@@ -27,10 +27,10 @@ const ORIENT = [
 
 const DECIDE = [
   { href: '/crm/decide', label: 'Lead Generator', icon: '⚡' },
-  { href: '/crm/decide/by-connectivity', label: 'By Connectivity', icon: '↗' },
-  { href: '/crm/decide/by-wealth', label: 'By Network Worth', icon: '£' },
-  { href: '/crm/decide/by-paths', label: 'By Intro Paths', icon: '⇉' },
-  { href: '/crm/decide/by-affinity', label: 'By Donor Affinity', icon: '♥' },
+  { href: '/crm/decide/by-connectivity', label: 'By Influence', icon: '↗' },
+  { href: '/crm/decide/by-wealth', label: 'By Capacity', icon: '£' },
+  { href: '/crm/decide/by-paths', label: 'By Introability', icon: '⇉' },
+  { href: '/crm/decide/by-affinity', label: 'By Affinity', icon: '♥' },
 ];
 
 const ACT = [

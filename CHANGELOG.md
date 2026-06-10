@@ -4,6 +4,10 @@ All notable changes to this project will be documented here. Format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- **Reconciled the two scoring systems onto the PRD §18 model.** The CRM Lead Generator previously used an off-PRD composite (connectivity 20 / wealth 30 / paths 30 / affinity 20). It now computes the canonical PRD §18.1 priority score (introability 30% / affinity 25% / capacity 20% / influence 15% / strategic-fit 10%) plus the §18.2 confidence score, reusing the exact formulae in `@/lib/ranking` — the same model the candidate pipeline uses (build rule 6). A new `crm-priority.ts` maps live CRM data (intro-path scores → introability, charity/category/sector → affinity, wealth band + directorships → §18.3 capacity, connections → influence, cause-aligned sector → strategic-fit; identity/relationship/corroboration/freshness → confidence). The Lead Generator, Dimension Matrix, By-X views (now By Introability / By Affinity / By Capacity / By Influence / By Confidence), CSV export, and action snapshots all show §18 dimensions + confidence. `lead-score.ts` keeps the `scoreLead` shaping; `SCORING_CONFIG_VERSION` is now `prd-18.1-v1`. Lead ordering changed accordingly (top leads are well-connected, high-capacity, warmly-introducible HNW individuals). The dormant `candidate_recommendations` §18 pipeline is unchanged; both surfaces now share one formula.
+
 ### Added
 
 - OODA presentation overhaul (per `OODA_IMPROVEMENT_PLAN.md`):

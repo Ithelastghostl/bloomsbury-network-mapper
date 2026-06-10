@@ -31,14 +31,14 @@ async function pageAll<T>(supabase: SupabaseClient, table: string, columns: stri
  * default behind a "show existing donors" toggle.
  */
 export async function computeScoredLeads(supabase: SupabaseClient): Promise<ScoredLead[]> {
-  const [persons, allConns, suppressions, exclusions] = await Promise.all([
+  const [persons, allConns, suppressions, exclusions, evidence] = await Promise.all([
     pageAll<{ canonical_entity_id: string; display_name: string; attributes: Record<string, unknown> }>(
       supabase, 'canonical_entities', 'canonical_entity_id, display_name, entity_type, attributes',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (q: any) => q.eq('entity_type', 'person'),
     ),
-    pageAll<{ connection_id: string; source_entity_id: string; connected_entity_id: string | null; via_organisation: string | null }>(
-      supabase, 'network_connections', 'connection_id, source_entity_id, connected_entity_id, via_organisation',
+    pageAll<{ connection_id: string; source_entity_id: string; connected_entity_id: string | null; via_organisation: string | null; connection_type: string }>(
+      supabase, 'network_connections', 'connection_id, source_entity_id, connected_entity_id, via_organisation, connection_type',
     ),
     loadSuppressions(supabase),
     pageAll<{ canonical_entity_id: string }>(
@@ -46,15 +46,24 @@ export async function computeScoredLeads(supabase: SupabaseClient): Promise<Scor
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (q: any) => q.eq('exclude_as_candidate', true),
     ),
+    // Evidence aggregates feed §18.2 confidence (corroboration + freshness).
+    pageAll<{ entity_id: string; created_at: string }>(
+      supabase, 'enrichment_evidence', 'entity_id, created_at',
+    ),
   ]);
 
   const conns = allConns.filter(c => !suppressions.isSuppressedConnection(c));
   const excludedIds = new Set(exclusions.map(e => e.canonical_entity_id));
 
   const connCount = new Map<string, number>();
+  const directorshipCount = new Map<string, number>();
   for (const c of conns) {
     if (c.source_entity_id) connCount.set(c.source_entity_id, (connCount.get(c.source_entity_id) ?? 0) + 1);
     if (c.connected_entity_id) connCount.set(c.connected_entity_id, (connCount.get(c.connected_entity_id) ?? 0) + 1);
+    // §18.3 capacity: directorship / trustee ties are observable-capacity signals.
+    if (c.source_entity_id && /DIRECTOR|TRUSTEE/i.test(c.connection_type ?? '')) {
+      directorshipCount.set(c.source_entity_id, (directorshipCount.get(c.source_entity_id) ?? 0) + 1);
+    }
   }
 
   const charityOverlap = new Map<string, number>();
@@ -63,6 +72,14 @@ export async function computeScoredLeads(supabase: SupabaseClient): Promise<Scor
     if (/foundation|trust|charit/i.test(via) && c.source_entity_id) {
       charityOverlap.set(c.source_entity_id, (charityOverlap.get(c.source_entity_id) ?? 0) + 1);
     }
+  }
+
+  const evidenceCount = new Map<string, number>();
+  const newestEvidence = new Map<string, string>();
+  for (const e of evidence) {
+    evidenceCount.set(e.entity_id, (evidenceCount.get(e.entity_id) ?? 0) + 1);
+    const cur = newestEvidence.get(e.entity_id);
+    if (!cur || e.created_at > cur) newestEvidence.set(e.entity_id, e.created_at);
   }
 
   return persons
@@ -74,6 +91,11 @@ export async function computeScoredLeads(supabase: SupabaseClient): Promise<Scor
         (p.attributes ?? {}) as any,
         connCount.get(p.canonical_entity_id) ?? 0,
         charityOverlap.get(p.canonical_entity_id) ?? 0,
+        {
+          evidenceCount: evidenceCount.get(p.canonical_entity_id) ?? 0,
+          newestEvidenceAt: newestEvidence.get(p.canonical_entity_id) ?? null,
+          directorshipCount: directorshipCount.get(p.canonical_entity_id) ?? 0,
+        },
       );
       if (excludedIds.has(p.canonical_entity_id)) {
         lead.existingDonor = { matchName: p.display_name, kind: 'excluded' };
@@ -83,8 +105,12 @@ export async function computeScoredLeads(supabase: SupabaseClient): Promise<Scor
       }
       return lead;
     })
-    .filter(l => l.compositeScore > 0 || l.pathCount > 0 || l.connectivity > 0)
-    .sort((a, b) => b.compositeScore - a.compositeScore);
+    // Keep only leads with a real signal. Note priority is never exactly 0 (the
+    // §18 strategic-fit baseline floors it at ~3 for everyone), so we filter on
+    // actual signals — a reachability path, a connection, wealth, or affinity —
+    // rather than priority > 0, to avoid surfacing zero-signal people.
+    .filter(l => l.pathCount > 0 || l.connectionCount > 0 || l.dimensions.capacity > 0 || l.dimensions.affinity > 0)
+    .sort((a, b) => b.priority - a.priority);
 }
 
 /** React-cached wrapper for server components (one load per render). */

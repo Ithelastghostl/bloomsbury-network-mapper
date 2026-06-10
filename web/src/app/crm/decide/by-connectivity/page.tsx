@@ -4,5 +4,5 @@ import { LeadGeneratorTable } from '@/components/crm/lead-generator-table';
 
 export default async function ByConnectivityPage() {
   const leads = await loadScoredLeads(getAdminClient());
-  return <LeadGeneratorTable leads={leads} method="connectivity" />;
+  return <LeadGeneratorTable leads={leads} method="influence" />;
 }
