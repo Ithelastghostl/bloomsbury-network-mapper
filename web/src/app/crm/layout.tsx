@@ -2,6 +2,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { fetchStats } from '@/lib/crm/queries';
 import { SidebarNav } from '@/components/crm/sidebar-nav';
 import { StatsBar } from '@/components/crm/stats-bar';
+import { GlobalSearch } from '@/components/crm/global-search';
 import type { CrmStats } from '@/lib/crm/types';
 
 // The CRM is a live read-only view of Supabase — render per request, never
@@ -24,7 +25,12 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen bg-pitch-black text-text-primary overflow-hidden">
       <SidebarNav />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <StatsBar stats={stats} />
+        <div className="flex items-center justify-between border-b border-border-subtle">
+          <StatsBar stats={stats} />
+          <div className="px-4">
+            <GlobalSearch />
+          </div>
+        </div>
         <main className="flex-1 overflow-y-auto px-6 py-6">
           {children}
         </main>

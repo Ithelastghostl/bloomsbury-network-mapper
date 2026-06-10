@@ -2,11 +2,11 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { enrichEntities } from '@/lib/crm/queries';
 import { EntityTable } from '@/components/crm/entity-table';
 import { PortfolioSummary } from '@/components/crm/portfolio-summary';
-import { isSupporter } from '@/lib/crm/seed-reference';
+import { isHnwTarget } from '@/lib/crm/seed-reference';
 
 type PersonRow = { canonical_entity_id: string; entity_type: string; display_name: string; source: string; attributes: Record<string, unknown> };
 
-export default async function SupportersPage() {
+export default async function HnwTargetsPage() {
   const supabase = getAdminClient();
 
   let allPersons: PersonRow[] | null = null;
@@ -21,17 +21,17 @@ export default async function SupportersPage() {
     allPersons = null;
   }
 
-  const supporters = (allPersons ?? []).filter(e => isSupporter(e.display_name));
+  const targets = (allPersons ?? []).filter(e => isHnwTarget(e.display_name));
 
-  const enriched = await enrichEntities(supabase, supporters);
+  const enriched = await enrichEntities(supabase, targets);
 
   return (
     <div>
       <PortfolioSummary entities={enriched} />
       <EntityTable
         entities={enriched}
-        title="Supporters"
-        description={`${supporters.length} donors and supporters from our friends & supporters list — the people we already know. The starting point for introduction paths.`}
+        title="HNW Targets"
+        description={`${targets.length} high-net-worth individuals we want to reach — the destination. Use the Introduction Paths graph to find warm routes from our supporters to these targets.`}
       />
     </div>
   );

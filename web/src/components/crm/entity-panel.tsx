@@ -201,29 +201,88 @@ export function EntityPanel({
                 )}
               </div>
 
-              {/* How to introduce — the warm path from one of our donors. */}
+              {/* Seed info — funder role and tier from the original spreadsheets */}
               {(() => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const intro = (entity.attributes ?? {})?.introduction as Record<string, any> | undefined;
-                if (!intro) return null;
+                const si = (entity.attributes ?? {}) as Record<string, any>;
+                const seedData = si.seed_info as Record<string, string | null> | undefined;
+                if (!seedData) return null;
+                const labels: string[] = [];
+                if (seedData.funder_sub_type) labels.push(seedData.funder_sub_type);
+                if (seedData.tier) labels.push(seedData.tier);
+                if (seedData.source === 'supporters') labels.push('Supporter');
+                else if (seedData.source === 'hnw_targets') labels.push('HNW Target');
+                if (!labels.length) return null;
+                return (
+                  <div className="flex flex-wrap gap-1.5">
+                    {labels.map((l, i) => (
+                      <span key={i} className="text-xs bg-gold/10 text-gold border border-gold/20 px-2 py-0.5 rounded">
+                        {l}
+                      </span>
+                    ))}
+                    {seedData.affiliation && (
+                      <span className="text-xs text-text-muted">{seedData.affiliation}</span>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Introduction paths — up to 3 scored routes from our supporters. */}
+              {(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const a = (entity.attributes ?? {}) as Record<string, any>;
+                const intro = a.introduction;
+                const paths = Array.isArray(a.intro_paths) ? a.intro_paths as Array<{ rank: number; score: number; hops: number; path_names: string[]; root_supporter: string; via_orgs: string[]; reason: string; score_breakdown: Record<string, number> }> : null;
+
+                if (!intro && !paths) return null;
+
+                if (intro?.degree === 0) {
+                  return (
+                    <div className="rounded-md border border-border-subtle bg-mid-charcoal/40 px-3 py-2.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">Introduction path</p>
+                      <p className="text-sm text-gold">Supporter — in our core network.</p>
+                    </div>
+                  );
+                }
+
+                if (paths && paths.length > 0) {
+                  return (
+                    <div className="rounded-md border border-border-subtle bg-mid-charcoal/40 px-3 py-2.5 space-y-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                        {intro?.is_hnw_target ? 'Paths to HNW target' : 'Introduction paths'} ({paths.length})
+                      </p>
+                      {paths.map((p, i) => (
+                        <div key={i} className={`rounded border px-2.5 py-2 ${i === 0 ? 'border-gold/20 bg-gold/[0.04]' : 'border-border-subtle'}`}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-text-muted">#{p.rank}</span>
+                            <span className={`text-xs font-mono px-1 py-0.5 rounded ${p.score >= 70 ? 'text-green-400 bg-green-400/10' : p.score >= 45 ? 'text-gold bg-gold/10' : 'text-text-muted bg-mid-charcoal'}`}>{p.score}</span>
+                            <span className="text-xs text-text-secondary">{p.path_names.join(' → ')}</span>
+                          </div>
+                          {p.via_orgs.length > 0 && (
+                            <p className="text-[10px] text-text-muted mt-1">via {p.via_orgs.slice(0, 2).join(', ')}</p>
+                          )}
+                          <p className="text-[10px] text-text-muted mt-0.5">{p.reason}</p>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+
+                // Fallback: single introduction
+                const rootName = intro?.root_supporter ?? intro?.root_donor;
+                if (!intro || !rootName) return null;
                 return (
                   <div className="rounded-md border border-border-subtle bg-mid-charcoal/40 px-3 py-2.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">How to introduce</p>
-                    {intro.degree === 0 ? (
-                      <p className="text-sm text-gold">Core donor — direct relationship.</p>
-                    ) : (
-                      <>
-                        <p className="text-sm text-text-secondary leading-relaxed">
-                          {intro.degree === 1 ? (
-                            <>Ask <span className="text-gold font-medium">{intro.root_donor}</span> to introduce you{intro.via ? <> — via {intro.via}</> : null}.</>
-                          ) : (
-                            <>Reach via <span className="text-gold font-medium">{intro.root_donor}</span> → <span className="text-text-primary">{intro.introducer}</span>{intro.via ? <> (via {intro.via})</> : null}.</>
-                          )}
-                        </p>
-                        {Array.isArray(intro.path) && intro.path.length > 1 && (
-                          <p className="text-xs text-text-muted mt-1">{intro.path.join('  →  ')}</p>
-                        )}
-                      </>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">Introduction path</p>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      {intro.degree === 1 ? (
+                        <>Ask <span className="text-gold font-medium">{rootName}</span> to introduce you{intro.via ? <> — via {intro.via}</> : null}.</>
+                      ) : (
+                        <>Reach via <span className="text-gold font-medium">{rootName}</span> → <span className="text-text-primary">{intro.introducer}</span>{intro.via ? <> (via {intro.via})</> : null}.</>
+                      )}
+                    </p>
+                    {Array.isArray(intro.path) && intro.path.length > 1 && (
+                      <p className="text-xs text-text-muted mt-1">{intro.path.join('  →  ')}</p>
                     )}
                   </div>
                 );

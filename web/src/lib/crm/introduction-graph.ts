@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { seedInfo } from './seed-reference';
+import { isSupporter, isHnwTarget } from './seed-reference';
 import type { GraphEdge } from './graph-queries';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -7,17 +7,17 @@ type SupabaseClient = any;
 const PAGE_SIZE = 1000;
 
 /**
- * The Introduction Graph answers: starting from our 62 donors (the hnw_targets),
- * who can introduce us to a new individual, and via which org/board?
+ * The Introduction Graph answers: starting from our 287 supporters (the people
+ * we already know), how do we reach the 62 HNW targets and other HNW individuals?
  *
- *   degree 0 = a donor (core introducer — we already know them)
- *   degree 1 = someone a donor knows directly (ask the donor to introduce us)
- *   degree 2 = someone a degree-1 person knows (we meet the degree-1 person, who
- *              then introduces us)
+ *   degree 0 = a supporter (we already know them — the starting point)
+ *   degree 1 = someone a supporter knows directly (one hop away)
+ *   degree 2 = someone a degree-1 person knows (two hops from a supporter)
+ *   hnw_target = one of the 62 HNW targets we want to reach (highlighted)
  *
  * Two people are linked if they share an org/board (co-director / co-membership)
  * or have a direct person↔person tie; the freshly-staged outward contacts are
- * leaf people linked to the donor that surfaced them.
+ * leaf people linked to the supporter that surfaced them.
  */
 
 export interface IntroNode {
@@ -25,14 +25,16 @@ export interface IntroNode {
   name: string;
   type: 'person' | 'company';
   connectionCount: number;
-  degree: number;            // 0 donor, 1 first-order, 2 second-order, -1 org
-  /** Whom to go through to reach this node (one degree closer to a donor). */
+  degree: number;            // 0 supporter, 1 first-order, 2 second-order, -1 org
+  /** Whom to go through to reach this node (one degree closer to a supporter). */
   introducer?: string;
-  /** The donor at the root of this node's shortest introduction path. */
-  rootDonor?: string;
+  /** The supporter at the root of this node's shortest introduction path. */
+  rootSupporter?: string;
   /** The org/board that links this node to its introducer. */
   via?: string;
   staged?: boolean;
+  /** Whether this node is one of the 62 HNW targets we want to reach. */
+  isHnwTarget?: boolean;
 }
 
 export interface IntroRoute {
@@ -40,19 +42,22 @@ export interface IntroRoute {
   name: string;
   degree: number;
   introducer: string;
-  rootDonor: string;
+  rootSupporter: string;
   via?: string;
-  path: string[];            // [donor, …, node] by display name
+  path: string[];            // [supporter, …, node] by display name
   staged: boolean;
+  isHnwTarget: boolean;
 }
 
 export interface IntroductionGraph {
   peopleChain: { nodes: IntroNode[]; edges: GraphEdge[] };
   viaOrgs: { nodes: IntroNode[]; edges: GraphEdge[] };
   routes: IntroRoute[];
-  donorCount: number;
+  supporterCount: number;
   firstOrder: number;
   secondOrder: number;
+  hnwReached: number;
+  hnwTotal: number;
 }
 
 interface EntityRow { canonical_entity_id: string; display_name: string; entity_type: string }
@@ -107,10 +112,14 @@ export function buildIntroductionGraph(tables: IntroTables): IntroductionGraph {
   const isPerson = (id: string) => id.startsWith('staged:') || type.get(id) === 'person';
   const isCompany = (id: string) => type.get(id) === 'company';
 
-  // Donors = persons in the hnw_targets seed list.
-  const donors = new Set<string>();
+  // Supporters = persons in the supporters seed list (our 287 — the starting point).
+  const supporters = new Set<string>();
+  // HNW targets = the 62 people we want to reach.
+  const hnwTargets = new Set<string>();
   for (const e of entities) {
-    if (e.entity_type === 'person' && seedInfo(e.display_name)?.source === 'hnw_targets') donors.add(e.canonical_entity_id);
+    if (e.entity_type !== 'person') continue;
+    if (isSupporter(e.display_name)) supporters.add(e.canonical_entity_id);
+    if (isHnwTarget(e.display_name)) hnwTargets.add(e.canonical_entity_id);
   }
 
   // ---- person↔person adjacency, each edge tagged with the linking org (via) ----
@@ -158,13 +167,13 @@ export function buildIntroductionGraph(tables: IntroTables): IntroductionGraph {
     }
   }
 
-  // ---- BFS from all donors at once (multi-source), tracking degree + path ----
+  // ---- BFS from all supporters at once (multi-source), tracking degree + path ----
   const degree = new Map<string, number>();
   const introducer = new Map<string, string>(); // node -> the neighbour one step closer
   const viaOf = new Map<string, string | undefined>();
-  const root = new Map<string, string>();        // node -> donor id at path root
+  const root = new Map<string, string>();        // node -> supporter id at path root
   let frontier: string[] = [];
-  for (const d of donors) { degree.set(d, 0); root.set(d, d); frontier.push(d); }
+  for (const s of supporters) { degree.set(s, 0); root.set(s, s); frontier.push(s); }
 
   for (let deg = 0; deg < 2 && frontier.length; deg++) {
     const next: string[] = [];
@@ -199,8 +208,9 @@ export function buildIntroductionGraph(tables: IntroTables): IntroductionGraph {
       id, name: name.get(id) ?? id, type: 'person', degree: deg,
       connectionCount: adj.get(id)?.size ?? 1,
       introducer: introId ? name.get(introId) : undefined,
-      rootDonor: root.get(id) ? name.get(root.get(id)!) : undefined,
+      rootSupporter: root.get(id) ? name.get(root.get(id)!) : undefined,
       via: viaOf.get(id), staged,
+      isHnwTarget: hnwTargets.has(id),
     };
   };
 
@@ -211,8 +221,9 @@ export function buildIntroductionGraph(tables: IntroTables): IntroductionGraph {
     routes.push({
       id, name: name.get(id) ?? id, degree: deg,
       introducer: introducer.get(id) ? (name.get(introducer.get(id)!) ?? '') : '',
-      rootDonor: root.get(id) ? (name.get(root.get(id)!) ?? '') : '',
+      rootSupporter: root.get(id) ? (name.get(root.get(id)!) ?? '') : '',
       via: viaOf.get(id), path: pathTo(id), staged: id.startsWith('staged:'),
+      isHnwTarget: hnwTargets.has(id),
     });
   }
 
@@ -250,12 +261,16 @@ export function buildIntroductionGraph(tables: IntroTables): IntroductionGraph {
   let firstOrder = 0, secondOrder = 0;
   for (const r of routes) { if (r.degree === 1) firstOrder++; else if (r.degree === 2) secondOrder++; }
 
+  const hnwReached = routes.filter(r => r.isHnwTarget).length;
+
   return {
     peopleChain: { nodes: chainNodes, edges: chainEdges },
     viaOrgs: { nodes: viaNodes, edges: orgEdges },
     routes,
-    donorCount: donors.size,
+    supporterCount: supporters.size,
     firstOrder,
     secondOrder,
+    hnwReached,
+    hnwTotal: hnwTargets.size,
   };
 }

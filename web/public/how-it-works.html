@@ -14,8 +14,8 @@
 <header class="hero">
   <p class="eyebrow">Bloomsbury Football Foundation</p>
   <h1>How the Platform Works</h1>
-  <p>A technical walkthrough of the Network Mapper — its data model, the seed/lead pipeline, the relationship graph, wealth augmentation, and the APIs behind each screen.</p>
-  <div class="meta">Technical Guide · Network Mapper</div>
+  <p>Technical reference covering data sources, scoring algorithms, graph computations, and the OODA decision framework.</p>
+  <div class="meta">Technical Guide &middot; Network Mapper</div>
 </header>
 
 <div class="wrap">
@@ -29,176 +29,191 @@
   <nav class="toc">
     <p class="toc-title">Contents</p>
     <ol>
-      <li><a href="#overview">What the platform is</a></li>
-      <li><a href="#data">The data model</a></li>
-      <li><a href="#triage">Seeds, Leads, Pipeline, All</a></li>
-      <li><a href="#wealth">Wealth &amp; evidence</a></li>
-      <li><a href="#graph">The relationship graph</a></li>
-      <li><a href="#introductions">Introductions &amp; warm paths</a></li>
-      <li><a href="#augment">Wealth augmentation loop</a></li>
-      <li><a href="#review">Dossier retry &amp; review flags</a></li>
+      <li><a href="#architecture">Architecture and data flow</a></li>
+      <li><a href="#sources">Source data</a></li>
+      <li><a href="#entities">Entity model</a></li>
+      <li><a href="#graph">Graph construction</a></li>
+      <li><a href="#introductions">Multi-path introduction routing</a></li>
+      <li><a href="#scoring">Lead scoring algorithm</a></li>
+      <li><a href="#characterisation">Characterisation pipeline</a></li>
+      <li><a href="#wealth">Wealth augmentation</a></li>
+      <li><a href="#supporter-reach">Supporter reach computation</a></li>
       <li><a href="#api">API surface</a></li>
-      <li><a href="#stack">Stack &amp; rendering</a></li>
+      <li><a href="#stack">Stack</a></li>
     </ol>
   </nav>
 
-  <section id="overview">
-    <h2>Overview</h2>
-    <p class="section-title">What the platform is</p>
-    <p>The Network Mapper is a <strong>read-only dashboard</strong> over a graph of people and organisations connected to Bloomsbury Football Foundation. It answers three questions: who are the high-net-worth individuals around us, how are they connected, and what is the warmest route to reach them.</p>
-    <p>Everything on screen is data already stored in the database. The dashboard displays; it does not run enrichment on its own. Its one action, <span class="pill gold">Augment &amp; Persist</span>, only ever runs when a person clicks the button. Nothing fires automatically in the background.</p>
+  <section id="architecture">
+    <h2>Architecture and data flow</h2>
+    <p>The platform follows an <strong>Observe &rarr; Orient &rarr; Decide &rarr; Act</strong> loop. Data flows in one direction: source spreadsheets are ingested into Supabase, enriched by agent workflows, projected into graphs and scores, and surfaced for human decision-making.</p>
     <div class="card-grid">
-      <div class="card"><h3>~1,700</h3><p>person entities in the graph</p></div>
-      <div class="card"><h3>~1,050</h3><p>companies &amp; charities</p></div>
-      <div class="card"><h3>~3,400</h3><p>relationships &amp; shared boards</p></div>
+      <div class="card"><h3>~1,700</h3><p>person entities</p></div>
+      <div class="card"><h3>~1,050</h3><p>companies and charities</p></div>
+      <div class="card"><h3>~3,700</h3><p>network connections</p></div>
+      <div class="card"><h3>~1,100</h3><p>co-director edges</p></div>
     </div>
   </section>
 
-  <section id="data">
-    <h2>Foundations</h2>
-    <p class="section-title">The data model</p>
-    <p>All data lives in a Supabase Postgres database under the <code>app</code> schema. The dashboard reads a handful of core tables:</p>
+  <section id="sources">
+    <h2>Source data</h2>
+    <p>Two Salesforce-exported spreadsheets in <code>Seed_reference/</code>:</p>
     <table>
-      <thead><tr><th>Table</th><th>What it holds</th></tr></thead>
+      <thead><tr><th>File</th><th>Contents</th><th>Count</th></tr></thead>
       <tbody>
-        <tr><td><code>canonical_entities</code></td><td>The master list of every person and company — id, display name, type, and a flexible <code>attributes</code> field (wealth data, the warm-path <code>introduction</code> route, the retry <code>dossier</code>, and review flags).</td></tr>
-        <tr><td><code>wealth_estimates</code></td><td>Wealth assessments per entity: a band, a score, a confidence, and structured evidence.</td></tr>
-        <tr><td><code>enrichment_evidence</code></td><td>Supporting evidence rows — source, layer, text, URL, confidence — backing a wealth or status claim.</td></tr>
-        <tr><td><code>network_connections</code></td><td>Directed relationships between two entities (person→person and person→company), with a type and the organisation that links them.</td></tr>
-        <tr><td><code>co_director_edges</code></td><td>People who share a company board, sourced from Companies House filings.</td></tr>
-        <tr><td><code>staged_entities</code></td><td>Outward contacts surfaced by network mapping, pending promotion — the &ldquo;new individuals&rdquo; a donor could introduce us to.</td></tr>
-        <tr><td><code>introduction_routes</code></td><td>Warm introduction paths to a target, with the introducer and the organisation that links them.</td></tr>
+        <tr><td>Friends &amp; Supporters</td><td>Our core network: donors, strategic contacts, key introducers. Fields: name, funder type, funder sub-type, tier (Priority/Important), affiliation, email, introduced-by.</td><td>283</td></tr>
+        <tr><td>HNW Target Donors</td><td>High-net-worth individuals we want to reach. Same field structure.</td><td>68</td></tr>
       </tbody>
     </table>
-    <p>When a page needs to show people, it loads their canonical records and then calls <code>enrichEntities()</code>, which fetches wealth, evidence and connections for the whole batch in parallel and stitches them together into an <strong>EnrichedEntity</strong> — the shape every screen renders from.</p>
+    <p>These are parsed into <code>seed-people.json</code> (351 entries) which ships with the app. Each entry carries <code>name</code>, <code>source</code> (supporters/hnw_targets), <code>tier</code>, <code>funder_sub_type</code>, <code>affiliation</code>, and <code>introduced_by</code>. Name matching uses <code>normaliseSeedName()</code> which lowercases, strips honorific prefixes (Sir, Dr, Prof) and trailing honours (CBE, OBE, etc.), and collapses whitespace.</p>
+    <p>An additional corpus of <strong>20,444 Charity Commission filings</strong> (1.6 GB) at <code>MKData/markdown/</code> provides local evidence for trustee roles, related-party transactions, and charity financial scale.</p>
   </section>
 
-  <section id="triage">
-    <h2>The funnel</h2>
-    <p class="section-title">Seeds → Leads → Pipeline → All</p>
-    <p>People are sorted into four buckets. This is the spine of the whole tool: it separates <em>who we already have</em> from <em>who we’ve discovered around them</em>.</p>
-
-    <div class="card">
-      <h3><span class="pill gold">Seeds</span> the people we already have</h3>
-      <p>The original supporter and target list: the people the project started from, each with research reports and the prompts behind them. Membership is defined by name. A curated list of <strong>323 seed people</strong> (from the HNW and supporter spreadsheets) ships with the app as <code>seed-people.json</code>, and a person is a seed when their name matches that list via <code>isSeedPerson()</code>. That match normalises names — lowercases them, strips titles like <em>Sir/Dr</em> and honours like <em>CBE</em> — so spelling variants still resolve. About <strong>318 of the 323 are now in the database</strong>; the handful left are personal contacts of the founder with no public record to research.</p>
-    </div>
-
-    <div class="card">
-      <h3><span class="pill blue">Leads</span> discovered &amp; already enriched</h3>
-      <p>People we found <em>through</em> the seeds (co-directors, fellow trustees, family) who are <strong>not</strong> seeds themselves but already carry a wealth estimate or evidence. Filter: <code>!isSeedPerson() &amp;&amp; (has wealth OR has evidence)</code>. These are the warm prospects.</p>
-    </div>
-
-    <div class="card">
-      <h3><span class="pill grey">Pipeline</span> discovered, not yet researched</h3>
-      <p>Discovered non-seed people with no wealth or evidence yet — the raw backlog awaiting research. Filter: <code>!isSeedPerson() &amp;&amp; no wealth &amp;&amp; no evidence</code>.</p>
-    </div>
-
-    <div class="card">
-      <h3><span class="pill grey">All</span> everyone</h3>
-      <p>Every person entity, unfiltered. The complete view.</p>
-    </div>
-
-    <div class="note"><strong>The buckets are a clean partition.</strong> Seeds + Leads + Pipeline = All — no person is counted twice, none is missed.</div>
-  </section>
-
-  <section id="wealth">
-    <h2>Signals</h2>
-    <p class="section-title">Wealth &amp; evidence</p>
-    <p>Each person can carry a <strong>wealth band</strong> — the headline signal used for prioritisation and sorting:</p>
-    <p>
-      <span class="pill gold">£100M+</span>
-      <span class="pill gold">£25M–100M</span>
-      <span class="pill blue">£5M–25M</span>
-      <span class="pill grey">£1M–5M</span>
-      <span class="pill grey">Unknown</span>
-    </p>
-    <p>A band is backed by a <strong>score</strong> (0–1), a <strong>confidence</strong> (0–1), an estimated net worth in GBP, a source of wealth, and a written summary with citations. The <strong>portfolio summary</strong> on the Leads view aggregates these — combined &amp; average net worth, band distribution, and the best-connected people — to give a one-glance read on a whole list.</p>
+  <section id="entities">
+    <h2>Entity model</h2>
+    <p>All data lives in Supabase Postgres under the <code>app</code> schema.</p>
+    <table>
+      <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>canonical_entities</code></td><td>Master record for every person and company. The <code>attributes</code> jsonb field holds: wealth data, introduction routes (<code>intro_paths</code>), seed info (<code>seed_info</code>), characterisation (<code>current_role</code>, <code>employer</code>, <code>sector</code>, <code>bio_summary</code>), action items, review flags, and target category.</td></tr>
+        <tr><td><code>wealth_estimates</code></td><td>Per-entity wealth assessment: band, score, confidence, assessed_at.</td></tr>
+        <tr><td><code>enrichment_evidence</code></td><td>Supporting evidence rows with source, layer (A/B/C), text, URL, confidence.</td></tr>
+        <tr><td><code>network_connections</code></td><td>Relationships: person&rarr;person and person&rarr;company, typed (DIRECTOR_OF, CO_DIRECTOR_OF, FAMILY_MEMBER, CO_TRUSTEE, ASSOCIATED_WITH, ADVISOR_TO).</td></tr>
+        <tr><td><code>co_director_edges</code></td><td>Companies House shared board memberships.</td></tr>
+        <tr><td><code>staged_entities</code></td><td>Outward contacts pending promotion into the main entity table.</td></tr>
+      </tbody>
+    </table>
+    <p>Entity attributes carry structured fields that accumulate over time:</p>
+    <table>
+      <thead><tr><th>Field</th><th>Set by</th><th>Contains</th></tr></thead>
+      <tbody>
+        <tr><td><code>seed_info</code></td><td>compute-introductions</td><td>source, tier, funder_sub_type, affiliation, introduced_by (from spreadsheet)</td></tr>
+        <tr><td><code>introduction</code></td><td>compute-multi-paths</td><td>degree, introducer, via, root_supporter, path[], is_hnw_target, is_supporter</td></tr>
+        <tr><td><code>intro_paths</code></td><td>compute-multi-paths</td><td>Array of up to 3 scored introduction routes (see below)</td></tr>
+        <tr><td><code>target_category</code></td><td>compute-multi-paths</td><td>hnw_target, wealth_identified, or charity_donor</td></tr>
+        <tr><td><code>action_item</code></td><td>send-to-backlog API</td><td>status, assignee, notes, lead context, timestamps</td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section id="graph">
-    <h2>Connections</h2>
-    <p class="section-title">The relationship graph</p>
-    <p>There are three graph views, each answering a different question.</p>
+    <h2>Graph construction</h2>
+    <p>The social graph is built at render time from three edge sources, merged and deduplicated:</p>
+    <ol>
+      <li><strong>Direct person&rarr;person connections</strong> from <code>network_connections</code> (CO_DIRECTOR_OF, FAMILY_MEMBER, etc.)</li>
+      <li><strong>Co-membership</strong>: two people linked to the same company in <code>network_connections</code> become an implicit person&rarr;person edge. Companies with &gt;50 members are skipped to avoid hairball clusters.</li>
+      <li><strong>Co-director edges</strong> from <code>co_director_edges</code> (Companies House shared boards).</li>
+    </ol>
+    <p>Each resulting edge carries a <strong>weight</strong> (number of distinct reasons the two people are linked) and a set of <strong>provenance</strong> labels. Connected components are labelled for cluster colouring.</p>
+    <p>The <strong>1-hop toggle</strong> filters the rendered graph to show only nodes directly connected to at least one supporter (Orbit) or nodes at degree 0-1 (Introduction Graph), stripping out second-order connections for a cleaner view.</p>
 
-    <h3>Orbit — how people cluster</h3>
-    <p>The Orbit view draws an edge <strong>between two people</strong> whenever they share something. It builds those person-to-person links from three sources, then merges duplicates:</p>
-    <ul>
-      <li><strong>Direct relationships</strong> — existing person→person links (co-director, family member, co-trustee, associate).</li>
-      <li><strong>Shared company</strong> — if two people are both attached to the same company, they’re linked (the company is collapsed into a direct bond). Companies with more than 50 members are skipped so a giant employer doesn’t create a hairball.</li>
-      <li><strong>Shared boards</strong> — Companies House co-director records.</li>
-    </ul>
-    <p>Each resulting bond carries a <strong>weight</strong> = the number of distinct reasons two people are linked, so stronger ties draw thicker. Nodes are coloured by <strong>community</strong> (connected-component), which is what turns a scattered cloud into readable clusters. A toggle switches to <strong>“+ Institutions”</strong> (bipartite) mode, which puts companies back in as visible connector nodes so you can see <em>which</em> organisation links a group.</p>
-    <p>Our <strong>62 HNW donors</strong> (the <code>hnw_targets</code> cohort) are painted a distinct burnt-orange across the graphs, with their own legend entry, so the people we already have a relationship with stand out from everyone discovered around them.</p>
-
-    <h3>Institutions — individuals &amp; companies</h3>
-    <p>People linked to the (non-charity) companies they direct or advise — boards and directorships.</p>
-
-    <h3>Charities — charities at the centre</h3>
-    <p>People linked to charities and foundations, surfacing trustees and supporters. A company counts as a charity if its name contains words like <em>foundation, trust, charity, charitable, endowment</em>, <strong>or</strong> it has Charity Commission evidence — more reliable than keywords alone.</p>
-
-    <div class="note"><strong>Why the graph looks connected now.</strong> The underlying relationships were always there. The earlier view dropped the shared-board edges and used weak layout forces, so it rendered as scattered dots. Folding in co-directorships and shared companies, then colouring by community, reveals the single large network underneath — most people sit in one connected map.</div>
+    <h3>Supporter Reach</h3>
+    <p>For each supporter, the graph counts their 1st-degree neighbours who are HNW targets and sums the estimated net worth of all 1st-degree contacts. This produces two metrics per supporter: <strong>HNW contact count</strong> and <strong>network worth</strong>. The visualisation sizes bubble nodes by these metrics.</p>
   </section>
 
   <section id="introductions">
-    <h2>Warm paths</h2>
-    <p class="section-title">Introductions — who can introduce us</p>
-    <p>Knowing a prospect is wealthy is only half the job; the other half is <strong>who of ours can get us in the room</strong>. The <strong>Introductions</strong> section (its own item in the sidebar) answers that with a donor-rooted graph.</p>
-    <p>It roots on the <strong>62 HNW donors</strong> and walks outward two degrees over a people-only graph — two people are linked when they share a board/company or have a direct tie, and freshly-staged outward contacts hang off the donor that surfaced them. Each degree is a distinct colour:</p>
+    <h2>Multi-path introduction routing</h2>
+    <p>The introduction system finds paths from our 283 supporters to every reachable person within 2 hops.</p>
+
+    <h3>BFS computation</h3>
+    <p><code>compute-introductions.ts</code> runs a multi-source breadth-first search rooted on all supporters simultaneously:</p>
     <ul>
-      <li><span class="pill gold">Degree 0 — donor</span> someone we already have a relationship with (gold).</li>
-      <li><span class="pill blue">Degree 1 — first order</span> a person a donor knows directly → <em>ask the donor to introduce us</em> (teal).</li>
-      <li><span class="pill grey">Degree 2 — second order</span> a person known by a first-order contact → <em>we meet the first-order person, who introduces us onward</em> (orange).</li>
+      <li><strong>Degree 0</strong> = supporter (our person)</li>
+      <li><strong>Degree 1</strong> = someone a supporter knows directly</li>
+      <li><strong>Degree 2</strong> = someone a degree-1 person knows</li>
     </ul>
-    <p>Two tabs render the same paths differently: <strong>People chain</strong> (person→person, coloured by degree) and <strong>Via organisations</strong> (the linking boards shown as their own nodes).</p>
-    <p>The same routing is written onto each person for their dossier. <code>compute-introductions.ts</code> runs the donor-rooted breadth-first search and stores <code>attributes.introduction = { degree, introducer, via, root_donor, path[] }</code> on every person within two hops of a donor. Their profile panel then shows a <strong>“How to introduce”</strong> line — e.g. <em>“Ask Howard Shore to introduce you — via Shore Capital,”</em> or for a second-order contact the full chain <em>donor → first-order person → target</em>.</p>
+    <p>The BFS tracks the introducer, the linking organisation (via), and the root supporter for each reached node. Results are stored on <code>attributes.introduction</code>.</p>
+
+    <h3>Multi-path scoring</h3>
+    <p><code>compute-multi-paths.ts</code> finds up to <strong>3 distinct introduction paths</strong> per target person. For each target, it reverse-walks from the target through the adjacency graph to find all supporter-rooted paths of length 1 or 2, then scores each:</p>
+    <table>
+      <thead><tr><th>Factor</th><th>Weight</th><th>Calculation</th></tr></thead>
+      <tbody>
+        <tr><td>Hops</td><td>40%</td><td>1-hop = 40pts, 2-hop = 20pts</td></tr>
+        <tr><td>Shared orgs</td><td>25%</td><td>min(1, shared_org_count / 3) &times; 25. More shared boards or charities between people along the path = stronger bond.</td></tr>
+        <tr><td>Introducer reach</td><td>20%</td><td>min(1, introducer_degree / 15) &times; 20. A well-connected intermediate person makes a better introducer.</td></tr>
+        <tr><td>Supporter tier</td><td>15%</td><td>Priority = 15pts, Important = 9pts, none = 3pts. Higher-tier supporters are more valuable as introduction roots.</td></tr>
+      </tbody>
+    </table>
+    <p>Paths are sorted by score, then the top 3 are picked with a <strong>diversity preference</strong>: the algorithm prefers different root supporters and different intermediaries before accepting duplicate routes. Each path carries a plain-English <code>reason</code> field explaining why it scores well.</p>
+    <p>Targets are classified: <code>hnw_target</code> (from the spreadsheet), <code>wealth_identified</code> (has wealth data), or <code>charity_donor</code> (connected to charity-like organisations).</p>
   </section>
 
-  <section id="augment">
-    <h2>Enrichment</h2>
-    <p class="section-title">The wealth augmentation loop</p>
-    <p>Research is done by a local Claude Code agent using web search — there is <strong>no API key</strong> in the app and the dashboard never calls a model itself. Instead it acts as the queue and the store. The loop:</p>
-    <ol class="steps">
-      <li><strong>Request</strong> — On a Lead’s detail page, a user clicks <span class="pill gold">Augment &amp; Persist</span>. This sets <code>augmentation_requested</code> on that person. (Explicit click only — nothing auto-fires.)</li>
-      <li><strong>Queue</strong> — The person now appears in <code>GET /api/crm/augment-queue</code>, returned in the exact shape the research tooling expects.</li>
-      <li><strong>Research</strong> — The local agent reads the queue and researches each person via web search (net worth, source of wealth, evidence with citations).</li>
-      <li><strong>Persist</strong> — The agent POSTs results to <code>/api/entities/{id}/augment</code>. The server writes evidence, upserts the wealth estimate, and stamps <code>wealth_augmented_at</code> — which removes the queue flag and <strong>promotes the Lead into a Seed-quality profile</strong>.</li>
+  <section id="scoring">
+    <h2>Lead scoring algorithm</h2>
+    <p>The Lead Generator (<strong>Decide</strong> section) computes a composite score for every non-supporter person:</p>
+    <table>
+      <thead><tr><th>Dimension</th><th>Weight</th><th>Formula</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Connectivity</strong></td><td>20%</td><td><code>min(100, connection_count / 20 &times; 100)</code>. Normalised count of network connections. A person with 20+ connections scores 100.</td></tr>
+        <tr><td><strong>Wealth</strong></td><td>30%</td><td><code>min(100, log10(net_worth) / 9 &times; 100)</code>. Log-scaled so both millionaires and billionaires register, but higher wealth scores proportionally more.</td></tr>
+        <tr><td><strong>Paths</strong></td><td>30%</td><td><code>min(100, path_count/3 &times; 50 + best_path_score/100 &times; 50)</code>. Rewards both having multiple routes and having one high-quality route.</td></tr>
+        <tr><td><strong>Donor affinity</strong></td><td>20%</td><td>Base: <code>min(50, charity_overlap &times; 15)</code> + category bonus (HNW target +40, charity donor +30, wealth identified +20) + philanthropy sector bonus (+10).</td></tr>
+      </tbody>
+    </table>
+    <p>Composite = <code>round(connectivity &times; 0.2 + wealth &times; 0.3 + paths &times; 0.3 + affinity &times; 0.2)</code>. The table can be re-sorted by any single dimension by clicking column headers.</p>
+    <p>When a lead is sent to the Action Backlog, all scoring context travels with it: the composite score, breakdown, best path, root supporter, wealth band, sector, and bio.</p>
+  </section>
+
+  <section id="characterisation">
+    <h2>Characterisation pipeline</h2>
+    <p>The <code>characterize-connections</code> workflow fills in basic profiles for uncharacterised persons. It runs in parallel batches of 30:</p>
+    <ol>
+      <li><strong>Select</strong>: queries Supabase for persons missing profile keys (<code>current_role</code>, <code>employer</code>, <code>sector</code>, <code>wealth_band</code>, etc.), ordered by connection count (most-connected first).</li>
+      <li><strong>Characterize</strong>: one parallel agent per person runs web searches to find their role, employer, sector, location, a one-sentence bio, and a conservative wealth approximation.</li>
+      <li><strong>Persist</strong>: writes profile attributes and upserts <code>wealth_estimates</code> for persons with non-unknown wealth bands.</li>
     </ol>
-    <p>The write endpoints are admin-gated. For local use a <code>CRM_LOCAL_MODE</code> flag bypasses that gate (only when not in production), so the tethered agent can persist without a login.</p>
-    <div class="note"><strong>The same local-agent model powers the deeper passes.</strong> <em>Network mapping</em> walks outward from a donor to discover their contacts (written to <code>staged_entities</code> and the introduction routes above); the <em>pipeline augmentation</em> stamps general-level context on the discovered backlog from stored relationships only. All of it runs on the local Claude Code subscription — never a metered API key.</div>
+    <p>Wealth approximation during characterisation is conservative: published Rich List figures are used at face value; inferred estimates from strong signals (PE principal, hedge fund founder, major shareholdings) are banded with low confidence (0.3-0.5); no signal results in <code>wealth_band: "unknown"</code>.</p>
   </section>
 
-  <section id="review">
-    <h2>Quality</h2>
-    <p class="section-title">Dossier retry &amp; review flags</p>
-    <p>Some discovered people — often private supporters with no public footprint — can’t be confidently identified on a first pass. Rather than guess or invent a profile, the platform runs a <strong>charity-anchored retry</strong> and flags them for a human.</p>
-    <p><code>dossier-retry.ts</code> is a two-step harness: <code>--list</code> prints the queue (anyone carrying <code>needs_human_review</code>, or an unconfirmed identity), the local agent researches each one anchored on Bloomsbury Football itself (its Charity Commission record, trustees, donor pages, board co-occurrence), and <code>--apply</code> writes a best-effort <code>attributes.dossier</code> — summary, candidate leads, sources, reviewer notes — and sets the flags. The flag only clears when a confident identity is found; otherwise the person stays queued for the next retry.</p>
-    <p>When <code>needs_human_review</code> is set, the profile panel shows a <span class="pill gold">⚠ Needs human review</span> banner with the reason, the dossier summary, and <strong>“leads to chase”</strong> — so a fundraiser opening the record immediately knows it needs care and what to check next.</p>
+  <section id="wealth">
+    <h2>Wealth augmentation</h2>
+    <p>For deeper research, the <code>augment-people</code> workflow runs a multi-phase pipeline per person:</p>
+    <ol>
+      <li><strong>Research</strong>: web search across net-worth databases (Rich Lists, Forbes, Bloomberg), Companies House shareholdings, and local charity filings. The v10 research prompt guides structured extraction.</li>
+      <li><strong>Anchored search</strong>: for supporters, the agent reads their affiliation and "introduced by" from the spreadsheet, then searches with those anchors to disambiguate common names.</li>
+      <li><strong>Adversarial verify</strong>: a separate agent audits whether the net-worth figure is genuinely substantiated by a real, on-topic source URL. Unsourced figures are downgraded to <code>wealth_band: "unknown"</code> (the "source-or-unknown gate").</li>
+      <li><strong>Persist</strong>: writes via <code>storeWealthResult()</code> which inserts enrichment_evidence, upserts wealth_estimates, and stamps <code>wealth_augmented_at</code>.</li>
+    </ol>
+    <p>Wealth bands: <code>1m_5m</code> (1M-5M), <code>5m_25m</code> (5M-25M), <code>25m_100m</code> (25M-100M), <code>100m_plus</code> (100M+), <code>unknown</code>.</p>
+  </section>
+
+  <section id="supporter-reach">
+    <h2>Supporter reach computation</h2>
+    <p>The Supporter Reach view (<code>loadSupporterReach()</code>) computes per-supporter metrics:</p>
+    <ul>
+      <li><strong>1st-degree HNW count</strong>: how many of the 68 HNW targets this supporter is directly connected to in the adjacency graph.</li>
+      <li><strong>1st-degree network worth</strong>: sum of <code>estimated_net_worth_gbp</code> (from entity attributes) or band midpoint (from wealth_estimates) for all direct contacts. Band midpoints: 100m_plus = 200M, 25m_100m = 50M, 5m_25m = 12M, 1m_5m = 2.5M.</li>
+      <li><strong>Total reach count</strong>: number of unique 1st-degree neighbours.</li>
+    </ul>
+    <p>The graph visualisation sizes bubbles by the selected metric (HNW count or network worth). The table view exposes all metrics sortable.</p>
   </section>
 
   <section id="api">
-    <h2>Interfaces</h2>
-    <p class="section-title">API surface</p>
+    <h2>API surface</h2>
     <table>
       <thead><tr><th>Endpoint</th><th>Purpose</th></tr></thead>
       <tbody>
-        <tr><td><code>GET /api/crm/augment-queue</code></td><td>List people requested for research.</td></tr>
-        <tr><td><code>POST /api/crm/entities/{id}/request-augmentation</code></td><td>Flag a person for research (the button).</td></tr>
-        <tr><td><code>POST /api/entities/{id}/augment</code></td><td>Persist researched wealth → promote to seed.</td></tr>
-        <tr><td><code>GET /api/introduction-routes</code></td><td>Warm introduction routes to a target (or from an introducer).</td></tr>
-        <tr><td><code>GET /api/crm/stats</code></td><td>Network-wide counts for the header bar.</td></tr>
+        <tr><td><code>GET /api/crm/search?q=</code></td><td>Global person/org search (ilike on display_name, limit 20)</td></tr>
+        <tr><td><code>GET /api/crm/stats</code></td><td>Network-wide counts for the header bar</td></tr>
+        <tr><td><code>GET /api/crm/entities/{id}/profile</code></td><td>Full enriched profile for one entity</td></tr>
+        <tr><td><code>POST /api/crm/entities/{id}/request-augmentation</code></td><td>Queue a person for wealth research</td></tr>
+        <tr><td><code>POST /api/crm/entities/{id}/send-to-backlog</code></td><td>Send a lead to the Action Backlog with scoring context</td></tr>
+        <tr><td><code>POST /api/crm/entities/{id}/update-action</code></td><td>Update action item status/notes</td></tr>
+        <tr><td><code>GET /api/crm/augment-queue</code></td><td>List people queued for research</td></tr>
+        <tr><td><code>POST /api/entities/{id}/augment</code></td><td>Persist researched wealth result</td></tr>
       </tbody>
     </table>
   </section>
 
   <section id="stack">
-    <h2>Under the hood</h2>
-    <p class="section-title">Stack &amp; rendering</p>
+    <h2>Stack</h2>
     <ul>
-      <li><strong>Next.js (App Router)</strong> with React Server Components — pages fetch from Supabase on the server.</li>
-      <li><strong>Supabase Postgres</strong> (schema <code>app</code>) accessed with a service-role client; every request has an <strong>8-second timeout with retries</strong> so a flaky connection fails fast instead of hanging, and pages degrade to a friendly error card rather than crashing.</li>
-      <li><strong>D3</strong> for the force-directed graph; the layout is computed and then frozen, so nodes settle and stop rather than drifting forever.</li>
-      <li>The CRM is <strong>rendered per request</strong> (never prerendered at build), so it always reflects current data and the build never depends on the database.</li>
-      <li>Styling is a light theme — Bloomsbury gold on white — applied through CSS design tokens.</li>
+      <li><strong>Next.js 16</strong> (App Router, React Server Components) &mdash; pages fetch from Supabase on the server.</li>
+      <li><strong>Supabase Postgres</strong> (schema <code>app</code>), service-role client with 8-second timeout and retries.</li>
+      <li><strong>D3.js</strong> for force-directed graphs. Layouts are computed synchronously and frozen (nodes settle, then stop).</li>
+      <li><strong>Tailwind CSS</strong> with a dark theme (Bloomsbury gold on charcoal).</li>
+      <li><strong>Claude Code workflows</strong> for batch characterisation and wealth augmentation &mdash; local session, no API keys.</li>
+      <li>Pages are <code>force-dynamic</code> (never prerendered), so the CRM always reflects current data.</li>
     </ul>
   </section>
 
@@ -206,8 +221,8 @@
 </div>
 
 <footer>
-  Bloomsbury Football Foundation — Network Mapper · Technical Guide ·
-  <a href="/getting-started.html">Read the getting-started guide →</a>
+  Bloomsbury Football Foundation &mdash; Network Mapper &middot; Technical Guide &middot;
+  <a href="/getting-started.html">Read the getting-started guide &rarr;</a>
 </footer>
 
 </body>

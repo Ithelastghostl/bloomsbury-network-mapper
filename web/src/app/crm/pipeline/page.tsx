@@ -27,13 +27,15 @@ export default async function PipelinePage() {
     !evidenceSet.has(e.canonical_entity_id)
   );
 
-  const enriched = await enrichEntities(supabase, pipeline);
+  // Only enrich the first 200 to avoid timeout on large pipelines.
+  const batch = pipeline.slice(0, 200);
+  const enriched = await enrichEntities(supabase, batch);
 
   return (
     <EntityTable
       entities={enriched}
       title="Pipeline"
-      description={`${pipeline.length} discovered leads awaiting enrichment — no wealth or evidence data yet.`}
+      description={`${pipeline.length} discovered leads awaiting enrichment (showing ${batch.length}).`}
     />
   );
 }

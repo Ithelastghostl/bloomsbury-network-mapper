@@ -4,17 +4,12 @@ import { useMemo, useState } from 'react';
 import { NetworkGraph, componentColor } from './network-graph';
 import type { GraphData } from '@/lib/crm/graph-queries';
 
-// Build a legend for component-coloured (orbit) mode: one entry per colour
-// actually painted on the canvas, ranked by cluster size so the largest
-// communities lead. Colours wrap at the palette length, so distinct components
-// sharing a colour are merged into a single legend row (their sizes summed).
 function buildClusterLegend(nodes: GraphData['nodes']): Array<{ color: string; label: string }> {
   const sizeByComponent = new Map<number, number>();
   for (const n of nodes) {
     if (n.component == null) continue;
     sizeByComponent.set(n.component, (sizeByComponent.get(n.component) ?? 0) + 1);
   }
-  // Merge by the colour each component resolves to.
   const sizeByColor = new Map<string, number>();
   for (const [comp, size] of sizeByComponent) {
     const color = componentColor(comp);
@@ -28,9 +23,30 @@ function buildClusterLegend(nodes: GraphData['nodes']): Array<{ color: string; l
   }));
 }
 
-// The colour the freshly-mapped HNW-target cohort is painted on the canvas.
-// Kept in sync with NetworkGraph's default highlightColor.
 const HNW_COLOR = '#c2410c';
+const SUPPORTER_COLOR = '#2f6f6b';
+
+function filterToOneHop(graph: GraphData): GraphData {
+  const supporterIds = new Set(graph.nodes.filter(n => n.seedSource === 'supporters').map(n => n.id));
+  if (supporterIds.size === 0) return graph;
+
+  const adj = new Map<string, Set<string>>();
+  for (const e of graph.edges) {
+    if (!adj.has(e.source)) adj.set(e.source, new Set());
+    if (!adj.has(e.target)) adj.set(e.target, new Set());
+    adj.get(e.source)!.add(e.target);
+    adj.get(e.target)!.add(e.source);
+  }
+
+  const keep = new Set(supporterIds);
+  for (const sId of supporterIds) {
+    for (const nb of adj.get(sId) ?? []) keep.add(nb);
+  }
+
+  const nodes = graph.nodes.filter(n => keep.has(n.id));
+  const edges = graph.edges.filter(e => keep.has(e.source) && keep.has(e.target));
+  return { nodes, edges };
+}
 
 export function OrbitGraph({
   orbit,
@@ -40,18 +56,26 @@ export function OrbitGraph({
   bipartite: GraphData;
 }) {
   const [mode, setMode] = useState<'orbit' | 'bipartite'>('orbit');
-  const active = mode === 'orbit' ? orbit : bipartite;
+  const [oneHop, setOneHop] = useState(false);
 
-  const orbitCompanies = bipartite.nodes.filter(n => n.type === 'company').length;
-  const clusterLegend = useMemo(() => buildClusterLegend(orbit.nodes), [orbit.nodes]);
+  const fullGraph = mode === 'orbit' ? orbit : bipartite;
+  const active = useMemo(() => oneHop ? filterToOneHop(fullGraph) : fullGraph, [fullGraph, oneHop]);
 
-  // The HNW-target seeds, highlighted in a single distinct colour on top of the
-  // normal cluster/type fill. Memoised so the simulation isn't rebuilt each render.
-  const hnwIds = useMemo(
-    () => new Set(active.nodes.filter(n => n.seedSource === 'hnw_targets').map(n => n.id)),
-    [active.nodes],
-  );
-  const hnwLegendEntry = { color: HNW_COLOR, label: `HNW targets (${hnwIds.size})` };
+  const orbitCompanies = active.nodes.filter(n => n.type === 'company').length;
+  const clusterLegend = useMemo(() => buildClusterLegend(active.nodes), [active.nodes]);
+
+  const nodeColorById = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const n of active.nodes) {
+      if (n.seedSource === 'hnw_targets') m[n.id] = HNW_COLOR;
+      else if (n.seedSource === 'supporters') m[n.id] = SUPPORTER_COLOR;
+    }
+    return m;
+  }, [active.nodes]);
+
+  const supporterCount = active.nodes.filter(n => n.seedSource === 'supporters').length;
+  const hnwCount = active.nodes.filter(n => n.seedSource === 'hnw_targets').length;
+  const personCount = active.nodes.filter(n => n.type === 'person').length;
 
   return (
     <div>
@@ -60,27 +84,38 @@ export function OrbitGraph({
           <h2 className="text-lg font-semibold text-text-primary uppercase tracking-wide">Orbit</h2>
           <p className="text-sm text-text-muted mt-0.5">
             {mode === 'orbit'
-              ? `${orbit.nodes.length} people clustered by shared boards, charities & relationships (${orbit.edges.length} ties)`
-              : `${bipartite.nodes.length - orbitCompanies} people and ${orbitCompanies} institutions (${bipartite.edges.length} links)`}
+              ? `${personCount} people (${active.edges.length} ties)${oneHop ? ' — 1-hop from supporters only' : ''}`
+              : `${personCount} people and ${orbitCompanies} institutions (${active.edges.length} links)${oneHop ? ' — 1-hop from supporters only' : ''}`}
           </p>
         </div>
-        <div className="inline-flex rounded-md border border-border-subtle overflow-hidden text-xs font-medium">
-          <button
-            onClick={() => setMode('orbit')}
-            className={`px-3 py-1.5 uppercase tracking-wide transition-colors ${
-              mode === 'orbit' ? 'bg-gold text-warm-white' : 'bg-surface-raised text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            People orbits
-          </button>
-          <button
-            onClick={() => setMode('bipartite')}
-            className={`px-3 py-1.5 uppercase tracking-wide transition-colors border-l border-border-subtle ${
-              mode === 'bipartite' ? 'bg-gold text-warm-white' : 'bg-surface-raised text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            + Institutions
-          </button>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={oneHop}
+              onChange={e => setOneHop(e.target.checked)}
+              className="accent-gold"
+            />
+            1-hop only
+          </label>
+          <div className="inline-flex rounded-md border border-border-subtle overflow-hidden text-xs font-medium">
+            <button
+              onClick={() => setMode('orbit')}
+              className={`px-3 py-1.5 uppercase tracking-wide transition-colors ${
+                mode === 'orbit' ? 'bg-gold text-warm-white' : 'bg-surface-raised text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              People orbits
+            </button>
+            <button
+              onClick={() => setMode('bipartite')}
+              className={`px-3 py-1.5 uppercase tracking-wide transition-colors border-l border-border-subtle ${
+                mode === 'bipartite' ? 'bg-gold text-warm-white' : 'bg-surface-raised text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              + Institutions
+            </button>
+          </div>
         </div>
       </div>
 
@@ -89,18 +124,22 @@ export function OrbitGraph({
         style={{ height: 'calc(100vh - 220px)' }}
       >
         <NetworkGraph
-          key={mode}
+          key={`${mode}-${oneHop}`}
           nodes={active.nodes}
           edges={active.edges}
           colorByComponent={mode === 'orbit'}
           nodeColors={{ person: '#a07d0a', company: '#3b5a8a' }}
-          highlightIds={hnwIds}
-          highlightColor={HNW_COLOR}
+          nodeColorById={nodeColorById}
           legend={
             mode === 'orbit'
-              ? [hnwLegendEntry, ...clusterLegend]
+              ? [
+                  { color: SUPPORTER_COLOR, label: `Supporters (${supporterCount})` },
+                  { color: HNW_COLOR, label: `HNW targets (${hnwCount})` },
+                  ...clusterLegend,
+                ]
               : [
-                  hnwLegendEntry,
+                  { color: SUPPORTER_COLOR, label: `Supporters (${supporterCount})` },
+                  { color: HNW_COLOR, label: `HNW targets (${hnwCount})` },
                   { color: '#a07d0a', label: 'Person' },
                   { color: '#3b5a8a', label: 'Institution' },
                 ]

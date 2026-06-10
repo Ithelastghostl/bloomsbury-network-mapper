@@ -14,8 +14,8 @@
 <header class="hero">
   <p class="eyebrow">Bloomsbury Football Foundation</p>
   <h1>Getting Started</h1>
-  <p>A plain-English tour of the Network Mapper: what each page shows you, and what to do there.</p>
-  <div class="meta">Onboarding Guide · 5-minute read</div>
+  <p>A plain-English tour of the Network Mapper: what each page shows, what to do there, and how the OODA loop works.</p>
+  <div class="meta">Onboarding Guide &middot; 8-minute read</div>
 </header>
 
 <div class="wrap">
@@ -27,152 +27,168 @@
   </div>
 
   <section>
-    <h2>Start here</h2>
-    <p class="section-title">What is this tool?</p>
-    <p>The Network Mapper helps us find and reach <strong>potential major donors</strong>. It holds a big list of wealthy individuals and the people and organisations connected to them, and it shows you <strong>how everyone is linked</strong>, so we can find a warm introduction instead of a cold call.</p>
-    <p>Think of it in three layers: the people <strong>we already have</strong>, the promising people we’ve <strong>discovered around them</strong>, and a <strong>map</strong> of how they all connect.</p>
-    <div class="note"><strong>You can’t break anything by clicking around.</strong> The tool only shows information. It doesn’t change or send anything. The single action button is clearly labelled, and you choose when to use it.</div>
+    <h2>What is this tool?</h2>
+    <p>The Network Mapper helps the fundraising team find and reach potential major donors. It holds two source lists &mdash; our <strong>283 supporters and donors</strong> (the people we already know) and <strong>68 HNW targets</strong> (the wealthy individuals we want to reach) &mdash; and maps the network between them.</p>
+    <p>The tool answers three questions: <strong>who</strong> are the high-net-worth individuals around us, <strong>how</strong> are they connected to people we know, and <strong>what is the warmest route</strong> to reach them.</p>
+    <p>The platform is organised around four phases, borrowed from military decision-making: <strong>Observe, Orient, Decide, Act.</strong></p>
+    <div class="note"><strong>You can't break anything by clicking around.</strong> The tool displays information. The only actions are sending a lead to the backlog and updating its status &mdash; both require an explicit click.</div>
   </section>
 
   <section>
-    <h2>The menu</h2>
-    <p class="section-title">Finding your way around</p>
-    <p>The sidebar on the left is grouped: your <strong>lists of people</strong> at the top, the <strong>network map</strong> below, then <strong>Introductions</strong> (how to reach someone), and finally the <strong>tools</strong>. Here’s what each link means.</p>
+    <h2>The four phases</h2>
     <nav class="toc">
-      <p class="toc-title">The pages</p>
+      <p class="toc-title">Sections in the sidebar</p>
       <ol>
-        <li><a href="#seeds">Seeds</a></li>
-        <li><a href="#leads">Leads</a></li>
-        <li><a href="#pipeline">Pipeline</a></li>
-        <li><a href="#all">All</a></li>
-        <li><a href="#orbit">Orbit (the map)</a></li>
-        <li><a href="#institutions">Institutions</a></li>
-        <li><a href="#charities">Charities</a></li>
-        <li><a href="#introductions">Introduction Graph</a></li>
-        <li><a href="#person">A person’s page</a></li>
-        <li><a href="#queue">Augment Queue</a></li>
+        <li><a href="#observe">Observe</a> &mdash; see the raw data and enriched profiles</li>
+        <li><a href="#orient">Orient</a> &mdash; explore relationships and introduction paths</li>
+        <li><a href="#decide">Decide</a> &mdash; ranked leads and scored introduction routes</li>
+        <li><a href="#act">Act</a> &mdash; the outreach backlog</li>
       </ol>
     </nav>
   </section>
 
-  <section id="seeds">
-    <h2><span class="pill gold">Lists</span></h2>
-    <p class="section-title">Seeds</p>
-    <p><strong>The people we already have.</strong> These are our existing supporters and target donors: the names from our own lists, the ones we’ve done proper research on.</p>
-    <p>At the top you’ll see a <strong>summary box</strong> with the combined estimated wealth of this group, how it splits across wealth levels, and who the best-connected people are. Below that is a table. Click any name to open their full page.</p>
-    <p><span class="pill green">Use it to</span> review the core relationships we already own.</p>
+  <!-- OBSERVE -->
+  <section id="observe">
+    <h2><span class="pill gold">Observe</span></h2>
+    <p class="section-title">See the data</p>
+    <p>This section is about looking at what we have. Raw source files and enriched profiles side by side.</p>
+
+    <h3>Supporters Sheet / HNW Sheet</h3>
+    <p>The original spreadsheets rendered as searchable, filterable tables. Every row shows the person's name, tier (Priority or Important), funder sub-type (Current donor, Strategic contact, Key introducer, Target donor), affiliation, and who introduced them. Use these to see exactly what came in from the source files.</p>
+
+    <h3>Supporters (enriched)</h3>
+    <p><strong>Our 283 supporters and donors, enriched.</strong> These are the starting point for all introduction paths. Their profiles carry wealth estimates, evidence, connections, and the funder labels from the original spreadsheet (shown as gold badges on their profile).</p>
+
+    <h3>HNW Targets (enriched)</h3>
+    <p><strong>The 68 high-net-worth individuals we want to reach.</strong> These are the destination. The platform maps paths from our supporters to these people through the network.</p>
+
+    <h3>Leads</h3>
+    <p>People we discovered <em>through</em> our network &mdash; co-directors, fellow trustees, family &mdash; who already have some wealth or evidence data. These are warm prospects.</p>
+
+    <h3>All Entities</h3>
+    <p>Every person in the system, unfiltered. Use search and filters to find anyone.</p>
+
+    <h3>Pipeline</h3>
+    <p>Discovered people not yet researched &mdash; the raw backlog waiting for characterisation.</p>
   </section>
 
-  <section id="leads">
-    <p class="section-title">Leads</p>
-    <p><strong>Promising new people we’ve discovered.</strong> These aren’t on our original list. We found them <em>through</em> our seeds — people who sit on the same boards, fellow trustees, family members — and we already have some wealth information on them.</p>
-    <p><span class="pill green">Use it to</span> spot warm prospects worth pursuing. Open a Lead’s page and use the <strong>Augment &amp; Persist</strong> button to ask for deeper research (explained below).</p>
+  <!-- ORIENT -->
+  <section id="orient">
+    <h2><span class="pill gold">Orient</span></h2>
+    <p class="section-title">Understand the relationships</p>
+    <p>Graphs and tables that show how people connect and where the paths are.</p>
+
+    <h3>Orbit</h3>
+    <p>A force-directed graph of how people cluster. Each dot is a person; lines mean they share a board, company, charity, or family tie. Colours indicate clusters. <strong>Supporters</strong> are teal, <strong>HNW targets</strong> are orange. Toggle "+ Institutions" to see the companies that connect people. Use the <strong>1-hop only</strong> checkbox to hide second-order connections and see only direct contacts of supporters.</p>
+    <ul>
+      <li>Bigger dots = more connections</li>
+      <li>Thicker lines = stronger bonds (multiple shared roles)</li>
+      <li>Click a dot to open a profile panel, double-click to isolate their neighbourhood</li>
+      <li>Cmd/Ctrl-click to open the full profile page</li>
+    </ul>
+
+    <h3>Supporter Reach</h3>
+    <p>Which supporters have the biggest HNW network? Two modes:</p>
+    <ul>
+      <li><strong>HNW Contacts</strong> &mdash; supporter bubbles sized by how many HNW individuals they know directly (1st degree). Lines connect supporters to their HNW contacts.</li>
+      <li><strong>Network Worth</strong> &mdash; bubbles sized by the total estimated net worth of everyone in their immediate network.</li>
+    </ul>
+    <p>Toggle between <strong>Graph</strong> and <strong>Table</strong> view. The table is sortable by HNW count, network worth, reach, and tier.</p>
+
+    <h3>Introduction Graph</h3>
+    <p>Starting from our supporters, this graph walks outward two hops to show who we can reach. Colours tell you the distance:</p>
+    <ul>
+      <li><strong>Gold</strong> = supporter (we know them)</li>
+      <li><strong>Teal</strong> = one hop away (a supporter knows them directly)</li>
+      <li><strong>Grey</strong> = two hops away (reached via a one-hop person)</li>
+      <li><strong>Orange</strong> = HNW target (the destination)</li>
+    </ul>
+    <p>Use <strong>1-hop only</strong> to strip out second-order connections. Switch between "People chain" and "Via organisations" to see the linking boards.</p>
+
+    <h3>Introduction Routes</h3>
+    <p>A searchable, filterable table of every person reachable from our supporters, with up to 3 scored introduction paths each. Click a row to expand and see all paths with their score breakdowns. Filter by category (HNW Target, Wealth Identified, Charity Donor).</p>
+
+    <h3>Institutions / Charities</h3>
+    <p>People linked to companies (Institutions) or charities and foundations (Charities). Useful for understanding someone's commercial or philanthropic world.</p>
   </section>
 
-  <section id="pipeline">
-    <p class="section-title">Pipeline</p>
-    <p><strong>The backlog.</strong> People we’ve discovered but haven’t researched yet — we don’t know their wealth or background. This is the raw pool that becomes Leads once someone looks into them.</p>
-    <p><span class="pill green">Use it to</span> see what’s waiting and decide who to research next.</p>
+  <!-- DECIDE -->
+  <section id="decide">
+    <h2><span class="pill gold">Decide</span></h2>
+    <p class="section-title">Prioritise who to pursue</p>
+
+    <h3>Lead Generator</h3>
+    <p>The centrepiece. Every non-supporter person is scored across four dimensions and ranked in a single table:</p>
+    <table>
+      <thead><tr><th>Dimension</th><th>Weight</th><th>What it measures</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Connectivity</strong></td><td>20%</td><td>How many network connections they have (more connections = more ways in)</td></tr>
+        <tr><td><strong>Wealth</strong></td><td>30%</td><td>Their estimated net worth, log-scaled (so a billionaire scores higher but a multi-millionaire still registers)</td></tr>
+        <tr><td><strong>Paths</strong></td><td>30%</td><td>Number and quality of introduction routes from our supporters (3 good paths beats 1)</td></tr>
+        <tr><td><strong>Affinity</strong></td><td>20%</td><td>Charity overlap, donor category, and whether they work in philanthropy (likely to be warm to our cause)</td></tr>
+      </tbody>
+    </table>
+    <p>Click any column header to re-rank by that single dimension. Use the category filter to see only HNW Targets, Wealth Identified, Charity Donors, or Discovered. Each row has a score bar for every dimension and a "Send" button that pushes the lead to the Action Backlog.</p>
+    <p>The sub-pages (By Connectivity, By Network Worth, By Intro Paths, By Donor Affinity) show the same table pre-sorted by one dimension.</p>
   </section>
 
-  <section id="all">
-    <p class="section-title">All</p>
-    <p><strong>Everyone, in one place.</strong> The complete list of every person in the system — seeds, leads and pipeline together. Use the search and filters at the top to find anyone.</p>
+  <!-- ACT -->
+  <section id="act">
+    <h2><span class="pill gold">Act</span></h2>
+    <p class="section-title">Manage outreach</p>
+
+    <h3>Action Backlog</h3>
+    <p>Leads sent from the Lead Generator land here as tickets. Each ticket carries:</p>
+    <ul>
+      <li>The person's name, bio, sector, and wealth band</li>
+      <li>The best introduction path and which supporter to ask</li>
+      <li>The lead score and category</li>
+      <li>Whether the person has been validated by a human</li>
+    </ul>
+    <p>Click a ticket to expand it. You can change its status to track progress:</p>
+    <table>
+      <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><strong>New</strong></td><td>Just arrived from the Lead Generator</td></tr>
+        <tr><td><strong>Outreach</strong></td><td>Ready to approach the supporter for an introduction</td></tr>
+        <tr><td><strong>Contacted</strong></td><td>Introduction has been made or contact established</td></tr>
+        <tr><td><strong>Information needed</strong></td><td>More research required before moving forward</td></tr>
+        <tr><td><strong>Deferred</strong></td><td>Parked for now</td></tr>
+        <tr><td><strong>Won</strong></td><td>Successful outcome</td></tr>
+        <tr><td><strong>Lost</strong></td><td>Not progressing</td></tr>
+      </tbody>
+    </table>
+    <p>Filter by status using the chips at the top. Tickets marked "unvalidated" have not been confirmed by a human.</p>
   </section>
 
   <section>
-    <h2>Reading a list</h2>
-    <p class="section-title">What the columns mean</p>
-    <p>Every list is a table with the same columns:</p>
-    <table>
-      <thead><tr><th>Column</th><th>What it tells you</th></tr></thead>
-      <tbody>
-        <tr><td><strong>Name</strong></td><td>The person. Click to open their full page.</td></tr>
-        <tr><td><strong>Wealth</strong></td><td>Their wealth level as a coloured badge — gold means the wealthiest (<span class="pill gold">£100M+</span>), down to grey for unknown.</td></tr>
-        <tr><td><strong>Score</strong></td><td>How confident we are, as a small bar.</td></tr>
-        <tr><td><strong>Links</strong></td><td>How many other people they’re connected to.</td></tr>
-        <tr><td><strong>Evidence</strong></td><td>How many supporting facts we’ve gathered.</td></tr>
-        <tr><td><strong>State</strong></td><td>Whether they’ve been researched yet.</td></tr>
-      </tbody>
-    </table>
-    <p>You can <strong>search by name</strong>, <strong>filter by wealth level</strong>, and <strong>sort</strong> by clicking a column heading. The wealthiest are shown first by default.</p>
-  </section>
+    <h2>Other features</h2>
 
-  <section id="orbit">
-    <h2><span class="pill gold">The map</span></h2>
-    <p class="section-title">Orbit</p>
-    <p><strong>A picture of how people connect.</strong> Each dot is a person, and a line between two dots means they’re linked: they share a company, a board, a family tie, or a charity. Tightly connected groups cluster together and share a colour, so you can see the natural “circles” in the network at a glance.</p>
-    <ul>
-      <li><strong>Bigger dots</strong> = better-connected people.</li>
-      <li><strong>Thicker lines</strong> = stronger links (connected in more than one way).</li>
-      <li><strong>Click a dot</strong> to zoom into just that person’s circle. Click “Show all” to go back.</li>
-      <li><strong>⌘/Ctrl-click a dot</strong> to open that person’s full page.</li>
-      <li>Use the <strong>“+ Institutions”</strong> toggle (top right) to also show the companies that connect people.</li>
-    </ul>
-    <p><span class="pill green">Use it to</span> find the warmest path between someone we know and someone we want to reach.</p>
-  </section>
+    <h3>Global search (Cmd+K)</h3>
+    <p>Press Cmd+K (or Ctrl+K) anywhere in the CRM to search all people and organisations. Results show seed info, introduction context, and category. Click a result to open their profile.</p>
 
-  <section id="institutions">
-    <p class="section-title">Institutions</p>
-    <p><strong>People and the companies they run.</strong> Shows individuals linked to the businesses they direct or advise. Useful for understanding someone’s commercial world and who shares their boardrooms.</p>
-  </section>
-
-  <section id="charities">
-    <p class="section-title">Charities</p>
-    <p><strong>People and the good causes they back.</strong> Charities and foundations sit at the centre, surrounded by their trustees and supporters. A great place to spot shared philanthropic interests we can connect with.</p>
-  </section>
-
-  <section id="introductions">
-    <h2><span class="pill gold">Introductions</span></h2>
-    <p class="section-title">Introduction Graph</p>
-    <p><strong>Who can introduce us to someone?</strong> This map starts from our <strong>62 donors</strong> — the people we already have a relationship with — and shows who <em>they</em> can connect us to. The colour of each dot tells you how close they are:</p>
-    <ul>
-      <li><strong>Gold dots</strong> are our donors — we already know them.</li>
-      <li><strong>Teal dots</strong> are one step away: a donor knows them directly, so we can <strong>ask the donor for an introduction</strong>.</li>
-      <li><strong>Orange dots</strong> are two steps away: we’d meet a teal person first, and <em>they</em> introduce us onward.</li>
-    </ul>
-    <p>Two tabs at the top switch between seeing it as a <strong>chain of people</strong> and showing the <strong>organisations</strong> (shared boards and companies) that link them.</p>
-    <p><span class="pill green">Use it to</span> plan the warmest route to a new prospect — and you’ll see that same route written in plain words on each person’s page.</p>
-  </section>
-
-  <section id="person">
-    <h2>Going deeper</h2>
-    <p class="section-title">A person’s page</p>
-    <p>Click any name to open their profile. It gathers everything we know:</p>
+    <h3>Person profile</h3>
+    <p>Click any name to open their profile. It shows:</p>
     <div class="card-grid">
-      <div class="card cream"><h3>How to Introduce</h3><p>The warm route from one of our donors — e.g. “Ask Howard Shore to introduce you, via Shore Capital,” or the full chain for someone two steps away.</p></div>
-      <div class="card cream"><h3>Wealth Profile</h3><p>Their wealth level, estimated net worth, where the money came from, and a summary.</p></div>
-      <div class="card cream"><h3>Network Connections</h3><p>Who they’re linked to and how — each name clickable to hop across the network.</p></div>
-      <div class="card cream"><h3>Evidence</h3><p>The facts behind the profile, each with its source link.</p></div>
-      <div class="card cream"><h3>First Contact Intelligence</h3><p>Talking points for an introduction: their background, directorships, and charity involvement.</p></div>
+      <div class="card cream"><h3>Seed info badges</h3><p>Gold badges for funder sub-type (Strategic contact, Key introducer, etc.), tier, and source (Supporter / HNW Target).</p></div>
+      <div class="card cream"><h3>Introduction paths</h3><p>Up to 3 scored routes from our supporters, each with rank, score, chain, linking organisation, and a plain-English reason why this path is good.</p></div>
+      <div class="card cream"><h3>Wealth profile</h3><p>Estimated net worth, wealth band, source, and confidence.</p></div>
+      <div class="card cream"><h3>Connections & evidence</h3><p>Network links and the facts behind the profile, each with its source.</p></div>
     </div>
-    <div class="note amber"><strong>Watch for a “⚠ Needs human review” banner.</strong> It means we couldn’t fully confirm who this person is, so the tool is asking you to look closer. It shows what we <em>do</em> know and a short list of leads to chase — don’t treat the profile as settled until it’s confirmed.</div>
-  </section>
 
-  <section id="queue">
-    <h2>The one action</h2>
-    <p class="section-title">Augment &amp; Persist + the Augment Queue</p>
-    <p>On a person’s page you’ll see an <span class="pill gold">Augment &amp; Persist</span> button. This is how you <strong>ask for deeper research</strong> on someone who looks promising.</p>
-    <ol class="steps">
-      <li><strong>You click the button.</strong> The person is added to a research list. The button changes to “Queued for research”.</li>
-      <li><strong>They appear in the Augment Queue.</strong> That page lists everyone waiting for research.</li>
-      <li><strong>Research happens.</strong> Their wealth and background are looked up.</li>
-      <li><strong>Their profile fills in.</strong> Once done, their page shows the new wealth details and they move up into our researched contacts.</li>
-    </ol>
-    <div class="note amber"><strong>Nothing happens until you click.</strong> The tool never researches people on its own — you’re always in control of who gets looked into.</div>
+    <h3>Augment & Persist</h3>
+    <p>On a person's profile, this button queues them for deeper wealth research by a local agent. The person appears in the Augment Queue, gets researched, and their profile fills in.</p>
   </section>
 
   <section>
     <h2>In a nutshell</h2>
-    <p class="section-title">The 30-second version</p>
     <div class="card">
       <ul>
-        <li><strong>Seeds</strong> = people we already have. <strong>Leads</strong> = promising people we found. <strong>Pipeline</strong> = not researched yet.</li>
-        <li><strong>Orbit</strong> shows how everyone connects — use it to find a warm introduction.</li>
-        <li><strong>Introductions</strong> shows who of our donors can introduce us to a new prospect — gold = donors, teal = one step away, orange = two steps.</li>
-        <li>Click a name to see everything about a person — including <strong>how to introduce</strong> them.</li>
-        <li>Click <strong>Augment &amp; Persist</strong> to request research on someone.</li>
-        <li>You can’t break anything — explore freely.</li>
+        <li><strong>Observe</strong> &mdash; see our source spreadsheets and enriched data side by side.</li>
+        <li><strong>Orient</strong> &mdash; explore the network graph, supporter reach, and introduction paths. Use 1-hop toggle to simplify.</li>
+        <li><strong>Decide</strong> &mdash; the Lead Generator ranks everyone by connectivity, wealth, paths, and affinity. Click columns to re-rank.</li>
+        <li><strong>Act</strong> &mdash; send leads to the backlog, track outreach status from New through to Won.</li>
+        <li><strong>Cmd+K</strong> to search anywhere. Click any name for a full profile.</li>
       </ul>
     </div>
   </section>
@@ -181,8 +197,8 @@
 </div>
 
 <footer>
-  Bloomsbury Football Foundation — Network Mapper · Getting Started ·
-  <a href="/how-it-works.html">See the technical guide →</a>
+  Bloomsbury Football Foundation &mdash; Network Mapper &middot; Getting Started &middot;
+  <a href="/how-it-works.html">See the technical guide &rarr;</a>
 </footer>
 
 </body>

@@ -1,22 +1,25 @@
 /**
  * Compute, for every canonical person, the warm introduction route from one of
- * our 62 donors (the hnw_targets) and store it on attributes.introduction:
- *   { degree, introducer, via, root_donor, path:[names…], computed_at }
+ * our 283 supporters (the people we already know) and store it on
+ * attributes.introduction:
+ *   { degree, introducer, via, root_supporter, path:[names…], computed_at }
  *
- *   degree 0 = the person IS a donor (core, direct relationship)
- *   degree 1 = a donor knows them directly  → ask the donor to introduce us
- *   degree 2 = a 1st-order person knows them → reach them via that person
+ *   degree 0 = the person IS a supporter (our core network)
+ *   degree 1 = a supporter knows them directly → one-hop introduction
+ *   degree 2 = a 1st-order person knows them → two-hop introduction
  *
- * People over 2 hops from any donor get no introduction (cleared). Mirrors the
- * Introduction Graph (src/lib/crm/introduction-graph.ts). People-only chains,
- * where two people are linked by a shared board/org or a direct tie.
+ * Also stamps attributes.seed_info with the supporter's spreadsheet metadata
+ * (funder_sub_type, tier, affiliation, introduced_by) for display in the CRM.
+ *
+ * People over 2 hops from any supporter get no introduction (cleared). Mirrors
+ * the Introduction Graph (src/lib/crm/introduction-graph.ts).
  *
  * Usage: npx tsx scripts/compute-introductions.ts [--dry-run]
  * Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (auto-loaded from web/.env.local)
  */
 import fs from 'fs';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { seedInfo } from '../src/lib/crm/seed-reference';
+import { seedInfo, isSupporter, isHnwTarget } from '../src/lib/crm/seed-reference';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DB = SupabaseClient<any, any, any>;
@@ -42,7 +45,12 @@ async function main() {
   const isCompany = (id: string) => (ents.find(e => e.canonical_entity_id === id)?.entity_type) === 'company';
   const persons = ents.filter(e => e.entity_type === 'person');
 
-  const donors = new Set(persons.filter(p => seedInfo(p.display_name as string)?.source === 'hnw_targets').map(p => p.canonical_entity_id as string));
+  // Supporters = our 283 people from the friends & supporters list (the BFS root)
+  const supporters = new Set(persons.filter(p => isSupporter(p.display_name as string)).map(p => p.canonical_entity_id as string));
+  // HNW targets = the 68 people we want to reach (tracked separately)
+  const hnwTargets = new Set(persons.filter(p => isHnwTarget(p.display_name as string)).map(p => p.canonical_entity_id as string));
+
+  console.log(`Supporters in DB: ${supporters.size} | HNW targets in DB: ${hnwTargets.size}`);
 
   // person↔person adjacency with the linking org (via)
   const adj = new Map<string, Map<string, string | undefined>>();
@@ -70,10 +78,10 @@ async function main() {
     for (let i = 0; i < arr.length; i++) for (let j = i + 1; j < arr.length; j++) link(arr[i], arr[j], org);
   }
 
-  // multi-source BFS from donors, depth ≤ 2
+  // multi-source BFS from supporters, depth ≤ 2
   const degree = new Map<string, number>(), introducer = new Map<string, string>(), viaOf = new Map<string, string | undefined>(), root = new Map<string, string>();
   let frontier: string[] = [];
-  for (const d of donors) { degree.set(d, 0); root.set(d, d); frontier.push(d); }
+  for (const s of supporters) { degree.set(s, 0); root.set(s, s); frontier.push(s); }
   for (let deg = 0; deg < 2 && frontier.length; deg++) {
     const next: string[] = [];
     for (const cur of frontier) for (const [nb, via] of adj.get(cur) ?? []) {
@@ -84,25 +92,52 @@ async function main() {
   }
   const pathTo = (id: string): string[] => { const out: string[] = []; let n: string | undefined = id; const seen = new Set<string>(); while (n && !seen.has(n)) { seen.add(n); out.unshift(name.get(n)!); if (degree.get(n) === 0) break; n = introducer.get(n); } return out; };
 
-  let d0 = 0, d1 = 0, d2 = 0, cleared = 0;
+  let d0 = 0, d1 = 0, d2 = 0, cleared = 0, hnwReached = 0;
   const updates: { id: string; attrs: Record<string, unknown> }[] = [];
   for (const p of persons) {
     const id = p.canonical_entity_id as string;
+    const displayName = p.display_name as string;
     const attrs = { ...(p.attributes as Record<string, unknown> ?? {}) };
     const deg = degree.get(id);
+
+    // Stamp seed_info from the spreadsheet for any seed person
+    const si = seedInfo(displayName);
+    if (si) {
+      attrs.seed_info = {
+        source: si.source,
+        tier: si.tier,
+        funder_sub_type: si.funder_sub_type,
+        affiliation: si.affiliation,
+        introduced_by: si.introduced_by,
+      };
+    } else {
+      delete attrs.seed_info;
+    }
+
     if (deg === 0) {
-      attrs.introduction = { degree: 0, core_donor: true, note: 'Core donor — direct relationship', computed_at: new Date().toISOString() }; d0++;
+      attrs.introduction = { degree: 0, is_supporter: true, note: 'Supporter — in our core network', computed_at: new Date().toISOString() }; d0++;
     } else if (deg === 1 || deg === 2) {
-      attrs.introduction = { degree: deg, introducer: name.get(introducer.get(id)!), via: viaOf.get(id) ?? null, root_donor: name.get(root.get(id)!), path: pathTo(id), computed_at: new Date().toISOString() };
+      const isHnw = hnwTargets.has(id);
+      if (isHnw) hnwReached++;
+      attrs.introduction = {
+        degree: deg,
+        introducer: name.get(introducer.get(id)!),
+        via: viaOf.get(id) ?? null,
+        root_supporter: name.get(root.get(id)!),
+        path: pathTo(id),
+        is_hnw_target: isHnw || undefined,
+        computed_at: new Date().toISOString(),
+      };
       if (deg === 1) d1++; else d2++;
     } else {
-      if (attrs.introduction === undefined) continue; // nothing to clear
+      if (attrs.introduction === undefined && !si) continue;
       delete attrs.introduction; cleared++;
     }
     updates.push({ id, attrs });
   }
 
-  console.log(`Donors: ${donors.size} | core(0): ${d0} | 1st-order: ${d1} | 2nd-order: ${d2} | cleared (no route ≤2): ${cleared}`);
+  console.log(`Supporters (deg 0): ${d0} | 1st-order: ${d1} | 2nd-order: ${d2} | cleared: ${cleared}`);
+  console.log(`HNW targets reachable within 2 hops: ${hnwReached}/${hnwTargets.size}`);
   if (dryRun) { console.log('[DRY RUN] nothing written.'); return; }
   for (let i = 0; i < updates.length; i++) {
     const u = updates[i];
@@ -110,6 +145,6 @@ async function main() {
     if (error) console.log(`  ! ${name.get(u.id)}: ${error.message}`);
     if (i % 300 === 0) process.stdout.write(`  ${i}/${updates.length}\r`);
   }
-  console.log(`\nDone. Wrote introduction routes on ${updates.length} people.`);
+  console.log(`\nDone. Wrote introduction routes + seed_info on ${updates.length} people.`);
 }
 main().catch(e => { console.error('Fatal:', e); process.exit(1); });

@@ -3,21 +3,35 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const CRM_TABS = [
-  { href: '/crm/seeds', label: 'Seeds', icon: '★' },
+const OBSERVE = [
+  { href: '/crm/source-supporters', label: 'Supporters Sheet', icon: '📋' },
+  { href: '/crm/source-hnw', label: 'HNW Sheet', icon: '📋' },
+  { href: '/crm/seeds', label: 'Supporters (enriched)', icon: '★' },
+  { href: '/crm/hnw-targets', label: 'HNW Targets (enriched)', icon: '◆' },
   { href: '/crm/enriched', label: 'Leads', icon: '◎' },
-  { href: '/crm', label: 'All', icon: '◉' },
+  { href: '/crm', label: 'All Entities', icon: '◉' },
   { href: '/crm/pipeline', label: 'Pipeline', icon: '▸' },
 ];
 
-const GRAPH_TABS = [
+const ORIENT = [
   { href: '/crm/graph', label: 'Orbit', icon: '⊛' },
+  { href: '/crm/graph/reach', label: 'Supporter Reach', icon: '◉' },
   { href: '/crm/graph/institutions', label: 'Institutions', icon: '⬡' },
   { href: '/crm/graph/charities', label: 'Charities', icon: '♦' },
+  { href: '/crm/introductions', label: 'Introduction Graph', icon: '⊙' },
+  { href: '/crm/intro-routes', label: 'Introduction Routes', icon: '⇄' },
 ];
 
-const INTRODUCTIONS_TABS = [
-  { href: '/crm/introductions', label: 'Introduction Graph', icon: '⇄' },
+const DECIDE = [
+  { href: '/crm/decide', label: 'Lead Generator', icon: '⚡' },
+  { href: '/crm/decide/by-connectivity', label: 'By Connectivity', icon: '↗' },
+  { href: '/crm/decide/by-wealth', label: 'By Network Worth', icon: '£' },
+  { href: '/crm/decide/by-paths', label: 'By Intro Paths', icon: '⇉' },
+  { href: '/crm/decide/by-affinity', label: 'By Donor Affinity', icon: '♥' },
+];
+
+const ACT = [
+  { href: '/crm/act', label: 'Action Backlog', icon: '▶' },
 ];
 
 const TOOLS = [
@@ -26,12 +40,19 @@ const TOOLS = [
   { href: '/admin', label: 'Admin' },
 ];
 
+const SECTIONS = [
+  { title: 'Observe', tabs: OBSERVE },
+  { title: 'Orient', tabs: ORIENT },
+  { title: 'Decide', tabs: DECIDE },
+  { title: 'Act', tabs: ACT },
+  { title: 'Tools', tabs: TOOLS },
+];
+
 export function SidebarNav() {
   const pathname = usePathname();
 
   function isActive(href: string) {
-    // Exact-match routes that are prefixes of sibling routes.
-    if (href === '/crm' || href === '/crm/graph') return pathname === href;
+    if (href === '/crm' || href === '/crm/graph' || href === '/crm/decide' || href === '/crm/act') return pathname === href;
     return pathname === href || pathname.startsWith(href + '/');
   }
 
@@ -45,80 +66,29 @@ export function SidebarNav() {
       </div>
 
       <div className="flex-1 py-3 overflow-y-auto">
-        <div className="px-3 mb-2">
-          <span className="text-[10px] font-semibold tracking-widest uppercase text-text-muted">CRM</span>
-        </div>
-        {CRM_TABS.map(tab => {
-          const active = isActive(tab.href);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
-                active
-                  ? 'bg-gold/10 text-gold border-r-2 border-gold'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-deep-charcoal'
-              }`}
-            >
-              <span className="text-xs">{tab.icon}</span>
-              {tab.label}
-            </Link>
-          );
-        })}
-
-        <div className="px-3 mt-6 mb-2">
-          <span className="text-[10px] font-semibold tracking-widest uppercase text-text-muted">Social Graph</span>
-        </div>
-        {GRAPH_TABS.map(tab => {
-          const active = isActive(tab.href);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
-                active
-                  ? 'bg-gold/10 text-gold border-r-2 border-gold'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-deep-charcoal'
-              }`}
-            >
-              <span className="text-xs">{tab.icon}</span>
-              {tab.label}
-            </Link>
-          );
-        })}
-
-        <div className="px-3 mt-6 mb-2">
-          <span className="text-[10px] font-semibold tracking-widest uppercase text-text-muted">Introductions</span>
-        </div>
-        {INTRODUCTIONS_TABS.map(tab => {
-          const active = isActive(tab.href);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
-                active
-                  ? 'bg-gold/10 text-gold border-r-2 border-gold'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-deep-charcoal'
-              }`}
-            >
-              <span className="text-xs">{tab.icon}</span>
-              {tab.label}
-            </Link>
-          );
-        })}
-
-        <div className="px-3 mt-6 mb-2">
-          <span className="text-[10px] font-semibold tracking-widest uppercase text-text-muted">Tools</span>
-        </div>
-        {TOOLS.map(tool => (
-          <Link
-            key={tool.href}
-            href={tool.href}
-            className="flex items-center gap-2.5 px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-deep-charcoal transition-colors"
-          >
-            {tool.label}
-          </Link>
+        {SECTIONS.map(section => (
+          <div key={section.title}>
+            <div className="px-3 mt-4 mb-2 first:mt-0">
+              <span className="text-[10px] font-semibold tracking-widest uppercase text-text-muted">{section.title}</span>
+            </div>
+            {section.tabs.map(tab => {
+              const active = isActive(tab.href);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  className={`flex items-center gap-2.5 px-4 py-1.5 text-[13px] transition-colors ${
+                    active
+                      ? 'bg-gold/10 text-gold border-r-2 border-gold'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-deep-charcoal'
+                  }`}
+                >
+                  {'icon' in tab && <span className="text-xs">{(tab as { icon: string }).icon}</span>}
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </div>
         ))}
       </div>
 

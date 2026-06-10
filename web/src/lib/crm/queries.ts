@@ -48,10 +48,11 @@ export async function enrichEntities(
 
   const ids = entities.map(e => e.canonical_entity_id);
 
-  const [wealthRes, evidenceRes, connectionRes] = await Promise.all([
+  const [wealthRes, evidenceRes, outboundRes, inboundRes] = await Promise.all([
     supabase.from('wealth_estimates').select('*').in('entity_id', ids).order('assessed_at', { ascending: false }),
     supabase.from('enrichment_evidence').select('*').in('entity_id', ids).order('created_at', { ascending: false }),
     supabase.from('network_connections').select('*').in('source_entity_id', ids).order('priority'),
+    supabase.from('network_connections').select('*').in('connected_entity_id', ids).order('priority'),
   ]);
 
   // Rows are ordered newest-first; keep the latest estimate per entity.
@@ -76,7 +77,8 @@ export async function enrichEntities(
   }
 
   const connectionMap = new Map<string, ConnectionEntry[]>();
-  for (const c of connectionRes.data ?? []) {
+  // Outbound: person is source
+  for (const c of outboundRes.data ?? []) {
     const list = connectionMap.get(c.source_entity_id) ?? [];
     list.push({
       connection_id: c.connection_id,
@@ -87,6 +89,23 @@ export async function enrichEntities(
       evidence: c.evidence ?? {},
     });
     connectionMap.set(c.source_entity_id, list);
+  }
+
+  // Inbound: person is target — flip the direction so it shows as a connection
+  for (const c of inboundRes.data ?? []) {
+    if (!c.source_entity_id) continue;
+    const list = connectionMap.get(c.connected_entity_id) ?? [];
+    // Avoid duplicating if the same pair exists in both directions
+    if (list.some(x => x.connected_entity_id === c.source_entity_id && x.connection_type === c.connection_type)) continue;
+    list.push({
+      connection_id: c.connection_id + '_rev',
+      connected_entity_id: c.source_entity_id,
+      connection_type: c.connection_type,
+      via_organisation: c.via_organisation,
+      priority: c.priority ?? 0,
+      evidence: c.evidence ?? {},
+    });
+    connectionMap.set(c.connected_entity_id, list);
   }
 
   // Resolve connected entity names

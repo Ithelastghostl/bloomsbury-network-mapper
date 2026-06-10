@@ -11,7 +11,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 
 export function StatsBar({ stats }: { stats: CrmStats }) {
   return (
-    <div className="flex items-center gap-8 px-6 py-3 border-b border-border-subtle bg-deep-charcoal/50">
+    <div className="flex items-center gap-8 px-6 py-3 bg-deep-charcoal/50">
       <Stat label="Persons" value={stats.total_persons.toLocaleString()} />
       <Stat label="Companies" value={stats.total_companies.toLocaleString()} />
       <Stat label="Wealth Est." value={stats.wealth_estimated.toLocaleString()} />

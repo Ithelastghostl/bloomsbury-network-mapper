@@ -3,7 +3,13 @@ import seedPeople from './data/seed-people.json';
 export interface SeedPerson {
   name: string;
   source: 'hnw_targets' | 'supporters';
+  funder_type: string | null;
+  funder_sub_type: string | null;
   tier: string | null;
+  account_name: string | null;
+  affiliation: string | null;
+  account_owner: string | null;
+  introduced_by: string | null;
 }
 
 const SEED_PEOPLE = seedPeople as SeedPerson[];
@@ -41,4 +47,16 @@ export function seedInfo(displayName: string): SeedPerson | null {
   return SEED_BY_NAME.get(normaliseSeedName(displayName)) ?? null;
 }
 
+/** Is this person one of our 287 supporters/donors (the people we already know)? */
+export function isSupporter(displayName: string): boolean {
+  return seedInfo(displayName)?.source === 'supporters';
+}
+
+/** Is this person one of the HNW targets (the people we want to reach)? */
+export function isHnwTarget(displayName: string): boolean {
+  return seedInfo(displayName)?.source === 'hnw_targets';
+}
+
 export const SEED_PERSON_COUNT = SEED_PEOPLE.length;
+export const SUPPORTER_COUNT = SEED_PEOPLE.filter(p => p.source === 'supporters').length;
+export const HNW_TARGET_COUNT = SEED_PEOPLE.filter(p => p.source === 'hnw_targets').length;
