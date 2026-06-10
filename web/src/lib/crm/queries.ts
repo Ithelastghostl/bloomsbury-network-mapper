@@ -28,7 +28,12 @@ async function chunkedIn(
     chunks.map(c => supabase.from(table).select(columns).in(column, c)),
   );
   const out: Record<string, unknown>[] = [];
-  for (const r of results) if (r.data) out.push(...r.data);
+  for (const r of results) {
+    // Surface a failed chunk instead of silently returning a partial result —
+    // a dropped chunk would make an entity's wealth/evidence/connections vanish.
+    if (r.error) throw new Error(`chunkedIn ${table}.${column}: ${r.error.message}`);
+    if (r.data) out.push(...r.data);
+  }
   return out;
 }
 
@@ -99,8 +104,13 @@ export async function enrichEntities(
     if (!wealthMap.has(w.entity_id as string)) wealthMap.set(w.entity_id as string, w);
   }
 
+  // Chunking dropped the per-query newest-first .order(); restore it so the
+  // capped evidence drawers (.slice(0, N)) show the latest items, not an
+  // arbitrary subset.
+  const evidenceSorted = (evidenceRows as Array<Record<string, string>>)
+    .sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')));
   const evidenceMap = new Map<string, EvidenceEntry[]>();
-  for (const e of evidenceRows as Array<Record<string, string>>) {
+  for (const e of evidenceSorted) {
     const list = evidenceMap.get(e.entity_id) ?? [];
     list.push({
       evidence_id: e.evidence_id,

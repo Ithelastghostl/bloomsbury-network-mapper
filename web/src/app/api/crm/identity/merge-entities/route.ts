@@ -12,6 +12,39 @@ import { generateId } from '@/lib/ulid';
  *
  * Body: { keep_id, drop_id, reason? }
  */
+
+/**
+ * Single-column primary key per repointed table, used to repoint row-by-row
+ * when a bulk UPDATE collides with a unique constraint. Tables whose PK *is*
+ * the repoint column, or is composite on it, are handled specially below
+ * (the only safe action on collision there is to delete the colliding row).
+ */
+const PRIMARY_KEY: Record<string, string> = {
+  co_director_edges: 'co_director_edge_id',
+  network_connections: 'connection_id',
+  enrichment_evidence: 'evidence_id',
+  enrichment_signals: 'enrichment_signal_id',
+  entity_articles: 'article_id',
+  wealth_estimates: 'wealth_estimate_id',
+  sweep_runs: 'sweep_run_id',
+  seed_augmentation_runs: 'augmentation_run_id',
+  entity_notes: 'note_id',
+  connection_overrides: 'override_id',
+  intro_outcomes: 'intro_outcome_id',
+  identity_clusters: 'cluster_id',
+  relationships: 'relationship_id',
+  donation_events: 'donation_event_id',
+  candidate_recommendations: 'candidate_recommendation_id',
+  rejection_log: 'rejection_log_id',
+  introduction_routes: 'route_id',
+  seeds: 'seed_id',
+  seed_import_rows: 'row_id',
+  staged_entities: 'staged_entity_id',
+  entity_aliases: 'alias_id',
+  // known_contacts PK is canonical_entity_id (== the repoint column); lead_scores
+  // PK is composite (entity_id, config_version). Both are absent here on purpose
+  // so the fallback deletes the colliding row instead of trying to re-key it.
+};
 export async function POST(request: Request) {
   const denied = await requireAdminOrLocal();
   if (denied) return denied;
@@ -76,15 +109,36 @@ export async function POST(request: Request) {
   ];
   const repointWarnings: string[] = [];
   for (const [table, column] of repoints) {
-    // A unique constraint can block the update when keep already has the same
-    // row (e.g. both were directors of the same company). Record it: the loser
-    // row still points at drop_id and would block the delete, so we remove it.
+    // Bulk-repoint first; this moves every drop row to keep in one statement.
     const { error } = await supabase.from(table).update({ [column]: keep_id }).eq(column, drop_id);
-    if (error) {
-      repointWarnings.push(`${table}.${column}: ${error.message}`);
-      // Delete the colliding rows that still reference drop_id so the final
-      // delete can proceed (the equivalent row already exists on keep_id).
-      await supabase.from(table).delete().eq(column, drop_id);
+    if (!error) continue;
+
+    // A unique constraint blocked the *whole* statement because at least one
+    // drop row duplicates a row keep already has. PostgREST UPDATE is atomic, so
+    // nothing moved. Retry row-by-row: move what we can, and delete ONLY the
+    // individual rows that still collide (the equivalent already exists on keep).
+    // The old code deleted every drop row for the column here — that destroyed
+    // the non-colliding rows too. We must not do that.
+    repointWarnings.push(`${table}.${column}: ${error.message} (row-by-row fallback)`);
+    const pkCol = PRIMARY_KEY[table];
+    if (!pkCol) {
+      // known_contacts / lead_scores: the repoint column is (part of) the PK, so
+      // there's at most one drop row per key and a collision means keep already
+      // holds the equivalent. Deleting drop's rows for this column is the correct
+      // resolution (and is scoped to drop_id only — never touches keep's rows).
+      const { error: delErr } = await supabase.from(table).delete().eq(column, drop_id);
+      if (delErr) repointWarnings.push(`${table}.${column}: delete failed: ${delErr.message}`);
+      continue;
+    }
+    const { data: rows } = await supabase.from(table).select(pkCol).eq(column, drop_id);
+    for (const r of (rows ?? []) as unknown as Array<Record<string, string>>) {
+      const id = r[pkCol];
+      const { error: rowErr } = await supabase.from(table).update({ [column]: keep_id }).eq(pkCol, id);
+      if (rowErr) {
+        // This specific row collides with one keep already has → drop just it.
+        const { error: delErr } = await supabase.from(table).delete().eq(pkCol, id);
+        if (delErr) repointWarnings.push(`${table}.${pkCol}=${id}: delete failed: ${delErr.message}`);
+      }
     }
   }
   if (repointWarnings.length) {

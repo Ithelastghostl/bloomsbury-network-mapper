@@ -37,16 +37,26 @@ async function main() {
   for (const importType of ['supporters', 'hnw_targets'] as const) {
     const rows = people.filter(p => p.source === importType);
 
+    // Idempotency keyed on ROWS, not the import header — a crash between
+    // inserting the header and its rows must not wedge every future run.
     const { data: existing } = await sb
       .from('seed_imports')
       .select('import_id')
       .eq('import_type', importType)
-      .eq('file_name', FILE_NAME)
-      .limit(1);
-    if (existing?.length) {
-      console.log(`${importType}: backfill already present (${existing[0].import_id}) — skipping.`);
-      continue;
+      .eq('file_name', FILE_NAME);
+    let resume = false;
+    for (const imp of existing ?? []) {
+      const { count } = await sb.from('seed_import_rows').select('*', { count: 'exact', head: true }).eq('import_id', imp.import_id);
+      if ((count ?? 0) > 0) {
+        console.log(`${importType}: backfill already present (${imp.import_id}, ${count} rows) — skipping.`);
+        resume = true;
+        break;
+      }
+      // Empty header from a prior failed run — remove and redo.
+      console.log(`${importType}: clearing empty import header ${imp.import_id} from a failed run.`);
+      await sb.from('seed_imports').delete().eq('import_id', imp.import_id);
     }
+    if (resume) continue;
 
     console.log(`${importType}: ${rows.length} rows`);
     if (dryRun) continue;
