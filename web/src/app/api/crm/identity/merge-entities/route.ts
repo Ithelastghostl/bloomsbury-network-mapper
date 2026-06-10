@@ -68,6 +68,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: { code: 'TYPE_MISMATCH', message: 'Cannot merge a person with a company' } }, { status: 400 });
   }
 
+  // Concurrency guard: if drop_id already appears as an alias source, a merge of
+  // it is already in flight or done. Reject rather than race a second merge that
+  // would repoint onto an entity another merge is mid-deleting (→ dangling refs).
+  const { data: existingAlias } = await supabase
+    .from('entity_aliases')
+    .select('alias_id')
+    .eq('alias_entity_id', drop_id)
+    .limit(1);
+  if (existingAlias?.length) {
+    return NextResponse.json(
+      { error: { code: 'CONFLICT', message: 'This entity has already been merged.' } },
+      { status: 409 },
+    );
+  }
+
   // Repoint EVERY column that FK-references canonical_entities, from drop → keep.
   // Anything missed here would leave a dangling reference and make the final
   // DELETE of drop_id fail with an FK violation (kept in sync with the schema —
@@ -87,7 +102,9 @@ export async function POST(request: Request) {
     ['entity_notes', 'entity_id'],
     ['connection_overrides', 'source_entity_id'],
     ['connection_overrides', 'connected_entity_id'],
-    ['lead_scores', 'entity_id'],
+    // lead_scores is intentionally omitted: the table is no longer written
+    // (live scoring replaced the persist script), so it never references an
+    // entity. If a persisted-scores reader is ever reintroduced, add it back.
     ['intro_outcomes', 'entity_id'],
     ['identity_clusters', 'canonical_entity_id'],
     ['relationships', 'source_entity_id'],

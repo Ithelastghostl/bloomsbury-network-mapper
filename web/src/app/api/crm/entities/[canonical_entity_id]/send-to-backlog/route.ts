@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { requireAdminOrLocal } from '@/lib/crm/auth';
+import { withIdempotency } from '@/lib/with-idempotency';
 import { logAudit } from '@/lib/crm/audit';
 
-export async function POST(request: Request, { params }: { params: Promise<{ canonical_entity_id: string }> }) {
+export const POST = withIdempotency(async (request: Request, { params }: { params: Promise<{ canonical_entity_id: string }> }) => {
   const denied = await requireAdminOrLocal();
   if (denied) return denied;
   const { canonical_entity_id } = await params;
@@ -63,4 +64,4 @@ export async function POST(request: Request, { params }: { params: Promise<{ can
   });
 
   return NextResponse.json({ ok: true, entity_id: canonical_entity_id });
-}
+});

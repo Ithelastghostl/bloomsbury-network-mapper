@@ -1,9 +1,10 @@
 import { isHnwTarget } from './seed-reference';
 
 /**
- * Version tag for the composite lead-scoring formula. Bump when weights or
- * inputs change; persisted scores in app.lead_scores key on this so ranked
- * lists are reproducible.
+ * Version tag + weights for the composite lead-scoring formula. The Lead
+ * Generator computes scores live (see lead-loader.ts); these document the
+ * current formula version for provenance and let the UI/tests reference it.
+ * Bump the version when weights or inputs change.
  */
 export const SCORING_CONFIG_VERSION = 'crm-composite-v1';
 export const SCORING_WEIGHTS = { connectivity: 0.2, wealth: 0.3, paths: 0.3, affinity: 0.2 } as const;

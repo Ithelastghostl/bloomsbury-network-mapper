@@ -17,6 +17,12 @@ function localModeEnabled(): boolean {
  * Returns a `Response` (403) if the caller is not an admin, or `null` if allowed.
  * Allowed when local mode is on, or when an authenticated admin/engineering_admin
  * user is present.
+ *
+ * NOTE: this gate IS the authorization layer for the CRM API routes. They all use
+ * the Supabase service-role client (`getAdminClient`), which bypasses RLS entirely
+ * — so the RLS policies on app.entity_notes / connection_overrides / lead_scores
+ * do NOT constrain the app path. They are defense-in-depth for direct SQL/PostgREST
+ * access only. Don't drop this check assuming RLS will catch it.
  */
 export async function requireAdminOrLocal(): Promise<Response | null> {
   if (localModeEnabled()) return null;

@@ -1,5 +1,6 @@
 import { getAdminClient } from '@/lib/supabase/admin';
 import { serverError } from '@/lib/api-error';
+import { requireAdminOrLocal } from '@/lib/crm/auth';
 
 interface TargetEntity {
   canonical_entity_id: string;
@@ -18,6 +19,9 @@ interface TargetEntity {
 // to /api/entities/:id/augment.
 export async function GET() {
   try {
+    const denied = await requireAdminOrLocal();
+    if (denied) return denied;
+
     const supabase = getAdminClient();
 
     const { data: entities, error } = await supabase

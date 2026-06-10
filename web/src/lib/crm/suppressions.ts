@@ -122,15 +122,20 @@ export function pruneIntroPaths(attrs: Record<string, any>, sup: SuppressionSet)
   }
   next.intro_paths = survives.map((p: Record<string, unknown>, i: number) => ({ ...p, rank: i + 1 }));
   const best = next.intro_paths[0] as {
-    hops: number; path_names: string[]; via_orgs: string[]; root_supporter: string;
+    hops?: number; path_names?: string[]; via_orgs?: string[]; root_supporter?: string;
   };
+  // Default-guard every field: a hand-edited or legacy intro_paths entry missing
+  // path_names/via_orgs must not throw here — that would 500 the suppress call
+  // *after* the override row is already written.
+  const pathNames = Array.isArray(best.path_names) ? best.path_names : [];
+  const viaOrgs = Array.isArray(best.via_orgs) ? best.via_orgs : [];
   next.introduction = {
-    ...(typeof next.introduction === 'object' ? next.introduction : {}),
-    degree: best.hops,
-    introducer: best.path_names.length === 3 ? best.path_names[1] : undefined,
-    via: best.via_orgs[0] ?? null,
-    root_supporter: best.root_supporter,
-    path: best.path_names,
+    ...(next.introduction && typeof next.introduction === 'object' ? next.introduction : {}),
+    degree: best.hops ?? null,
+    introducer: pathNames.length === 3 ? pathNames[1] : undefined,
+    via: viaOrgs[0] ?? null,
+    root_supporter: best.root_supporter ?? null,
+    path: pathNames,
     computed_at: new Date().toISOString(),
   };
   return next;

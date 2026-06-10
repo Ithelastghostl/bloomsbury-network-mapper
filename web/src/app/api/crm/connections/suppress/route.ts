@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { requireAdminOrLocal } from '@/lib/crm/auth';
+import { withIdempotency } from '@/lib/with-idempotency';
 import { logAudit } from '@/lib/crm/audit';
 import { generateId } from '@/lib/ulid';
 import { SuppressionSet, pruneIntroPaths, type OverrideRow } from '@/lib/crm/suppressions';
@@ -17,8 +18,11 @@ import { SuppressionSet, pruneIntroPaths, type OverrideRow } from '@/lib/crm/sup
  * Body: { connection_id?, co_director_edge_id?, source_entity_id?,
  *         connected_entity_id?, reason?, author? }
  * Requires either a row id or a full entity pair.
+ *
+ * Idempotent on the `Idempotency-Key` header — a double-submit returns the
+ * first response instead of creating a second override row.
  */
-export async function POST(request: Request) {
+export const POST = withIdempotency(async (request: Request) => {
   const denied = await requireAdminOrLocal();
   if (denied) return denied;
   const body = await request.json();
@@ -101,6 +105,13 @@ export async function POST(request: Request) {
 
   // Prune stored intro_paths that traverse the suppressed pair. Only the new
   // override matters here — earlier ones were pruned when they were created.
+  //
+  // The scan is filtered to persons who HAVE intro_paths (a small subset —
+  // ~hundreds, not the whole table) and pruneIntroPaths only rewrites the rows
+  // whose paths actually traverse the pair, so writes are minimal. If the
+  // intro_paths population ever grows large enough that this scan dominates the
+  // request, move it to a background job (there is no general job worker today;
+  // pipeline_jobs is run-scoped, so it isn't the right home yet).
   let pruned = 0;
   if (sourceId && connectedId) {
     const sup = new SuppressionSet([override]);
@@ -130,4 +141,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ ok: true, override_id: override.override_id, paths_pruned: pruned });
-}
+});

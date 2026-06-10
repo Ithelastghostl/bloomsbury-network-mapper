@@ -53,6 +53,13 @@ export async function GET(request: Request) {
     const keyFn = sortField[method] ?? sortField.composite;
     leads.sort((a, b) => keyFn(b) - keyFn(a));
 
+    // Hard cap so the export can't silently grow into a slow/huge response.
+    const MAX_ROWS = 50_000;
+    if (leads.length > MAX_ROWS) {
+      console.warn(`leads.csv: truncated ${leads.length} → ${MAX_ROWS} rows (method=${method}, scope=${scope})`);
+      leads = leads.slice(0, MAX_ROWS);
+    }
+
     const rows = [COLUMNS.join(',')];
     leads.forEach((l, i) => {
       rows.push([

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { requireAdminOrLocal } from '@/lib/crm/auth';
+import { withIdempotency } from '@/lib/with-idempotency';
 import { logAudit } from '@/lib/crm/audit';
 import { generateId } from '@/lib/ulid';
 
@@ -9,7 +10,7 @@ const VALID_STATUSES = new Set(['new', 'outreach', 'contacted', 'information_nee
 /** Statuses that represent an introduction outcome worth recording (§ intro_outcomes). */
 const OUTCOME_STATUSES = new Set(['contacted', 'won', 'lost']);
 
-export async function POST(request: Request, { params }: { params: Promise<{ canonical_entity_id: string }> }) {
+export const POST = withIdempotency(async (request: Request, { params }: { params: Promise<{ canonical_entity_id: string }> }) => {
   const denied = await requireAdminOrLocal();
   if (denied) return denied;
   const { canonical_entity_id } = await params;
@@ -34,6 +35,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ can
   const attrs = { ...(entity.attributes as Record<string, any> ?? {}) };
   if (!attrs.action_item) {
     return NextResponse.json({ error: { code: 'NO_ACTION', message: 'No action item on this entity' } }, { status: 400 });
+  }
+
+  // Optimistic concurrency: if the client tells us which version it edited
+  // (`expectedUpdatedAt`), reject when another writer has changed it since,
+  // instead of silently clobbering their edit. Optional — older callers that
+  // don't send it keep last-write-wins behaviour.
+  if (body.expectedUpdatedAt !== undefined && attrs.action_item.updated_at !== body.expectedUpdatedAt) {
+    return NextResponse.json(
+      { error: { code: 'CONFLICT', message: 'This action was changed by someone else — reload and retry.' } },
+      { status: 409 },
+    );
   }
 
   const prevStatus = attrs.action_item.status as string;
@@ -74,4 +86,4 @@ export async function POST(request: Request, { params }: { params: Promise<{ can
   }
 
   return NextResponse.json({ ok: true });
-}
+});

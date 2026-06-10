@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { EntityNotes } from './entity-notes';
+import { ExportCsvButton } from './export-csv-button';
 
 interface ActionItem {
   id: string;
@@ -58,19 +59,29 @@ function ActionEditor({ item, onSaved }: { item: ActionItem; onSaved: () => void
   const [notes, setNotes] = useState(item.notes ?? '');
   const [assignee, setAssignee] = useState(item.assignee ?? '');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const dirty = status !== item.status || notes !== (item.notes ?? '') || assignee !== (item.assignee ?? '');
 
   async function save() {
     if (!dirty || saving) return;
     setSaving(true);
+    setError(null);
     try {
-      await fetch(`/api/crm/entities/${item.id}/update-action`, {
+      const res = await fetch(`/api/crm/entities/${item.id}/update-action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, notes, assignee: assignee || null }),
+        // expectedUpdatedAt enables optimistic concurrency: a 409 means someone
+        // else edited this action since it was loaded.
+        body: JSON.stringify({ status, notes, assignee: assignee || null, expectedUpdatedAt: item.updatedAt }),
       });
-      onSaved();
-    } catch { /* keep drafts so nothing is lost */ }
+      if (res.status === 409) {
+        setError('Changed by someone else — reload to see the latest.');
+      } else if (res.ok) {
+        onSaved();
+      } else {
+        setError('Save failed.');
+      }
+    } catch { setError('Save failed.'); /* keep drafts so nothing is lost */ }
     setSaving(false);
   }
 
@@ -104,13 +115,16 @@ function ActionEditor({ item, onSaved }: { item: ActionItem; onSaved: () => void
           className="w-full bg-mid-charcoal border border-border-subtle rounded-md px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold/50 resize-y"
         />
       </div>
-      <button
-        onClick={save}
-        disabled={!dirty || saving}
-        className="text-xs px-3 py-1.5 rounded bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20 disabled:opacity-30 transition-colors"
-      >
-        {saving ? 'Saving…' : 'Save changes'}
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={save}
+          disabled={!dirty || saving}
+          className="text-xs px-3 py-1.5 rounded bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20 disabled:opacity-30 transition-colors"
+        >
+          {saving ? 'Saving…' : 'Save changes'}
+        </button>
+        {error && <span className="text-[10px] text-red-400">{error}</span>}
+      </div>
     </div>
   );
 }
@@ -165,12 +179,7 @@ export function ActionBacklog({ items }: { items: ActionItem[] }) {
             {items.length} leads sent from the Lead Generator. Click a row to expand: edit status, assignee, and notes; see why the lead was proposed.
           </p>
         </div>
-        <a
-          href="/api/crm/export/leads.csv?scope=actions"
-          className="text-xs px-3 py-1.5 rounded bg-mid-charcoal text-text-secondary border border-border-subtle hover:text-gold hover:border-gold/30 transition-colors shrink-0"
-        >
-          Export CSV
-        </a>
+        <ExportCsvButton href="/api/crm/export/leads.csv?scope=actions" filename="action-backlog.csv" />
       </div>
 
       <div className="flex items-center gap-2 mb-4 flex-wrap">

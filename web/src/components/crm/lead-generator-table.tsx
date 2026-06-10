@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { ScoredLead, IntroPathDetail } from '@/lib/crm/lead-score';
 import type { EnrichedEntity } from '@/lib/crm/types';
+import { ExportCsvButton } from './export-csv-button';
 
 type SortKey = 'composite' | 'connectivity' | 'wealth' | 'paths' | 'affinity' | 'name' | 'hops';
 type CategoryFilter = 'all' | 'hnw_target' | 'wealth_identified' | 'charity_donor' | 'discovered';
@@ -303,12 +304,7 @@ export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: Sco
             {filtered.length} scored leads {cfg.description} Click a row for introduction options and evidence.
           </p>
         </div>
-        <a
-          href={`/api/crm/export/leads.csv?method=${method}`}
-          className="text-xs px-3 py-1.5 rounded bg-mid-charcoal text-text-secondary border border-border-subtle hover:text-gold hover:border-gold/30 transition-colors shrink-0"
-        >
-          Export CSV
-        </a>
+        <ExportCsvButton href={`/api/crm/export/leads.csv?method=${method}`} filename={`leads-${method}.csv`} />
       </div>
 
       <div className="flex items-center gap-2 mb-4 flex-wrap">
