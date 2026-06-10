@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const OBSERVE = [
+  { href: '/crm/whats-new', label: "What's New", icon: '✦' },
   { href: '/crm/source-supporters', label: 'Supporters Sheet', icon: '📋' },
   { href: '/crm/source-hnw', label: 'HNW Sheet', icon: '📋' },
   { href: '/crm/seeds', label: 'Supporters (enriched)', icon: '★' },
@@ -16,6 +17,8 @@ const OBSERVE = [
 const ORIENT = [
   { href: '/crm/graph', label: 'Orbit', icon: '⊛' },
   { href: '/crm/graph/reach', label: 'Supporter Reach', icon: '◉' },
+  { href: '/crm/orient/dimensions', label: 'Dimension Matrix', icon: '▦' },
+  { href: '/crm/orient/brokerage', label: 'Institution Brokerage', icon: '⬡' },
   { href: '/crm/graph/institutions', label: 'Institutions', icon: '⬡' },
   { href: '/crm/graph/charities', label: 'Charities', icon: '♦' },
   { href: '/crm/introductions', label: 'Introduction Graph', icon: '⊙' },
@@ -32,9 +35,11 @@ const DECIDE = [
 
 const ACT = [
   { href: '/crm/act', label: 'Action Backlog', icon: '▶' },
+  { href: '/crm/act/outcomes', label: 'Outcomes', icon: '✓' },
 ];
 
 const TOOLS = [
+  { href: '/crm/identity', label: 'Identity QA' },
   { href: '/crm/augment-queue', label: 'Augment Queue' },
   { href: '/review', label: 'Review Queue' },
   { href: '/admin', label: 'Admin' },

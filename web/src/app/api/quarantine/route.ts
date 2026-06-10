@@ -6,7 +6,7 @@
 
 import { type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { apiError, serverError } from '@/lib/api-error';
+import { serverError } from '@/lib/api-error';
 
 export async function GET(request: NextRequest) {
   try {

@@ -13,7 +13,7 @@
  * - Conflicting signal detection (F8.4-T3, R4.7)
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { CanonicalEntity } from '@/types/database';
 import type { EnrichmentSignalPayload } from '@/lib/enrichment/types';
 
@@ -69,7 +69,6 @@ import {
 // Conflicts
 import {
   detectConflicts,
-  type SignalConflict,
 } from '@/lib/enrichment/conflicts';
 
 // Orchestrator (for ambiguous match integration)

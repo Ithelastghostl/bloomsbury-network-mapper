@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { EntityNotes } from './entity-notes';
 
 interface ActionItem {
   id: string;
@@ -21,6 +22,11 @@ interface ActionItem {
   sector: string | null;
   bio: string | null;
   isHumanValidated: boolean;
+  breakdown: { connectivity: number; wealth: number; paths: number; affinity: number } | null;
+  affinityRationale: string | null;
+  bestPathReason: string | null;
+  viaOrgs: string[] | null;
+  rankingMethod: string | null;
 }
 
 type SortKey = 'name' | 'status' | 'score' | 'category' | 'wealth' | 'created';
@@ -45,6 +51,69 @@ function formatNw(v: number | null): string {
 }
 
 const TH = 'text-left px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary select-none';
+
+/** Editable workflow panel inside an expanded action row. */
+function ActionEditor({ item, onSaved }: { item: ActionItem; onSaved: () => void }) {
+  const [status, setStatus] = useState(item.status);
+  const [notes, setNotes] = useState(item.notes ?? '');
+  const [assignee, setAssignee] = useState(item.assignee ?? '');
+  const [saving, setSaving] = useState(false);
+  const dirty = status !== item.status || notes !== (item.notes ?? '') || assignee !== (item.assignee ?? '');
+
+  async function save() {
+    if (!dirty || saving) return;
+    setSaving(true);
+    try {
+      await fetch(`/api/crm/entities/${item.id}/update-action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, notes, assignee: assignee || null }),
+      });
+      onSaved();
+    } catch { /* keep drafts so nothing is lost */ }
+    setSaving(false);
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted w-16">Status</label>
+        <select
+          value={status}
+          onChange={e => setStatus(e.target.value)}
+          className="bg-mid-charcoal border border-border-subtle rounded text-[11px] text-text-primary px-1.5 py-1 focus:outline-none focus:border-gold/50"
+        >
+          {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+        </select>
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted ml-3">Assignee</label>
+        <input
+          type="text"
+          value={assignee}
+          onChange={e => setAssignee(e.target.value)}
+          placeholder="Unassigned"
+          className="bg-mid-charcoal border border-border-subtle rounded px-2 py-1 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold/50 w-40"
+        />
+      </div>
+      <div>
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted block mb-1">Action notes</label>
+        <textarea
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          rows={2}
+          placeholder="Outreach notes, context for the assignee…"
+          className="w-full bg-mid-charcoal border border-border-subtle rounded-md px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold/50 resize-y"
+        />
+      </div>
+      <button
+        onClick={save}
+        disabled={!dirty || saving}
+        className="text-xs px-3 py-1.5 rounded bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20 disabled:opacity-30 transition-colors"
+      >
+        {saving ? 'Saving…' : 'Save changes'}
+      </button>
+    </div>
+  );
+}
 
 export function ActionBacklog({ items }: { items: ActionItem[] }) {
   const router = useRouter();
@@ -87,22 +156,21 @@ export function ActionBacklog({ items }: { items: ActionItem[] }) {
   }
   const si = (key: SortKey) => sortKey === key ? (sortAsc ? ' ↑' : ' ↓') : '';
 
-  async function updateStatus(id: string, newStatus: string) {
-    await fetch(`/api/crm/entities/${id}/update-action`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    router.refresh();
-  }
-
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-text-primary uppercase tracking-wide">Action Backlog</h2>
-        <p className="text-sm text-text-muted mt-0.5">
-          {items.length} leads sent from the Lead Generator. Click headers to sort. Click a row to expand.
-        </p>
+      <div className="mb-4 flex items-start justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-text-primary uppercase tracking-wide">Action Backlog</h2>
+          <p className="text-sm text-text-muted mt-0.5">
+            {items.length} leads sent from the Lead Generator. Click a row to expand: edit status, assignee, and notes; see why the lead was proposed.
+          </p>
+        </div>
+        <a
+          href="/api/crm/export/leads.csv?scope=actions"
+          className="text-xs px-3 py-1.5 rounded bg-mid-charcoal text-text-secondary border border-border-subtle hover:text-gold hover:border-gold/30 transition-colors shrink-0"
+        >
+          Export CSV
+        </a>
       </div>
 
       <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -127,52 +195,92 @@ export function ActionBacklog({ items }: { items: ActionItem[] }) {
                 <th className={TH} onClick={() => handleSort('score')}>Score{si('score')}</th>
                 <th className={TH} onClick={() => handleSort('wealth')}>Wealth{si('wealth')}</th>
                 <th className="text-left px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted">Route</th>
+                <th className="text-left px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted">Assignee</th>
                 <th className={TH} onClick={() => handleSort('created')}>Created{si('created')}</th>
-                <th className="px-3 py-2.5 w-8"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {sorted.map(item => {
                 const isOpen = expandedId === item.id;
                 return (
-                  <tr key={item.id} className={`transition-colors cursor-pointer ${isOpen ? 'bg-deep-charcoal' : 'hover:bg-deep-charcoal/60'}`} onClick={() => setExpandedId(isOpen ? null : item.id)}>
+                  <tr key={item.id} className={`transition-colors cursor-pointer align-top ${isOpen ? 'bg-deep-charcoal' : 'hover:bg-deep-charcoal/60'}`} onClick={() => setExpandedId(isOpen ? null : item.id)}>
                     <td className="px-3 py-2.5">
                       <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border ${STATUS_COLORS[item.status] ?? ''}`}>
                         {item.status.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5">
-                      <Link href={`/crm/entity/${item.id}`} className="text-[13px] font-medium text-text-primary hover:text-gold transition-colors" onClick={e => e.stopPropagation()}>
-                        {item.name}
-                      </Link>
-                      {isOpen && item.bio && <p className="text-[10px] text-text-muted mt-1">{item.bio}</p>}
-                      {!item.isHumanValidated && <span className="text-[9px] text-orange-400 ml-1.5">unvalidated</span>}
-                    </td>
-                    <td className="px-3 py-2.5 text-[10px] text-text-muted">{item.category.replace(/_/g, ' ')}</td>
-                    <td className="px-3 py-2.5 text-xs font-mono text-text-secondary">{item.leadScore}</td>
-                    <td className="px-3 py-2.5">
-                      {item.estimatedNw ? <span className="text-xs text-gold font-mono">{formatNw(item.estimatedNw)}</span> : <span className="text-[10px] text-text-muted">{item.wealthBand ?? '—'}</span>}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {item.bestPath ? (
-                        <div>
-                          <p className="text-[11px] text-text-secondary truncate max-w-[180px]">{item.bestPath}</p>
-                          {isOpen && item.rootSupporter && <p className="text-[10px] text-gold mt-0.5">via {item.rootSupporter}</p>}
-                        </div>
-                      ) : <span className="text-[10px] text-text-muted">—</span>}
-                    </td>
-                    <td className="px-3 py-2.5 text-[10px] text-text-muted">{item.createdAt.slice(0, 10)}</td>
-                    <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                    <td className="px-3 py-2.5" colSpan={isOpen ? 7 : 1}>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/crm/entity/${item.id}`} className="text-[13px] font-medium text-text-primary hover:text-gold transition-colors" onClick={e => e.stopPropagation()}>
+                          {item.name}
+                        </Link>
+                        {!item.isHumanValidated && <span className="text-[9px] text-orange-400">unvalidated</span>}
+                      </div>
+
                       {isOpen && (
-                        <select
-                          value={item.status}
-                          onChange={e => updateStatus(item.id, e.target.value)}
-                          className="bg-mid-charcoal border border-border-subtle rounded text-[10px] text-text-primary px-1.5 py-1 focus:outline-none focus:border-gold/50"
-                        >
-                          {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-                        </select>
+                        <div className="mt-3 space-y-4" onClick={e => e.stopPropagation()}>
+                          {item.bio && <p className="text-xs text-text-muted max-w-3xl">{item.bio}</p>}
+
+                          {/* Why this lead — frozen reasoning from Decide */}
+                          <div className="grid grid-cols-2 gap-3 max-w-4xl">
+                            <div className="rounded border border-gold/20 bg-gold/[0.04] px-3 py-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-gold mb-1">Affinity rationale</p>
+                              <p className="text-[11px] text-text-secondary leading-relaxed">
+                                {item.affinityRationale ?? 'No affinity rationale recorded (sent before explainability was captured).'}
+                              </p>
+                              {item.viaOrgs && item.viaOrgs.length > 0 && (
+                                <p className="text-[10px] text-text-muted mt-1">Shared organisations: {item.viaOrgs.join(', ')}</p>
+                              )}
+                            </div>
+                            <div className="rounded border border-border-subtle bg-mid-charcoal/30 px-3 py-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">Proposed route</p>
+                              {item.bestPath ? (
+                                <>
+                                  <p className="text-[11px] text-text-secondary">{item.bestPath}</p>
+                                  {item.rootSupporter && <p className="text-[10px] text-gold mt-0.5">Ask {item.rootSupporter} for the introduction</p>}
+                                  {item.bestPathReason && <p className="text-[10px] text-text-muted mt-0.5">{item.bestPathReason}</p>}
+                                </>
+                              ) : (
+                                <p className="text-[11px] text-text-muted">No introduction path recorded.</p>
+                              )}
+                              {item.breakdown && (
+                                <p className="text-[9px] text-text-muted mt-1.5">
+                                  Score {item.leadScore}/100 · connectivity {item.breakdown.connectivity} · wealth {item.breakdown.wealth} · paths {item.breakdown.paths} · affinity {item.breakdown.affinity}
+                                  {item.rankingMethod && item.rankingMethod !== 'composite' ? ` · ranked by ${item.rankingMethod}` : ''}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Workflow editor */}
+                          <div className="max-w-4xl rounded border border-border-subtle bg-mid-charcoal/20 px-3 py-2.5">
+                            <ActionEditor key={item.updatedAt} item={item} onSaved={() => router.refresh()} />
+                          </div>
+
+                          {/* Persistent entity notes */}
+                          <div className="max-w-4xl">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1.5">Persistent entity notes</p>
+                            <EntityNotes entityId={item.id} compact />
+                          </div>
+                        </div>
                       )}
                     </td>
+                    {!isOpen && (
+                      <>
+                        <td className="px-3 py-2.5 text-[10px] text-text-muted">{item.category?.replace(/_/g, ' ')}</td>
+                        <td className="px-3 py-2.5 text-xs font-mono text-text-secondary">{item.leadScore}</td>
+                        <td className="px-3 py-2.5">
+                          {item.estimatedNw ? <span className="text-xs text-gold font-mono">{formatNw(item.estimatedNw)}</span> : <span className="text-[10px] text-text-muted">{item.wealthBand ?? '—'}</span>}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          {item.bestPath ? (
+                            <p className="text-[11px] text-text-secondary truncate max-w-[180px]">{item.bestPath}</p>
+                          ) : <span className="text-[10px] text-text-muted">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5 text-[10px] text-text-muted">{item.assignee ?? '—'}</td>
+                        <td className="px-3 py-2.5 text-[10px] text-text-muted">{item.createdAt.slice(0, 10)}</td>
+                      </>
+                    )}
                   </tr>
                 );
               })}

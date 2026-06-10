@@ -13,7 +13,7 @@ import type {
   EnrichmentSignalPayload,
   MatchFeature,
 } from '../types';
-import { normaliseName, nameTokenOverlap } from './companies-house';
+import { nameTokenOverlap } from './companies-house';
 
 // -------------------------------------------------------------------
 // API types

@@ -93,7 +93,7 @@ export async function verifyNoOrphanArtefacts(
     // Find artefacts for this run_id that reference a non-existent run
     // In practice, since we're checking a specific run, we verify
     // all artefacts tagged with this run_id actually belong to it
-    const { data: artefacts, error } = await supabase
+    const { data: _artefacts, error } = await supabase
       .from(table)
       .select(idColumn)
       .eq('run_id', runId)
@@ -101,7 +101,7 @@ export async function verifyNoOrphanArtefacts(
 
     if (error) {
       // Table might not have deleted_at, retry without it
-      const { data: fallbackData, error: fallbackError } = await supabase
+      const { data: _fallbackData, error: fallbackError } = await supabase
         .from(table)
         .select(idColumn)
         .eq('run_id', runId);

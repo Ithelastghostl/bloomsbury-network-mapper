@@ -10,7 +10,7 @@ import type { ReviewMetrics } from '@/lib/monitoring/metrics';
 // Data fetching
 // -------------------------------------------------------------------
 
-async function fetchReviewMetrics(filters: {
+async function fetchReviewMetrics(_filters: {
   reviewer?: string;
   seed_id?: string;
   since?: string;

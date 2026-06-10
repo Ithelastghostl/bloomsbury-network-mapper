@@ -1,14 +1,49 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import type { ScoredLead } from '@/lib/crm/lead-score';
+import type { ScoredLead, IntroPathDetail } from '@/lib/crm/lead-score';
+import type { EnrichedEntity } from '@/lib/crm/types';
 
 type SortKey = 'composite' | 'connectivity' | 'wealth' | 'paths' | 'affinity' | 'name' | 'hops';
 type CategoryFilter = 'all' | 'hnw_target' | 'wealth_identified' | 'charity_donor' | 'discovered';
 
 const CAT_LABELS: Record<string, string> = { hnw_target: 'HNW Target', wealth_identified: 'Wealth ID', charity_donor: 'Charity Donor', discovered: 'Discovered' };
 const CAT_COLORS: Record<string, string> = { hnw_target: 'text-orange-400 bg-orange-400/10', wealth_identified: 'text-gold bg-gold/10', charity_donor: 'text-teal-400 bg-teal-400/10', discovered: 'text-text-muted bg-mid-charcoal' };
+
+/** Per-ranking-method presentation: heading, default sort, and which extra sub-signal columns to surface. */
+const METHODS: Record<string, { title: string; description: string; sortKey: SortKey; subColumns: Array<'connections' | 'estimatedNw' | 'pathCount' | 'bestPathScore' | 'charityOverlap' | 'sector'> }> = {
+  composite: {
+    title: 'Lead Generator',
+    description: 'ranked by composite of connectivity (20%), wealth (30%), introduction paths (30%), and donor affinity (20%).',
+    sortKey: 'composite',
+    subColumns: [],
+  },
+  connectivity: {
+    title: 'Leads by Connectivity',
+    description: 'ranked by network connectivity — how many mapped connections each lead has.',
+    sortKey: 'connectivity',
+    subColumns: ['connections'],
+  },
+  wealth: {
+    title: 'Leads by Network Worth',
+    description: 'ranked by estimated personal wealth (researched figures and band estimates).',
+    sortKey: 'wealth',
+    subColumns: ['estimatedNw'],
+  },
+  paths: {
+    title: 'Leads by Introduction Paths',
+    description: 'ranked by introduction-path quality — how warm and how many routes our supporters have to them.',
+    sortKey: 'paths',
+    subColumns: ['pathCount', 'bestPathScore'],
+  },
+  affinity: {
+    title: 'Leads by Donor Affinity',
+    description: 'ranked by donor affinity — charity overlaps, donor category, and sector signals.',
+    sortKey: 'affinity',
+    subColumns: ['charityOverlap', 'sector'],
+  },
+};
 
 function ScoreBar({ value, max = 100 }: { value: number; max?: number }) {
   const pct = Math.min(100, (value / max) * 100);
@@ -30,35 +65,136 @@ function formatNw(v: number | null): string {
   return `£${(v / 1e3).toFixed(0)}K`;
 }
 
-export function LeadGeneratorTable({ leads }: { leads: ScoredLead[] }) {
+/**
+ * Group a lead's introduction paths by the institution that creates the
+ * connection. When several supporters reach the target through the SAME
+ * institution, each supporter stays a distinct introduction option inside
+ * that institution's group — the analyst picks the introducer, not just the
+ * org. Identical people-chains are deduplicated (best score wins).
+ */
+function groupPathsByInstitution(paths: IntroPathDetail[]): Array<{ institution: string; paths: IntroPathDetail[] }> {
+  const byChain = new Map<string, IntroPathDetail>();
+  for (const p of paths) {
+    const key = p.path_names.join('|');
+    const existing = byChain.get(key);
+    if (!existing || p.score > existing.score) byChain.set(key, p);
+  }
+  const groups = new Map<string, IntroPathDetail[]>();
+  for (const p of byChain.values()) {
+    const inst = p.via_orgs[0] ?? 'Direct relationship';
+    const list = groups.get(inst) ?? [];
+    list.push(p);
+    groups.set(inst, list);
+  }
+  return [...groups.entries()]
+    .map(([institution, list]) => ({ institution, paths: list.sort((a, b) => b.score - a.score) }))
+    .sort((a, b) => (b.paths[0]?.score ?? 0) - (a.paths[0]?.score ?? 0));
+}
+
+/** On-demand evidence behind the score dimensions: wealth signals + charity affinity, with source links. */
+function LeadEvidence({ entityId }: { entityId: string }) {
+  const [profile, setProfile] = useState<EnrichedEntity | null | 'loading'>('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      try {
+        const res = await fetch(`/api/crm/entities/${entityId}/profile`);
+        const json = await res.json();
+        if (!cancelled) setProfile(res.ok ? json : null);
+      } catch {
+        if (!cancelled) setProfile(null);
+      }
+    }
+    run();
+    return () => { cancelled = true; };
+  }, [entityId]);
+
+  if (profile === 'loading') return <p className="text-[10px] text-text-muted">Loading evidence…</p>;
+  if (!profile) return <p className="text-[10px] text-text-muted">No evidence available.</p>;
+
+  const wealthSignals = (profile.wealth?.evidence ?? []).slice(0, 4);
+  const charityConnections = profile.connections.filter(c => /foundation|trust|charit/i.test(c.via_organisation ?? '')).slice(0, 4);
+  const charityEvidence = profile.evidence.filter(e => e.source === 'charity_commission').slice(0, 3);
+  const linkedEvidence = profile.evidence.filter(e => e.evidence_url).slice(0, 3);
+
+  if (!wealthSignals.length && !charityConnections.length && !charityEvidence.length && !linkedEvidence.length) {
+    return <p className="text-[10px] text-text-muted">No detailed evidence collected yet — run augmentation from the entity page.</p>;
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <p className="text-[10px] font-semibold text-text-secondary mb-1">What drove the wealth score</p>
+        {wealthSignals.length ? wealthSignals.map((e, i) => (
+          <p key={i} className="text-[10px] text-text-muted leading-relaxed">
+            · {e.detail} <span className="font-mono">({Math.round(e.contribution * 100)}%)</span>
+          </p>
+        )) : <p className="text-[10px] text-text-muted">No wealth signals recorded.</p>}
+        {linkedEvidence.length > 0 && (
+          <div className="mt-1.5">
+            {linkedEvidence.map(e => (
+              <a key={e.evidence_id} href={e.evidence_url!} target="_blank" rel="noopener noreferrer" className="block text-[10px] text-gold/80 hover:text-gold truncate">
+                ↗ {e.source}: {e.evidence_text.slice(0, 70)}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+      <div>
+        <p className="text-[10px] font-semibold text-text-secondary mb-1">What drove the affinity score</p>
+        {charityConnections.length ? charityConnections.map(c => (
+          <p key={c.connection_id} className="text-[10px] text-text-muted leading-relaxed">
+            · {c.connected_name ?? 'Connection'} via {c.via_organisation}
+          </p>
+        )) : <p className="text-[10px] text-text-muted">No charity-linked connections.</p>}
+        {charityEvidence.map(e => (
+          <p key={e.evidence_id} className="text-[10px] text-text-muted leading-relaxed">· {e.evidence_text.slice(0, 90)}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function LeadGeneratorTable({ leads, method = 'composite' }: { leads: ScoredLead[]; method?: string }) {
+  const cfg = METHODS[method] ?? METHODS.composite;
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [hopFilter, setHopFilter] = useState<'all' | '1' | '2'>('all');
   const [sectorFilter, setSectorFilter] = useState<string>('all');
   const [bandFilter, setBandFilter] = useState<string>('all');
   const [validatedFilter, setValidatedFilter] = useState<'all' | 'yes' | 'no'>('all');
-  const [sortKey, setSortKey] = useState<SortKey>('composite');
+  const [showExisting, setShowExisting] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>(cfg.sortKey);
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(0);
   const [sending, setSending] = useState<string | null>(null);
+  const [excluding, setExcluding] = useState<string | null>(null);
+  const [overrides, setOverrides] = useState<Map<string, ScoredLead['existingDonor']>>(new Map());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const pageSize = 40;
 
+  // Apply optimistic exclude/restore overrides on top of the server data.
+  const effective = useMemo(() => leads.map(l => overrides.has(l.id) ? { ...l, existingDonor: overrides.get(l.id) ?? null } : l), [leads, overrides]);
+
+  const existingCount = useMemo(() => effective.filter(l => l.existingDonor).length, [effective]);
+
   const catCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    for (const l of leads) c[l.category] = (c[l.category] ?? 0) + 1;
+    for (const l of effective) c[l.category] = (c[l.category] ?? 0) + 1;
     return c;
-  }, [leads]);
+  }, [effective]);
 
-  const sectors = useMemo(() => [...new Set(leads.map(l => l.sector).filter(Boolean))].sort() as string[], [leads]);
+  const sectors = useMemo(() => [...new Set(effective.map(l => l.sector).filter(Boolean))].sort() as string[], [effective]);
   const bands = useMemo(() => {
     const order = ['100m_plus', '25m_100m', '5m_25m', '1m_5m', 'unknown'];
-    return order.filter(b => leads.some(l => l.wealthBand === b));
-  }, [leads]);
+    return order.filter(b => effective.some(l => l.wealthBand === b));
+  }, [effective]);
   const BAND_LABELS: Record<string, string> = { '100m_plus': '£100M+', '25m_100m': '£25M–100M', '5m_25m': '£5M–25M', '1m_5m': '£1M–5M', unknown: 'Unknown' };
 
   const filtered = useMemo(() => {
-    let list = leads;
+    let list = effective;
+    if (!showExisting) list = list.filter(l => !l.existingDonor);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(l => l.name.toLowerCase().includes(q) || (l.rootSupporter ?? '').toLowerCase().includes(q) || (l.sector ?? '').toLowerCase().includes(q));
@@ -72,7 +208,7 @@ export function LeadGeneratorTable({ leads }: { leads: ScoredLead[] }) {
     if (bandFilter !== 'all') list = list.filter(l => l.wealthBand === bandFilter);
     if (validatedFilter !== 'all') list = list.filter(l => validatedFilter === 'yes' ? l.isHumanValidated : !l.isHumanValidated);
     return list;
-  }, [leads, search, category, hopFilter, sectorFilter, bandFilter, validatedFilter]);
+  }, [effective, search, category, hopFilter, sectorFilter, bandFilter, validatedFilter, showExisting]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -82,7 +218,7 @@ export function LeadGeneratorTable({ leads }: { leads: ScoredLead[] }) {
         case 'composite': cmp = b.compositeScore - a.compositeScore; break;
         case 'connectivity': cmp = b.connectivity - a.connectivity; break;
         case 'wealth': cmp = b.networkWorth - a.networkWorth; break;
-        case 'paths': cmp = b.bestPathScore - a.bestPathScore; break;
+        case 'paths': cmp = b.breakdown.paths - a.breakdown.paths; break;
         case 'affinity': cmp = b.donorAffinity - a.donorAffinity; break;
         case 'hops': cmp = (a.minHops ?? 99) - (b.minHops ?? 99); break;
         case 'name': cmp = a.name.localeCompare(b.name); break;
@@ -117,20 +253,62 @@ export function LeadGeneratorTable({ leads }: { leads: ScoredLead[] }) {
           sector: lead.sector,
           bio: lead.bio,
           breakdown: lead.breakdown,
+          explanations: lead.explanations,
+          affinityRationale: lead.explanations.affinity,
+          bestPathReason: lead.introPaths[0]?.reason ?? null,
+          viaOrgs: lead.introPaths[0]?.via_orgs ?? null,
+          rankingMethod: method,
+          hops: lead.minHops,
         }),
       });
     } catch { /* ignore */ }
     setSending(null);
   }
 
+  async function excludeLead(lead: ScoredLead) {
+    setExcluding(lead.id);
+    try {
+      const res = await fetch(`/api/crm/entities/${lead.id}/exclude`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: 'analyst_exclusion' }),
+      });
+      if (res.ok) setOverrides(prev => new Map(prev).set(lead.id, { matchName: lead.name, kind: 'excluded' }));
+    } catch { /* ignore */ }
+    setExcluding(null);
+  }
+
+  async function restoreLead(lead: ScoredLead) {
+    setExcluding(lead.id);
+    try {
+      const res = await fetch(`/api/crm/entities/${lead.id}/exclude`, { method: 'DELETE' });
+      // Restore only clears analyst exclusions; a name match stays flagged.
+      if (res.ok) setOverrides(prev => new Map(prev).set(lead.id, null));
+    } catch { /* ignore */ }
+    setExcluding(null);
+  }
+
+  const DONOR_BADGE: Record<string, { label: string; cls: string }> = {
+    exact: { label: 'Existing donor', cls: 'text-amber-400 bg-amber-400/10 border-amber-400/30' },
+    variant: { label: 'Donor name match?', cls: 'text-amber-300 bg-amber-300/10 border-amber-300/30' },
+    excluded: { label: 'Excluded', cls: 'text-red-400 bg-red-400/10 border-red-400/30' },
+  };
+
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-text-primary uppercase tracking-wide">Lead Generator</h2>
-        <p className="text-sm text-text-muted mt-0.5">
-          {leads.length} scored leads ranked by composite of connectivity, wealth, introduction paths, and donor affinity.
-          Click a column header to re-rank by that dimension.
-        </p>
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold text-text-primary uppercase tracking-wide">{cfg.title}</h2>
+          <p className="text-sm text-text-muted mt-0.5">
+            {filtered.length} scored leads {cfg.description} Click a row for introduction options and evidence.
+          </p>
+        </div>
+        <a
+          href={`/api/crm/export/leads.csv?method=${method}`}
+          className="text-xs px-3 py-1.5 rounded bg-mid-charcoal text-text-secondary border border-border-subtle hover:text-gold hover:border-gold/30 transition-colors shrink-0"
+        >
+          Export CSV
+        </a>
       </div>
 
       <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -167,6 +345,10 @@ export function LeadGeneratorTable({ leads }: { leads: ScoredLead[] }) {
           <option value="yes">Human validated</option>
           <option value="no">Unvalidated</option>
         </select>
+        <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer select-none">
+          <input type="checkbox" checked={showExisting} onChange={e => { setShowExisting(e.target.checked); setPage(0); }} className="accent-gold" />
+          Show existing donors &amp; excluded ({existingCount})
+        </label>
         <span className="text-xs text-text-muted ml-auto">{sorted.length} results</span>
       </div>
 
@@ -177,6 +359,12 @@ export function LeadGeneratorTable({ leads }: { leads: ScoredLead[] }) {
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-8">#</th>
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary" onClick={() => handleSort('name')}>Name{si('name')}</th>
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-20">Category</th>
+              {cfg.subColumns.includes('connections') && <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-20">Conns</th>}
+              {cfg.subColumns.includes('estimatedNw') && <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-24">Est. worth</th>}
+              {cfg.subColumns.includes('pathCount') && <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-16">Routes</th>}
+              {cfg.subColumns.includes('bestPathScore') && <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-20">Best route</th>}
+              {cfg.subColumns.includes('charityOverlap') && <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-20">Charity links</th>}
+              {cfg.subColumns.includes('sector') && <th className="text-left px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted w-24">Sector</th>}
               <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('composite')}>Score{si('composite')}</th>
               <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('connectivity')}>Connect.{si('connectivity')}</th>
               <th className="text-center px-3 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted cursor-pointer hover:text-text-secondary w-24" onClick={() => handleSort('wealth')}>Wealth{si('wealth')}</th>
@@ -190,17 +378,34 @@ export function LeadGeneratorTable({ leads }: { leads: ScoredLead[] }) {
           <tbody className="divide-y divide-border-subtle">
             {paged.map((l, i) => {
               const isOpen = expandedId === l.id;
+              const colCount = 11 + cfg.subColumns.length;
+              const donorBadge = l.existingDonor ? DONOR_BADGE[l.existingDonor.kind] : null;
               return (
-                <tr key={l.id} className={`transition-colors cursor-pointer ${isOpen ? 'bg-deep-charcoal' : 'hover:bg-deep-charcoal/60'}`} onClick={() => setExpandedId(isOpen ? null : l.id)}>
+                <tr key={l.id} className={`transition-colors cursor-pointer ${isOpen ? 'bg-deep-charcoal' : 'hover:bg-deep-charcoal/60'} ${l.existingDonor ? 'opacity-75' : ''}`} onClick={() => setExpandedId(isOpen ? null : l.id)}>
                   <td className="px-3 py-2.5 text-[10px] text-text-muted font-mono align-top">{page * pageSize + i + 1}</td>
-                  <td className="px-3 py-2.5 align-top" colSpan={isOpen ? 10 : 1}>
+                  <td className="px-3 py-2.5 align-top" colSpan={isOpen ? colCount - 1 : 1}>
                     <div className="flex items-center gap-2">
                       <Link href={`/crm/entity/${l.id}`} className="text-text-primary hover:text-gold font-medium transition-colors text-[13px]" onClick={e => e.stopPropagation()}>{l.name}</Link>
+                      {donorBadge && (
+                        <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border ${donorBadge.cls}`} title={l.existingDonor!.kind === 'variant' ? `Possible match: ${l.existingDonor!.matchName}` : l.existingDonor!.matchName}>
+                          {donorBadge.label}
+                        </span>
+                      )}
                       {!isOpen && l.bio && l.bio !== 'No public profile found.' && <span className="text-[10px] text-text-muted truncate max-w-[180px]">{l.bio}</span>}
                     </div>
 
                     {isOpen && (
                       <div className="mt-3 space-y-4" onClick={e => e.stopPropagation()}>
+                        {l.existingDonor && (
+                          <div className="rounded border border-amber-400/30 bg-amber-400/[0.05] px-3 py-2 max-w-3xl">
+                            <p className="text-[11px] text-amber-300">
+                              {l.existingDonor.kind === 'exact' && <>Already a current donor in the original supporters list — not a new lead.</>}
+                              {l.existingDonor.kind === 'variant' && <>Possible match with current donor <span className="font-semibold">{l.existingDonor.matchName}</span> (name variant). Verify before outreach — if it is the same person, exclude this entry.</>}
+                              {l.existingDonor.kind === 'excluded' && <>Excluded from lead generation by an analyst.</>}
+                            </p>
+                          </div>
+                        )}
+
                         {/* Profile summary */}
                         <div className="grid grid-cols-3 gap-4">
                           <div>
@@ -247,30 +452,48 @@ export function LeadGeneratorTable({ leads }: { leads: ScoredLead[] }) {
                           </div>
                         </div>
 
-                        {/* Introduction paths — best contacts */}
+                        {/* Evidence behind the dimensions */}
+                        <div className="rounded border border-border-subtle px-2.5 py-2 bg-mid-charcoal/20">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1.5">Evidence</p>
+                          <LeadEvidence entityId={l.id} />
+                        </div>
+
+                        {/* Introduction options, grouped by connecting institution */}
                         {l.introPaths.length > 0 && (
                           <div>
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2">
-                              Best introduction contacts ({l.introPaths.length} path{l.introPaths.length > 1 ? 's' : ''})
+                              Introduction options ({l.introPaths.length} path{l.introPaths.length > 1 ? 's' : ''})
                             </p>
-                            <div className="space-y-1.5">
-                              {l.introPaths.map((p, pi) => (
-                                <div key={pi} className={`rounded border px-2.5 py-2 ${pi === 0 ? 'border-gold/20 bg-gold/[0.04]' : 'border-border-subtle bg-mid-charcoal/20'}`}>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-bold text-text-muted">#{p.rank}</span>
-                                    <span className={`text-[10px] font-mono px-1 py-0.5 rounded ${p.score >= 70 ? 'text-green-400 bg-green-400/10' : p.score >= 45 ? 'text-gold bg-gold/10' : 'text-text-muted bg-mid-charcoal'}`}>{p.score}</span>
-                                    <span className="text-xs text-text-primary font-medium">{p.root_supporter}</span>
-                                    {p.supporter_tier && <span className="text-[10px] text-text-muted">({p.supporter_tier === 'Priority / very important' ? 'Priority' : p.supporter_tier})</span>}
-                                    {p.supporter_sub_type && <span className="text-[10px] text-gold">{p.supporter_sub_type}</span>}
-                                  </div>
-                                  <p className="text-[10px] text-text-secondary mt-1">{p.path_names.join(' → ')}</p>
-                                  {p.via_orgs.length > 0 && <p className="text-[10px] text-text-muted">Via: {p.via_orgs.join(', ')}</p>}
-                                  <p className="text-[10px] text-text-muted mt-0.5">{p.reason}</p>
-                                  <div className="flex gap-3 text-[9px] text-text-muted mt-1">
-                                    <span>Hops {p.score_breakdown.hops}/40</span>
-                                    <span>Shared orgs {p.score_breakdown.shared_orgs}/25</span>
-                                    <span>Introducer reach {p.score_breakdown.introducer_reach}/20</span>
-                                    <span>Supporter tier {p.score_breakdown.supporter_tier}/15</span>
+                            <div className="space-y-2">
+                              {groupPathsByInstitution(l.introPaths).map((group, gi) => (
+                                <div key={gi}>
+                                  {group.paths.length > 1 && (
+                                    <p className="text-[10px] text-text-secondary mb-1">
+                                      Via <span className="font-medium text-gold/90">{group.institution}</span> — {group.paths.length} introducer options:
+                                    </p>
+                                  )}
+                                  <div className="space-y-1.5">
+                                    {group.paths.map((p, pi) => (
+                                      <div key={pi} className={`rounded border px-2.5 py-2 ${gi === 0 && pi === 0 ? 'border-gold/20 bg-gold/[0.04]' : 'border-border-subtle bg-mid-charcoal/20'}`}>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] font-bold text-text-muted">#{p.rank}</span>
+                                          <span className={`text-[10px] font-mono px-1 py-0.5 rounded ${p.score >= 70 ? 'text-green-400 bg-green-400/10' : p.score >= 45 ? 'text-gold bg-gold/10' : 'text-text-muted bg-mid-charcoal'}`}>{p.score}</span>
+                                          <span className="text-xs text-text-primary font-medium">{p.root_supporter}</span>
+                                          {p.supporter_tier && <span className="text-[10px] text-text-muted">({p.supporter_tier === 'Priority / very important' ? 'Priority' : p.supporter_tier})</span>}
+                                          {p.supporter_sub_type && <span className="text-[10px] text-gold">{p.supporter_sub_type}</span>}
+                                        </div>
+                                        <p className="text-[10px] text-text-secondary mt-1">{p.path_names.join(' → ')}</p>
+                                        {p.via_orgs.length > 0 && group.paths.length === 1 && <p className="text-[10px] text-text-muted">Via: {p.via_orgs.join(', ')}</p>}
+                                        {p.via_orgs.length > 1 && group.paths.length > 1 && <p className="text-[10px] text-text-muted">Also via: {p.via_orgs.slice(1).join(', ')}</p>}
+                                        <p className="text-[10px] text-text-muted mt-0.5">{p.reason}</p>
+                                        <div className="flex gap-3 text-[9px] text-text-muted mt-1">
+                                          <span>Hops {p.score_breakdown.hops}/40</span>
+                                          <span>Shared orgs {p.score_breakdown.shared_orgs}/25</span>
+                                          <span>Introducer reach {p.score_breakdown.introducer_reach}/20</span>
+                                          <span>Supporter tier {p.score_breakdown.supporter_tier}/15</span>
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
                               ))}
@@ -287,6 +510,24 @@ export function LeadGeneratorTable({ leads }: { leads: ScoredLead[] }) {
                           >
                             {l.actionStatus ? `Status: ${l.actionStatus}` : sending === l.id ? 'Sending...' : 'Send to Action Backlog'}
                           </button>
+                          {l.existingDonor?.kind === 'excluded' ? (
+                            <button
+                              onClick={() => restoreLead(l)}
+                              disabled={excluding === l.id}
+                              className="text-xs px-3 py-1.5 rounded bg-mid-charcoal text-text-secondary border border-border-subtle hover:text-text-primary disabled:opacity-30 transition-colors"
+                            >
+                              {excluding === l.id ? 'Restoring…' : 'Restore as lead'}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => excludeLead(l)}
+                              disabled={excluding === l.id}
+                              className="text-xs px-3 py-1.5 rounded bg-mid-charcoal text-text-muted border border-border-subtle hover:text-red-400 hover:border-red-400/30 disabled:opacity-30 transition-colors"
+                              title="Exclude from lead generation (persists across recomputes)"
+                            >
+                              {excluding === l.id ? 'Excluding…' : 'Exclude from leads'}
+                            </button>
+                          )}
                           <Link href={`/crm/entity/${l.id}`} className="text-xs text-text-muted hover:text-gold transition-colors">Open full profile →</Link>
                         </div>
                       </div>
@@ -297,6 +538,12 @@ export function LeadGeneratorTable({ leads }: { leads: ScoredLead[] }) {
                       <td className="px-3 py-2.5">
                         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${CAT_COLORS[l.category] ?? ''}`}>{CAT_LABELS[l.category] ?? l.category}</span>
                       </td>
+                      {cfg.subColumns.includes('connections') && <td className="px-3 py-2.5 text-center text-xs font-mono text-text-secondary">{l.connectionCount}</td>}
+                      {cfg.subColumns.includes('estimatedNw') && <td className="px-3 py-2.5 text-center text-xs font-mono text-gold">{l.estimatedNw ? formatNw(l.estimatedNw) : <span className="text-text-muted">{l.wealthBand?.replace(/_/g, '-') ?? '—'}</span>}</td>}
+                      {cfg.subColumns.includes('pathCount') && <td className="px-3 py-2.5 text-center text-xs font-mono text-text-secondary">{l.pathCount}</td>}
+                      {cfg.subColumns.includes('bestPathScore') && <td className="px-3 py-2.5 text-center text-xs font-mono text-text-secondary">{l.bestPathScore || '—'}</td>}
+                      {cfg.subColumns.includes('charityOverlap') && <td className="px-3 py-2.5 text-center text-xs font-mono text-text-secondary">{l.charityOverlap}</td>}
+                      {cfg.subColumns.includes('sector') && <td className="px-3 py-2.5 text-[10px] text-text-muted">{l.sector ?? '—'}</td>}
                       <td className="px-3 py-2.5"><ScoreBar value={l.compositeScore} /></td>
                       <td className="px-3 py-2.5"><ScoreBar value={l.connectivity} /></td>
                       <td className="px-3 py-2.5"><ScoreBar value={l.networkWorth} /></td>

@@ -169,7 +169,6 @@ export function parseNetworkMappingOutput(rawText: string): ParsedNetworkMap {
       const name = nameLine.split('·')[0]?.split('—')[0]?.split('(')[0]?.trim();
       if (!name || name.length < 3) continue;
 
-      const fullBlock = block.toLowerCase();
       const linkedinMatch = block.match(/linkedin\.com\/in\/[^\s)]+/i);
       const wikiMatch = block.match(/en\.wikipedia\.org\/wiki\/[^\s)]+/i);
       const sensitivityMatch = block.match(/⚠\s*SENSITIVITY:\s*(.+)/i);

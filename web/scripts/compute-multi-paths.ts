@@ -1,5 +1,5 @@
 /**
- * Compute up to 3 distinct introduction paths from our supporters to every
+ * Compute up to 10 distinct introduction paths from our supporters to every
  * reachable HNW target and high-value person (wealth_estimates or charity donor).
  *
  * Each path is scored on:
@@ -16,6 +16,9 @@
 import fs from 'fs';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { isSupporter, isHnwTarget, seedInfo } from '../src/lib/crm/seed-reference';
+import { loadSuppressions } from '../src/lib/crm/suppressions';
+
+const MAX_PATHS = 10;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DB = SupabaseClient<any, any, any>;
@@ -81,9 +84,15 @@ async function main() {
 
   console.log('Loading data...');
   const ents = await page(sb, 'canonical_entities', 'canonical_entity_id, display_name, entity_type, attributes');
-  const conns = await page(sb, 'network_connections', 'source_entity_id, connected_entity_id, connection_type, via_organisation');
-  const coDirs = await page(sb, 'co_director_edges', 'seed_entity_id, co_director_entity_id, company_name');
+  const allConns = await page(sb, 'network_connections', 'connection_id, source_entity_id, connected_entity_id, connection_type, via_organisation');
+  const allCoDirs = await page(sb, 'co_director_edges', 'co_director_edge_id, seed_entity_id, co_director_entity_id, company_name');
   const wealthRows = await page(sb, 'wealth_estimates', 'entity_id');
+  const suppressions = await loadSuppressions(sb);
+
+  // Human suppressions win: overridden edges never enter the path graph.
+  const conns = allConns.filter(c => !suppressions.isSuppressedConnection(c as { connection_id: string; source_entity_id: string; connected_entity_id: string | null }));
+  const coDirs = allCoDirs.filter(d => !suppressions.isSuppressedCoDirector(d as { co_director_edge_id: string; seed_entity_id: string; co_director_entity_id: string }));
+  if (suppressions.size) console.log(`Applied ${suppressions.size} connection overrides (${allConns.length - conns.length} connections, ${allCoDirs.length - coDirs.length} co-director edges removed).`);
 
   const nameOf = new Map(ents.map(e => [e.canonical_entity_id as string, e.display_name as string]));
   const typeOf = new Map(ents.map(e => [e.canonical_entity_id as string, e.entity_type as string]));
@@ -122,6 +131,8 @@ async function main() {
 
   const link = (a: string, b: string, via?: string) => {
     if (!a || !b || a === b || !isPerson(a) || !isPerson(b)) return;
+    // Human suppressions win even for derived (shared-company) edges.
+    if (suppressions.isSuppressedPair(a, b)) return;
     for (const [x, y] of [[a, b], [b, a]]) {
       if (!adj.has(x)) adj.set(x, new Map());
       const m = adj.get(x)!;
@@ -221,14 +232,14 @@ async function main() {
       }
     }
 
-    // Sort by score desc, then pick top 3 with distinct root supporters (prefer diversity)
+    // Sort by score desc, then pick top MAX_PATHS with distinct root supporters (prefer diversity)
     paths.sort((a, b) => b.score - a.score);
     const picked: IntroPath[] = [];
     const usedSupporters = new Set<string>();
     const usedIntermediates = new Set<string>();
 
     for (const p of paths) {
-      if (picked.length >= 3) break;
+      if (picked.length >= MAX_PATHS) break;
       // Prefer diversity: different supporter, or at least different intermediate
       const midKey = p.path_ids.length === 3 ? p.path_ids[1] : '';
       if (picked.length > 0 && usedSupporters.has(p.path_ids[0]) && usedIntermediates.has(midKey)) continue;
@@ -240,10 +251,10 @@ async function main() {
       if (midKey) usedIntermediates.add(midKey);
     }
 
-    // If we still have fewer than 3, fill with remaining best
-    if (picked.length < 3) {
+    // If we still have fewer than MAX_PATHS, fill with remaining best
+    if (picked.length < MAX_PATHS) {
       for (const p of paths) {
-        if (picked.length >= 3) break;
+        if (picked.length >= MAX_PATHS) break;
         if (picked.some(q => q.path_ids[0] === p.path_ids[0] && q.path_ids.join('|') === p.path_ids.join('|'))) continue;
         p.rank = picked.length + 1;
         p.reason = explainPath(p);
@@ -266,7 +277,7 @@ async function main() {
     if (paths.length >= 3) with3++;
     if (hnwIds.has(id)) hnwWith++;
   }
-  console.log(`Targets with 1+ paths: ${with1} | 2+ paths: ${with2} | 3 paths: ${with3}`);
+  console.log(`Targets with 1+ paths: ${with1} | 2+ paths: ${with2} | 3+ paths: ${with3}`);
   console.log(`HNW targets with paths: ${hnwWith}/${hnwIds.size}`);
 
   // Write to DB

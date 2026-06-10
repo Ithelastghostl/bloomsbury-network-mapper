@@ -189,7 +189,7 @@ export async function resolveIntroducedBy(
   supabase: AnySupabaseClient,
   targetEntityId: string,
   introducedByRaw: string,
-  runId: string,
+  _runId: string,
 ): Promise<string | null> {
   if (!introducedByRaw) return null;
 
@@ -219,7 +219,7 @@ export async function resolveIntroducedBy(
 
 export async function createBootstrapRun(
   supabase: AnySupabaseClient,
-  userId: string,
+  _userId: string,
 ): Promise<string> {
   const runId = ulid();
   await supabase.from('runs').insert({

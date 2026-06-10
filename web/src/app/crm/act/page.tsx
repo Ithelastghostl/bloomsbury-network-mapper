@@ -38,6 +38,11 @@ export default async function ActPage() {
       sector: ai.sector as string | null,
       bio: ai.bio as string | null,
       isHumanValidated: !!attrs.identity_confirmed,
+      breakdown: ai.breakdown ?? null,
+      affinityRationale: (ai.affinity_rationale ?? ai.explanations?.affinity ?? null) as string | null,
+      bestPathReason: (ai.best_path_reason ?? null) as string | null,
+      viaOrgs: (Array.isArray(ai.via_orgs) ? ai.via_orgs : null) as string[] | null,
+      rankingMethod: (ai.ranking_method ?? null) as string | null,
     };
   }).sort((a, b) => {
     const statusOrder: Record<string, number> = { new: 0, outreach: 1, contacted: 2, information_needed: 3, deferred: 4, won: 5, lost: 6 };

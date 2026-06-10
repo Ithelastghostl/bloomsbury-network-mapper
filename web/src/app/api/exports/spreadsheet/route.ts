@@ -159,7 +159,6 @@ export async function GET(request: NextRequest) {
       const sharedAffiliations = ((path?.sharedAffiliations as string[]) ?? []).join('; ');
 
       const priorityBreakdown = (path?.priorityBreakdown as Record<string, number>) ?? {};
-      const confidenceBreakdown = (path?.confidenceBreakdown as Record<string, number>) ?? {};
 
       const dec = decisionMap.get(c.candidate_recommendation_id);
 

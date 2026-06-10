@@ -11,13 +11,12 @@
  * - Embedding text generation
  * - Canonical entity mapping stability (R2.9)
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import type { EntityMention, HumanIdentityDecision, IdentityCluster, CanonicalEntity } from '@/types/database';
 import {
   trigramSimilarity,
   cosineSimilarity,
   computeMatchConfidence,
-  computeSignals,
   sharedOrganisationScore,
   sharedAddressScore,
   roleOverlapScore,
@@ -28,7 +27,6 @@ import {
   checkBlockers,
   hasHumanMergeDecision,
   computePairwiseMatches,
-  buildClusters,
   clusterMentions,
   BAND_THRESHOLDS,
 } from '@/lib/entity-resolution/clustering';

@@ -1,8 +1,36 @@
 import { cache } from 'react';
 import type { EnrichedEntity, WealthData, EvidenceEntry, ConnectionEntry, CrmStats, WealthBand } from './types';
+import { loadSuppressions } from './suppressions';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any;
+
+/**
+ * Run a `.in(column, ids)` query in parallel chunks and concat the rows.
+ *
+ * PostgREST degrades pathologically on a single large `IN (...)` list — an
+ * 800-id lookup measured at ~7.5s, the same lookup in 200-id chunks at ~90ms
+ * (a ~80x cliff, not a gradual curve). Chunking is therefore mandatory, not an
+ * optimisation, anywhere an `.in()` list can grow with the connected-entity set.
+ */
+async function chunkedIn(
+  supabase: SupabaseClient,
+  table: string,
+  columns: string,
+  column: string,
+  ids: string[],
+  chunkSize = 200,
+): Promise<Record<string, unknown>[]> {
+  if (!ids.length) return [];
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += chunkSize) chunks.push(ids.slice(i, i + chunkSize));
+  const results = await Promise.all(
+    chunks.map(c => supabase.from(table).select(columns).in(column, c)),
+  );
+  const out: Record<string, unknown>[] = [];
+  for (const r of results) if (r.data) out.push(...r.data);
+  return out;
+}
 
 function mergeWealth(
   sweepRow: Record<string, unknown> | null,
@@ -48,21 +76,31 @@ export async function enrichEntities(
 
   const ids = entities.map(e => e.canonical_entity_id);
 
-  const [wealthRes, evidenceRes, outboundRes, inboundRes] = await Promise.all([
-    supabase.from('wealth_estimates').select('*').in('entity_id', ids).order('assessed_at', { ascending: false }),
-    supabase.from('enrichment_evidence').select('*').in('entity_id', ids).order('created_at', { ascending: false }),
-    supabase.from('network_connections').select('*').in('source_entity_id', ids).order('priority'),
-    supabase.from('network_connections').select('*').in('connected_entity_id', ids).order('priority'),
+  // Chunk every .in() — a single large IN list is an ~80x latency cliff on
+  // PostgREST. Per-chunk .order() is dropped; ordering is reconstructed in JS
+  // below where it matters (latest wealth estimate per entity).
+  const [wealthRows, evidenceRows, outboundRows, inboundRowsRaw, suppressions] = await Promise.all([
+    chunkedIn(supabase, 'wealth_estimates', '*', 'entity_id', ids),
+    chunkedIn(supabase, 'enrichment_evidence', '*', 'entity_id', ids),
+    chunkedIn(supabase, 'network_connections', '*', 'source_entity_id', ids),
+    chunkedIn(supabase, 'network_connections', '*', 'connected_entity_id', ids),
+    loadSuppressions(supabase),
   ]);
 
-  // Rows are ordered newest-first; keep the latest estimate per entity.
+  // Human suppressions win: overridden connections never reach the UI.
+  const isSup = (c: Record<string, unknown>) => suppressions.isSuppressedConnection(c as { connection_id: string; source_entity_id: string; connected_entity_id: string | null });
+  const outboundData = outboundRows.filter(c => !isSup(c));
+  const inboundData = inboundRowsRaw.filter(c => !isSup(c));
+
+  // Keep the latest estimate per entity (sort newest-first, then first-wins).
+  const wealthSorted = [...wealthRows].sort((a, b) => String(b.assessed_at ?? '').localeCompare(String(a.assessed_at ?? '')));
   const wealthMap = new Map<string, Record<string, unknown>>();
-  for (const w of wealthRes.data ?? []) {
-    if (!wealthMap.has(w.entity_id)) wealthMap.set(w.entity_id, w);
+  for (const w of wealthSorted) {
+    if (!wealthMap.has(w.entity_id as string)) wealthMap.set(w.entity_id as string, w);
   }
 
   const evidenceMap = new Map<string, EvidenceEntry[]>();
-  for (const e of evidenceRes.data ?? []) {
+  for (const e of evidenceRows as Array<Record<string, string>>) {
     const list = evidenceMap.get(e.entity_id) ?? [];
     list.push({
       evidence_id: e.evidence_id,
@@ -70,7 +108,7 @@ export async function enrichEntities(
       source_layer: e.source_layer,
       evidence_url: e.evidence_url,
       evidence_text: e.evidence_text,
-      confidence: e.confidence,
+      confidence: e.confidence as unknown as number,
       created_at: e.created_at,
     });
     evidenceMap.set(e.entity_id, list);
@@ -78,49 +116,51 @@ export async function enrichEntities(
 
   const connectionMap = new Map<string, ConnectionEntry[]>();
   // Outbound: person is source
-  for (const c of outboundRes.data ?? []) {
-    const list = connectionMap.get(c.source_entity_id) ?? [];
+  for (const c of outboundData) {
+    const list = connectionMap.get(c.source_entity_id as string) ?? [];
     list.push({
-      connection_id: c.connection_id,
-      connected_entity_id: c.connected_entity_id,
-      connection_type: c.connection_type,
-      via_organisation: c.via_organisation,
-      priority: c.priority,
-      evidence: c.evidence ?? {},
+      connection_id: c.connection_id as string,
+      connected_entity_id: c.connected_entity_id as string,
+      connection_type: c.connection_type as string,
+      via_organisation: c.via_organisation as string | undefined,
+      priority: c.priority as number,
+      evidence: (c.evidence ?? {}) as Record<string, unknown>,
     });
-    connectionMap.set(c.source_entity_id, list);
+    connectionMap.set(c.source_entity_id as string, list);
   }
 
   // Inbound: person is target — flip the direction so it shows as a connection
-  for (const c of inboundRes.data ?? []) {
+  for (const c of inboundData) {
     if (!c.source_entity_id) continue;
-    const list = connectionMap.get(c.connected_entity_id) ?? [];
+    const list = connectionMap.get(c.connected_entity_id as string) ?? [];
     // Avoid duplicating if the same pair exists in both directions
     if (list.some(x => x.connected_entity_id === c.source_entity_id && x.connection_type === c.connection_type)) continue;
     list.push({
-      connection_id: c.connection_id + '_rev',
-      connected_entity_id: c.source_entity_id,
-      connection_type: c.connection_type,
-      via_organisation: c.via_organisation,
-      priority: c.priority ?? 0,
-      evidence: c.evidence ?? {},
+      connection_id: (c.connection_id as string) + '_rev',
+      connected_entity_id: c.source_entity_id as string,
+      connection_type: c.connection_type as string,
+      via_organisation: c.via_organisation as string | undefined,
+      priority: (c.priority as number) ?? 0,
+      evidence: (c.evidence ?? {}) as Record<string, unknown>,
     });
-    connectionMap.set(c.connected_entity_id, list);
+    connectionMap.set(c.connected_entity_id as string, list);
   }
 
-  // Resolve connected entity names
+  // Restore the priority ordering the per-query .order() used to provide.
+  for (const list of connectionMap.values()) {
+    list.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+  }
+
+  // Resolve connected entity names (chunked — this set scales with the graph).
   const connectedIds = new Set<string>();
   for (const list of connectionMap.values()) {
     for (const c of list) connectedIds.add(c.connected_entity_id);
   }
   const nameMap = new Map<string, string>();
   if (connectedIds.size > 0) {
-    const { data: names } = await supabase
-      .from('canonical_entities')
-      .select('canonical_entity_id, display_name')
-      .in('canonical_entity_id', [...connectedIds]);
-    for (const n of names ?? []) {
-      nameMap.set(n.canonical_entity_id, n.display_name);
+    const names = await chunkedIn(supabase, 'canonical_entities', 'canonical_entity_id, display_name', 'canonical_entity_id', [...connectedIds]);
+    for (const n of names) {
+      nameMap.set(n.canonical_entity_id as string, n.display_name as string);
     }
   }
 

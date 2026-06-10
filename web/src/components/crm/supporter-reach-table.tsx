@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { SupporterReachData } from '@/lib/crm/supporter-reach';
 
-type SortKey = 'name' | 'hnw' | 'wealth' | 'reach' | 'tier';
+type SortKey = 'name' | 'hnw' | 'wealth' | 'reach' | 'tier' | 'reach2' | 'hnw2' | 'wealth2';
 type ViewFilter = 'all' | 'with_hnw' | 'with_wealth';
 
 function formatCurrency(v: number): string {
@@ -45,6 +45,9 @@ export function SupporterReachTable({ data }: { data: SupporterReachData }) {
         case 'wealth': cmp = b.totalReachWealth - a.totalReachWealth; break;
         case 'reach': cmp = b.totalReachCount - a.totalReachCount; break;
         case 'tier': cmp = (a.tier ?? 'z').localeCompare(b.tier ?? 'z'); break;
+        case 'reach2': cmp = b.secondDegreeCount - a.secondDegreeCount; break;
+        case 'hnw2': cmp = b.hnwWithin2Hops - a.hnwWithin2Hops; break;
+        case 'wealth2': cmp = b.reach2Wealth - a.reach2Wealth; break;
       }
       return sortAsc ? -cmp : cmp;
     });
@@ -100,9 +103,12 @@ export function SupporterReachTable({ data }: { data: SupporterReachData }) {
             <tr className="bg-deep-charcoal border-b border-border-subtle">
               <Th label="Supporter" sortKey="name" current={sortKey} asc={sortAsc} onClick={handleSort} />
               <Th label="Tier" sortKey="tier" current={sortKey} asc={sortAsc} onClick={handleSort} />
-              <Th label="HNW contacts" sortKey="hnw" current={sortKey} asc={sortAsc} onClick={handleSort} center />
-              <Th label="Network reach" sortKey="reach" current={sortKey} asc={sortAsc} onClick={handleSort} center />
-              <Th label="Network worth" sortKey="wealth" current={sortKey} asc={sortAsc} onClick={handleSort} />
+              <Th label="1-hop HNW" sortKey="hnw" current={sortKey} asc={sortAsc} onClick={handleSort} center />
+              <Th label="1-hop reach" sortKey="reach" current={sortKey} asc={sortAsc} onClick={handleSort} center />
+              <Th label="1-hop worth" sortKey="wealth" current={sortKey} asc={sortAsc} onClick={handleSort} />
+              <Th label="2-hop reach" sortKey="reach2" current={sortKey} asc={sortAsc} onClick={handleSort} center />
+              <Th label="HNW ≤2 hops" sortKey="hnw2" current={sortKey} asc={sortAsc} onClick={handleSort} center />
+              <Th label="≤2-hop worth" sortKey="wealth2" current={sortKey} asc={sortAsc} onClick={handleSort} />
               <th className="text-left px-4 py-2.5 text-[10px] font-semibold tracking-widest uppercase text-text-muted">HNW names</th>
             </tr>
           </thead>
@@ -133,6 +139,15 @@ export function SupporterReachTable({ data }: { data: SupporterReachData }) {
                 <td className="px-4 py-3">
                   <span className={`text-sm font-mono ${s.totalReachWealth > 0 ? 'text-gold' : 'text-text-muted'}`}>{formatCurrency(s.totalReachWealth)}</span>
                 </td>
+                <td className="px-4 py-3 text-center">
+                  <span className="text-sm font-mono text-text-secondary">{s.secondDegreeCount}</span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <span className={`text-sm font-mono ${s.hnwWithin2Hops > 0 ? 'text-orange-400' : 'text-text-muted'}`}>{s.hnwWithin2Hops}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`text-sm font-mono ${s.reach2Wealth > 0 ? 'text-gold/80' : 'text-text-muted'}`}>{formatCurrency(s.reach2Wealth)}</span>
+                </td>
                 <td className="px-4 py-3">
                   {s.hnwNames.length > 0 ? (
                     <span className="text-xs text-text-secondary">{s.hnwNames.slice(0, 3).join(', ')}{s.hnwNames.length > 3 ? ` +${s.hnwNames.length - 3}` : ''}</span>
@@ -143,7 +158,7 @@ export function SupporterReachTable({ data }: { data: SupporterReachData }) {
               </tr>
             ))}
             {paged.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-text-muted">No supporters match your filters.</td></tr>
+              <tr><td colSpan={9} className="px-4 py-8 text-center text-text-muted">No supporters match your filters.</td></tr>
             )}
           </tbody>
         </table>

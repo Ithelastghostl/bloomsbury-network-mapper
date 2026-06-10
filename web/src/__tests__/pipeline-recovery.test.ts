@@ -8,7 +8,7 @@
  * - Retry increments attempts and respects max_attempts
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { PIPELINE_PHASES, type PipelinePhase } from '@/lib/pipeline/phases';
+import { type PipelinePhase } from '@/lib/pipeline/phases';
 
 // -------------------------------------------------------------------
 // In-memory pipeline job simulator for unit testing

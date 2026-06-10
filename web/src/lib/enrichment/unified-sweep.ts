@@ -11,7 +11,6 @@
 
 import type { CanonicalEntity } from '@/types/database';
 import type {
-  EnrichmentSource,
   GraphEnrichmentSignal,
   DiscoveredRelationship,
   DiscoveredArticle,

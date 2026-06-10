@@ -7,7 +7,6 @@
 import type { Run } from '@/types/database';
 import {
   evaluateAllCriteria,
-  DEFAULT_THRESHOLDS,
   type CriterionInputs,
   type CriterionResult,
   type RollbackAssessment,

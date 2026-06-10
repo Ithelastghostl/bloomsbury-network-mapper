@@ -6,6 +6,31 @@ All notable changes to this project will be documented here. Format follows [Kee
 
 ### Added
 
+- OODA presentation overhaul (per `OODA_IMPROVEMENT_PLAN.md`):
+  - Observe: source vs augmented column split with provenance chips, evidence drawer, and completeness meters in the entity table; source sheets now read `seed_import_rows` (backfilled via `scripts/backfill-seed-rows.ts`, JSON fallback); pipeline view paginated with tier A/B facet; "What's New" delta feed.
+  - Orient: dimension matrix (targets × all scoring dimensions with distribution sparklines), institution brokerage view (supporter↔target bridges), 2-hop reach scorecards on Supporter Reach, node size/colour overlays (wealth, path score, affinity, hops) on the Orbit and Introduction graphs.
+  - Decide: the four "By X" ranking tabs are real views with method-specific columns; existing-donor dedup (exact + name-variant match, analyst exclusions persisted in `known_contacts`); introduction paths capped at 10 and grouped by institution with one option per introducer; per-dimension evidence drill-in; CSV export (`/api/crm/export/leads.csv`); scores persisted to `lead_scores` under `scoring_configs` version `crm-composite-v1` (`scripts/persist-lead-scores.ts`).
+  - Act: editable action notes and assignee, frozen affinity rationale and route reasoning on every action, persistent entity notes (`entity_notes`), connection removal as replayable suppressions (`connection_overrides` — all graph/path loaders filter them, stored paths pruned on removal), audit logging into `audit_log`, automatic `intro_outcomes` on contacted/won/lost, and an Outcomes conversion report.
+  - Identity QA view: same-name and name-variant duplicate detection with one-click entity merge (`/api/crm/identity/merge-entities`, recorded in `entity_aliases`).
+  - Migration `00012_analyst_hygiene_and_lead_scores.sql`: `entity_notes`, `connection_overrides`, `lead_scores`; `intro_outcomes` accepts CRM-originated rows via nullable pipeline anchors + `entity_id`.
+
+### Performance
+
+- **~40× faster Observe pages.** `enrichEntities` and the entity-name resolution now chunk every `.in(...)` into 200-id batches run in parallel (`chunkedIn` in `web/src/lib/crm/queries.ts`). A single large `IN (...)` list is an ~80× PostgREST latency cliff (777 ids = 7.5 s; the same in 200-id chunks = 90 ms). `/crm/seeds` dropped 11.5 s → 293 ms and `/crm/hnw-targets` 11.8 s → 281 ms; every CRM page is now sub-600 ms in production.
+
+### Security
+
+- Auth-gated the new sensitive CRM routes that were missing `requireAdminOrLocal`: `export/leads.csv`, `whats-new`, `entities/[id]/history`, and (pre-existing, now consistent) `update-action` and `send-to-backlog`.
+- CSV export neutralises spreadsheet formula injection (cells leading with `= + - @` / tab / CR are quote-prefixed).
+- `update-action` validates the status against the workflow enum and coerces `notes`/`assignee` to primitives so a malformed body can't store objects in the jsonb.
+
+### Fixed
+
+- Build was failing on pre-existing type errors: CLI scripts excluded from the Next typecheck graph (`tsconfig.json`), d3 cleanup return in `supporter-reach-graph.tsx`, untyped seed JSON imports in the source sheet pages.
+- Entity merge now repoints **every** column that FK-references `canonical_entities` (was missing `seeds`, `candidate_recommendations`, `introduction_routes`, `entity_aliases`, and ~15 others) — incomplete repointing would FK-block the final delete and leave a half-merged entity. Verified end-to-end with a synthetic merge.
+- `compute-multi-paths` and graph/path loaders apply connection suppressions to derived shared-company (CO_MEMBER) edges, not just direct edges.
+- Minor React fixes: stable keys in the What's-New feed, `ActionEditor` re-keyed on save to avoid stale drafts, `reduce` instead of array-spread in the dimension-matrix distribution (avoids call-stack limits at scale).
+
 - Initial repo scaffold: `DESIGN.md`, `PROJECT.md`, `CHANGELOG.md`, `README.md`.
 - Dev Container based on tc-production recipe (Node 22 base, postCreateCommand upgrades to Node 24).
 - Post-create setup script installs: Claude Code, Gemini CLI, Codex, Supabase CLI, Vercel CLI; runs `gh auth login`; registers Supabase + Vercel MCPs.

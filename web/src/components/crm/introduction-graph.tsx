@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { NetworkGraph } from './network-graph';
 import type { IntroductionGraph as IntroData, IntroNode } from '@/lib/crm/introduction-graph';
 import type { GraphEdge } from '@/lib/crm/graph-queries';
+import { sizeValue, SIZE_BY_OPTIONS, type NodeMetrics, type SizeBy } from '@/lib/crm/graph-overlays';
 
 const SUPPORTER = '#a07d0a';
 const FIRST = '#2f6f6b';
@@ -19,24 +20,28 @@ function colorForNode(degree: number, isHnw: boolean): string {
   return ORG;
 }
 
-export function IntroductionGraph({ data }: { data: IntroData }) {
+export function IntroductionGraph({ data, metrics = {} }: { data: IntroData; metrics?: Record<string, NodeMetrics> }) {
   const [tab, setTab] = useState<'people' | 'orgs'>('people');
   const [maxHops, setMaxHops] = useState<1 | 2>(2);
+  const [sizeBy, setSizeBy] = useState<SizeBy>('degree');
 
   const fullGraph = tab === 'people' ? data.peopleChain : data.viaOrgs;
 
   const active = useMemo(() => {
-    if (maxHops === 2) return fullGraph;
-    const keepIds = new Set(
-      fullGraph.nodes
-        .filter((n: IntroNode) => n.degree <= 1 || n.degree === -1)
-        .map((n: IntroNode) => n.id),
-    );
-    return {
-      nodes: fullGraph.nodes.filter((n: IntroNode) => keepIds.has(n.id)),
-      edges: fullGraph.edges.filter((e: GraphEdge) => keepIds.has(e.source) && keepIds.has(e.target)),
-    };
-  }, [fullGraph, maxHops]);
+    let nodes = fullGraph.nodes;
+    let edges = fullGraph.edges;
+    if (maxHops === 1) {
+      const keepIds = new Set(
+        nodes.filter((n: IntroNode) => n.degree <= 1 || n.degree === -1).map((n: IntroNode) => n.id),
+      );
+      nodes = nodes.filter((n: IntroNode) => keepIds.has(n.id));
+      edges = edges.filter((e: GraphEdge) => keepIds.has(e.source) && keepIds.has(e.target));
+    }
+    if (sizeBy !== 'degree') {
+      nodes = nodes.map((n: IntroNode) => ({ ...n, connectionCount: sizeValue(sizeBy, metrics[n.id], n.connectionCount) }));
+    }
+    return { nodes, edges };
+  }, [fullGraph, maxHops, sizeBy, metrics]);
 
   const counts = useMemo(() => {
     const nodes = active.nodes as IntroNode[];
@@ -78,6 +83,14 @@ export function IntroductionGraph({ data }: { data: IntroData }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <select
+            value={sizeBy}
+            onChange={e => setSizeBy(e.target.value as SizeBy)}
+            className="bg-mid-charcoal border border-border-subtle rounded-md px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-gold/50"
+            title="Node size encoding"
+          >
+            {SIZE_BY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
           <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer select-none">
             <input
               type="checkbox"
@@ -113,7 +126,7 @@ export function IntroductionGraph({ data }: { data: IntroData }) {
         style={{ height: 'calc(100vh - 220px)' }}
       >
         <NetworkGraph
-          key={`${tab}-${maxHops}`}
+          key={`${tab}-${maxHops}-${sizeBy}`}
           nodes={active.nodes}
           edges={active.edges}
           nodeColorById={nodeColorById}

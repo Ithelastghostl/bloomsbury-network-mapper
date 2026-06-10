@@ -1,11 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { generateId } from '@/lib/ulid';
 import type {
-  GraphEnrichmentSignal,
   DiscoveredRelationship,
-  DiscoveredArticle,
   UnifiedSweepResult,
-  WealthBand,
 } from '@/lib/enrichment/types';
 import type { WealthAssessment } from '@/lib/enrichment/unified-sweep';
 

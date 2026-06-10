@@ -24,11 +24,9 @@ import {
 } from '@/lib/discovery/eligibility';
 import {
   generateReasonCodes,
-  type ReasonCode,
 } from '@/lib/discovery/reason-codes';
 import {
   calculateSeedQuality,
-  type SeedQualityInput,
 } from '@/lib/discovery/seed-quality';
 import { DirectedGraph } from '@/lib/graph/networkx';
 

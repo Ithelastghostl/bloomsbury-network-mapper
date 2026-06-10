@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { apiError, forbidden, serverError } from '@/lib/api-error';
+import { forbidden, serverError } from '@/lib/api-error';
 import { withIdempotency } from '@/lib/with-idempotency';
 import { augmentSingleSeed } from '@/lib/augmentation/orchestrator';
 

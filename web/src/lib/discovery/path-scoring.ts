@@ -6,7 +6,7 @@
  */
 
 import type { DirectedGraph, GraphEdge } from '@/lib/graph/networkx';
-import { matchTemplate, type PathTemplate } from './path-templates';
+import { type PathTemplate } from './path-templates';
 
 /** §16.2 — Length penalty lookup. 4+ edges excluded by default. */
 const LENGTH_PENALTY: Record<number, number> = {

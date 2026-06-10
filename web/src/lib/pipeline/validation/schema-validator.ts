@@ -8,7 +8,7 @@
  * PRD refs: R1.5.1, R1.5.2, R1.5.8, §14
  */
 
-import type { EntityMention, Quarantine } from '@/types/database';
+import type { EntityMention } from '@/types/database';
 
 // -------------------------------------------------------------------
 // Types
@@ -141,8 +141,8 @@ function validateAmounts(mention: EntityMention): string | null {
  */
 export function schemaValidate(
   mentions: EntityMention[],
-  documentId: string,
-  runId: string,
+  _documentId: string,
+  _runId: string,
 ): SchemaValidationResult {
   const valid: EntityMention[] = [];
   const quarantined: QuarantineItem[] = [];

@@ -79,7 +79,7 @@ export const POST = withIdempotency(async (
       .from('human_decisions')
       .select('*', { count: 'exact', head: true });
 
-    const { data: seedRows } = await supabase
+    await supabase
       .from('human_decisions')
       .select('candidate_recommendation_id')
       .limit(1000);

@@ -5,7 +5,7 @@
  * Each module implements: enrich(entity) -> EnrichmentSignal[]
  */
 
-import type { CanonicalEntity, EnrichmentSignal } from '@/types/database';
+import type { CanonicalEntity } from '@/types/database';
 
 /** Sources supported in v1 (§17.1) + seed augmentation + web augmentation */
 export type EnrichmentSource =

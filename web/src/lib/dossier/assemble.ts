@@ -169,7 +169,7 @@ function buildPaths(
     ];
   }
 
-  return allPaths.map((p, i) => ({
+  return allPaths.map((p, _i) => ({
     nodes: p.path,
     description: descriptionFromPath(p.path, entityNames),
     score: p.score?.pathScore ?? 0,

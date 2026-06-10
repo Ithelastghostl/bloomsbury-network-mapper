@@ -22,13 +22,6 @@ import {
 // CSV parsing (simple — no streaming needed for review decisions)
 // ---------------------------------------------------------------
 
-interface CSVRow {
-  candidate_recommendation_id: string;
-  decision: string;
-  reason_code: string;
-  notes: string;
-}
-
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   const lines = text.split('\n').filter(l => l.trim().length > 0);
   if (lines.length === 0) return { headers: [], rows: [] };

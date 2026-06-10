@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import { isSupporter, isHnwTarget } from './seed-reference';
 import type { GraphEdge } from './graph-queries';
+import { loadSuppressions, EMPTY_SUPPRESSIONS, type SuppressionSet } from './suppressions';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any;
@@ -83,16 +84,18 @@ export interface IntroTables {
   connections: ConnRow[];
   coDirectors: CoDirRow[];
   staged: StagedRow[];
+  suppressions?: SuppressionSet;
 }
 
 export const loadIntroductionTables = cache(async (supabase: SupabaseClient): Promise<IntroTables> => {
-  const [entities, connections, coDirectors, staged] = await Promise.all([
+  const [entities, connections, coDirectors, staged, suppressions] = await Promise.all([
     fetchAll<EntityRow>(supabase, 'canonical_entities', 'canonical_entity_id, display_name, entity_type'),
     fetchAll<ConnRow>(supabase, 'network_connections', 'source_entity_id, connected_entity_id, staged_entity_id, connection_type, via_organisation'),
     fetchAll<CoDirRow>(supabase, 'co_director_edges', 'seed_entity_id, co_director_entity_id, company_name'),
     fetchAll<StagedRow>(supabase, 'staged_entities', 'staged_entity_id, display_name'),
+    loadSuppressions(supabase),
   ]);
-  return { entities, connections, coDirectors, staged };
+  return { entities, connections, coDirectors, staged, suppressions };
 });
 
 const STAGED = (id: string) => `staged:${id}`;
@@ -100,6 +103,7 @@ const undirKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
 export function buildIntroductionGraph(tables: IntroTables): IntroductionGraph {
   const { entities, connections, coDirectors, staged } = tables;
+  const suppressions = tables.suppressions ?? EMPTY_SUPPRESSIONS;
 
   const name = new Map<string, string>();
   const type = new Map<string, 'person' | 'company'>();
@@ -129,6 +133,7 @@ export function buildIntroductionGraph(tables: IntroTables): IntroductionGraph {
 
   const link = (a: string, b: string, via?: string) => {
     if (!a || !b || a === b || !isPerson(a) || !isPerson(b)) return;
+    if (suppressions.isSuppressedPair(a, b)) return;
     if (!adj.has(a)) adj.set(a, new Map());
     if (!adj.has(b)) adj.set(b, new Map());
     if (!adj.get(a)!.has(b) || via) adj.get(a)!.set(b, via);

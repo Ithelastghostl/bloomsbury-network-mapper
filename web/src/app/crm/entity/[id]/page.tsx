@@ -1,6 +1,5 @@
 import { getAdminClient } from '@/lib/supabase/admin';
 import { fetchEntityById } from '@/lib/crm/queries';
-import { WEALTH_BAND_LABELS } from '@/lib/crm/types';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { EntityDetail } from './entity-detail';

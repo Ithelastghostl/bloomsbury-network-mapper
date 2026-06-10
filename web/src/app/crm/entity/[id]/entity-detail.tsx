@@ -1,11 +1,12 @@
 'use client';
 
-import type { EnrichedEntity } from '@/lib/crm/types';
-import { WEALTH_BAND_LABELS } from '@/lib/crm/types';
+import { useState } from 'react';
+import type { EnrichedEntity, ConnectionEntry } from '@/lib/crm/types';
 import { StatusBadge } from '@/components/crm/status-badge';
 import { WealthBadge } from '@/components/crm/wealth-badge';
 import { ScoreBar } from '@/components/crm/score-bar';
 import { AugmentButton } from '@/components/crm/augment-button';
+import { EntityNotes } from '@/components/crm/entity-notes';
 import Link from 'next/link';
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
@@ -23,7 +24,86 @@ function formatCurrency(value: number): string {
   return `£${value.toLocaleString()}`;
 }
 
+function ConnectionRow({ entityId, conn, onRemoved }: {
+  entityId: string;
+  conn: ConnectionEntry;
+  onRemoved: (id: string) => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function suppress() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch('/api/crm/connections/suppress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          connection_id: conn.connection_id,
+          source_entity_id: entityId,
+          connected_entity_id: conn.connected_entity_id,
+          reason: reason || undefined,
+        }),
+      });
+      if (res.ok) onRemoved(conn.connection_id);
+    } catch { /* keep the row; analyst can retry */ }
+    setBusy(false);
+  }
+
+  return (
+    <div className="py-1.5 border-b border-border-subtle last:border-0">
+      <div className="flex items-center justify-between">
+        <div>
+          <Link
+            href={`/crm/entity/${conn.connected_entity_id}`}
+            className="text-sm text-text-primary hover:text-gold transition-colors"
+          >
+            {conn.connected_name ?? conn.connected_entity_id.slice(0, 12)}
+          </Link>
+          <p className="text-xs text-text-muted">{conn.connection_type.replace(/_/g, ' ')}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {conn.via_organisation && (
+            <span className="text-xs text-text-muted">via {conn.via_organisation}</span>
+          )}
+          <button
+            onClick={() => setConfirming(!confirming)}
+            title="Remove this connection (analyst override)"
+            className="text-xs text-text-muted hover:text-red-400 transition-colors px-1"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+      {confirming && (
+        <div className="flex items-center gap-2 mt-1.5">
+          <input
+            type="text"
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            placeholder="Reason (optional) — why is this edge wrong?"
+            className="flex-1 bg-mid-charcoal border border-border-subtle rounded px-2 py-1 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-red-400/50"
+          />
+          <button
+            onClick={suppress}
+            disabled={busy}
+            className="text-[10px] px-2 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 disabled:opacity-40 transition-colors"
+          >
+            {busy ? 'Removing…' : 'Confirm remove'}
+          </button>
+          <button onClick={() => setConfirming(false)} className="text-[10px] text-text-muted hover:text-text-secondary">Cancel</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function EntityDetail({ entity }: { entity: EnrichedEntity }) {
+  const [removedConnections, setRemovedConnections] = useState<Set<string>>(new Set());
+  const visibleConnections = entity.connections.filter(c => !removedConnections.has(c.connection_id));
+
   return (
     <div>
       {/* Header */}
@@ -103,29 +183,26 @@ export function EntityDetail({ entity }: { entity: EnrichedEntity }) {
         )}
 
         {/* Connections */}
-        <Card title={`Network Connections (${entity.connections.length})`}>
-          {entity.connections.length > 0 ? (
+        <Card title={`Network Connections (${visibleConnections.length})`}>
+          {visibleConnections.length > 0 ? (
             <div className="space-y-2 max-h-80 overflow-y-auto">
-              {entity.connections.map(c => (
-                <div key={c.connection_id} className="flex items-center justify-between py-1.5 border-b border-border-subtle last:border-0">
-                  <div>
-                    <Link
-                      href={`/crm/entity/${c.connected_entity_id}`}
-                      className="text-sm text-text-primary hover:text-gold transition-colors"
-                    >
-                      {c.connected_name ?? c.connected_entity_id.slice(0, 12)}
-                    </Link>
-                    <p className="text-xs text-text-muted">{c.connection_type.replace(/_/g, ' ')}</p>
-                  </div>
-                  {c.via_organisation && (
-                    <span className="text-xs text-text-muted">via {c.via_organisation}</span>
-                  )}
-                </div>
+              {visibleConnections.map(c => (
+                <ConnectionRow
+                  key={c.connection_id}
+                  entityId={entity.canonical_entity_id}
+                  conn={c}
+                  onRemoved={id => setRemovedConnections(prev => new Set(prev).add(id))}
+                />
               ))}
             </div>
           ) : (
             <p className="text-sm text-text-muted">No connections mapped yet.</p>
           )}
+        </Card>
+
+        {/* Analyst notes */}
+        <Card title="Analyst Notes">
+          <EntityNotes entityId={entity.canonical_entity_id} />
         </Card>
 
         {/* Evidence */}

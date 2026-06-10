@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { NetworkGraph, componentColor } from './network-graph';
 import type { GraphData } from '@/lib/crm/graph-queries';
+import { sizeValue, HOP_COLORS, SIZE_BY_OPTIONS, type NodeMetrics, type SizeBy, type ColorBy } from '@/lib/crm/graph-overlays';
 
 function buildClusterLegend(nodes: GraphData['nodes']): Array<{ color: string; label: string }> {
   const sizeByComponent = new Map<number, number>();
@@ -51,15 +52,28 @@ function filterToOneHop(graph: GraphData): GraphData {
 export function OrbitGraph({
   orbit,
   bipartite,
+  metrics = {},
 }: {
   orbit: GraphData;
   bipartite: GraphData;
+  metrics?: Record<string, NodeMetrics>;
 }) {
   const [mode, setMode] = useState<'orbit' | 'bipartite'>('orbit');
   const [oneHop, setOneHop] = useState(false);
+  const [sizeBy, setSizeBy] = useState<SizeBy>('degree');
+  const [colorBy, setColorBy] = useState<ColorBy>('default');
 
   const fullGraph = mode === 'orbit' ? orbit : bipartite;
-  const active = useMemo(() => oneHop ? filterToOneHop(fullGraph) : fullGraph, [fullGraph, oneHop]);
+  const filteredGraph = useMemo(() => oneHop ? filterToOneHop(fullGraph) : fullGraph, [fullGraph, oneHop]);
+
+  // Dimension overlay: re-encode node size from the selected metric.
+  const active = useMemo(() => {
+    if (sizeBy === 'degree') return filteredGraph;
+    return {
+      nodes: filteredGraph.nodes.map(n => ({ ...n, connectionCount: sizeValue(sizeBy, metrics[n.id], n.connectionCount) })),
+      edges: filteredGraph.edges,
+    };
+  }, [filteredGraph, sizeBy, metrics]);
 
   const orbitCompanies = active.nodes.filter(n => n.type === 'company').length;
   const clusterLegend = useMemo(() => buildClusterLegend(active.nodes), [active.nodes]);
@@ -67,11 +81,17 @@ export function OrbitGraph({
   const nodeColorById = useMemo(() => {
     const m: Record<string, string> = {};
     for (const n of active.nodes) {
-      if (n.seedSource === 'hnw_targets') m[n.id] = HNW_COLOR;
-      else if (n.seedSource === 'supporters') m[n.id] = SUPPORTER_COLOR;
+      if (colorBy === 'hops' && n.type === 'person') {
+        const hops = metrics[n.id]?.hops;
+        m[n.id] = HOP_COLORS[hops != null ? String(hops) : 'none'] ?? HOP_COLORS.none;
+        if (n.seedSource === 'hnw_targets') m[n.id] = HNW_COLOR; // targets stay visible
+      } else {
+        if (n.seedSource === 'hnw_targets') m[n.id] = HNW_COLOR;
+        else if (n.seedSource === 'supporters') m[n.id] = SUPPORTER_COLOR;
+      }
     }
     return m;
-  }, [active.nodes]);
+  }, [active.nodes, colorBy, metrics]);
 
   const supporterCount = active.nodes.filter(n => n.seedSource === 'supporters').length;
   const hnwCount = active.nodes.filter(n => n.seedSource === 'hnw_targets').length;
@@ -89,6 +109,23 @@ export function OrbitGraph({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <select
+            value={sizeBy}
+            onChange={e => setSizeBy(e.target.value as SizeBy)}
+            className="bg-mid-charcoal border border-border-subtle rounded-md px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-gold/50"
+            title="Node size encoding"
+          >
+            {SIZE_BY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <select
+            value={colorBy}
+            onChange={e => setColorBy(e.target.value as ColorBy)}
+            className="bg-mid-charcoal border border-border-subtle rounded-md px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-gold/50"
+            title="Node colour encoding"
+          >
+            <option value="default">Colour: role</option>
+            <option value="hops">Colour: hops</option>
+          </select>
           <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer select-none">
             <input
               type="checkbox"
@@ -124,14 +161,22 @@ export function OrbitGraph({
         style={{ height: 'calc(100vh - 220px)' }}
       >
         <NetworkGraph
-          key={`${mode}-${oneHop}`}
+          key={`${mode}-${oneHop}-${sizeBy}-${colorBy}`}
           nodes={active.nodes}
           edges={active.edges}
-          colorByComponent={mode === 'orbit'}
+          colorByComponent={mode === 'orbit' && colorBy === 'default'}
           nodeColors={{ person: '#a07d0a', company: '#3b5a8a' }}
           nodeColorById={nodeColorById}
           legend={
-            mode === 'orbit'
+            colorBy === 'hops'
+              ? [
+                  { color: HOP_COLORS['0'], label: `Supporters (${supporterCount})` },
+                  { color: HOP_COLORS['1'], label: '1 hop from a supporter' },
+                  { color: HOP_COLORS['2'], label: '2 hops from a supporter' },
+                  { color: HOP_COLORS.none, label: 'Unreached' },
+                  { color: HNW_COLOR, label: `HNW targets (${hnwCount})` },
+                ]
+              : mode === 'orbit'
               ? [
                   { color: SUPPORTER_COLOR, label: `Supporters (${supporterCount})` },
                   { color: HNW_COLOR, label: `HNW targets (${hnwCount})` },

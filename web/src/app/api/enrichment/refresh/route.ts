@@ -5,7 +5,6 @@
  * Finds stale cache entries and enqueues refresh jobs.
  */
 
-import { type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { apiError, forbidden, serverError } from '@/lib/api-error';
 import { generateId } from '@/lib/ulid';

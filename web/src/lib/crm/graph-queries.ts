@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { seedInfo } from './seed-reference';
+import { loadSuppressions, type SuppressionSet } from './suppressions';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any;
@@ -42,6 +43,7 @@ interface EntityRow {
 }
 
 interface ConnectionRow {
+  connection_id: string;
   source_entity_id: string;
   connected_entity_id: string;
   connection_type: string;
@@ -49,6 +51,7 @@ interface ConnectionRow {
 }
 
 interface CoDirectorRow {
+  co_director_edge_id: string;
   seed_entity_id: string;
   co_director_entity_id: string;
   company_name: string | null;
@@ -69,13 +72,13 @@ async function fetchAll<T>(supabase: SupabaseClient, table: string, columns: str
 }
 
 const fetchAllConnections = (supabase: SupabaseClient) =>
-  fetchAll<ConnectionRow>(supabase, 'network_connections', 'source_entity_id, connected_entity_id, connection_type, via_organisation');
+  fetchAll<ConnectionRow>(supabase, 'network_connections', 'connection_id, source_entity_id, connected_entity_id, connection_type, via_organisation');
 
 const fetchAllEntities = (supabase: SupabaseClient) =>
   fetchAll<EntityRow>(supabase, 'canonical_entities', 'canonical_entity_id, display_name, entity_type');
 
 const fetchCoDirectorEdges = (supabase: SupabaseClient) =>
-  fetchAll<CoDirectorRow>(supabase, 'co_director_edges', 'seed_entity_id, co_director_entity_id, company_name');
+  fetchAll<CoDirectorRow>(supabase, 'co_director_edges', 'co_director_edge_id, seed_entity_id, co_director_entity_id, company_name');
 
 export interface GraphTables {
   entities: EntityRow[];
@@ -83,6 +86,9 @@ export interface GraphTables {
   connections: ConnectionRow[];
   coDirectors: CoDirectorRow[];
   charityIds: Set<string>;
+  /** Analyst edge suppressions — already applied to the row lists above; derived
+   * projections (shared-company pairs) must also consult this. */
+  suppressions: SuppressionSet;
 }
 
 /**
@@ -93,12 +99,17 @@ export interface GraphTables {
  * for the multi-second graph page loads.
  */
 export const loadGraphTables = cache(async (supabase: SupabaseClient): Promise<GraphTables> => {
-  const [entities, connections, coDirectors, charityEvidence] = await Promise.all([
+  const [entities, allConnections, allCoDirectors, charityEvidence, suppressions] = await Promise.all([
     fetchAllEntities(supabase),
     fetchAllConnections(supabase),
     fetchCoDirectorEdges(supabase),
     fetchCharityEvidenceIds(supabase),
+    loadSuppressions(supabase),
   ]);
+
+  // Human suppressions win: drop overridden edges before any graph is built.
+  const connections = allConnections.filter(c => !suppressions.isSuppressedConnection(c));
+  const coDirectors = allCoDirectors.filter(d => !suppressions.isSuppressedCoDirector(d));
 
   const entityMap = new Map(entities.map(e => [e.canonical_entity_id, e]));
 
@@ -107,7 +118,7 @@ export const loadGraphTables = cache(async (supabase: SupabaseClient): Promise<G
     if (e.entity_type === 'company' && isCharityByName(e.display_name)) charityIds.add(e.canonical_entity_id);
   }
 
-  return { entities, entityMap, connections, coDirectors, charityIds };
+  return { entities, entityMap, connections, coDirectors, charityIds, suppressions };
 });
 
 const CHARITY_KEYWORDS = ['foundation', 'trust', 'charity', 'charitable', 'endowment'];
@@ -199,6 +210,7 @@ export function buildOrbitGraph(
   const acc = new Map<string, EdgeAcc>();
   const addPair = (a: string, b: string, type: string, via?: string | null) => {
     if (!a || !b || a === b) return;
+    if (tables.suppressions.isSuppressedPair(a, b)) return;
     const k = pairKey(a, b);
     let e = acc.get(k);
     if (!e) {

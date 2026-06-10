@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { isSupporter, isHnwTarget, seedInfo } from './seed-reference';
+import { loadSuppressions } from './suppressions';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any;
@@ -29,6 +30,12 @@ export interface SupporterNode {
   totalReachWealth: number;
   totalReachCount: number;
   hnwNames: string[];
+  /** People exactly 2 hops away (not supporters, not 1-hop). */
+  secondDegreeCount: number;
+  /** HNW targets reachable within 2 hops. */
+  hnwWithin2Hops: number;
+  /** Combined net worth of everyone reachable within 2 hops. */
+  reach2Wealth: number;
 }
 
 export interface ReachEdge {
@@ -49,11 +56,12 @@ interface CoDirRow { seed_entity_id: string; co_director_entity_id: string; comp
 interface WealthRow { entity_id: string; band: string; score: number }
 
 export const loadSupporterReach = cache(async (supabase: SupabaseClient): Promise<SupporterReachData> => {
-  const [entities, connections, coDirectors, wealthRows] = await Promise.all([
+  const [entities, connections, coDirectors, wealthRows, suppressions] = await Promise.all([
     fetchAll<EntityRow>(supabase, 'canonical_entities', 'canonical_entity_id, display_name, entity_type, attributes'),
     fetchAll<ConnRow>(supabase, 'network_connections', 'source_entity_id, connected_entity_id, connection_type, via_organisation'),
     fetchAll<CoDirRow>(supabase, 'co_director_edges', 'seed_entity_id, co_director_entity_id, company_name'),
     fetchAll<WealthRow>(supabase, 'wealth_estimates', 'entity_id, band, score'),
+    loadSuppressions(supabase),
   ]);
 
   const nameOf = new Map(entities.map(e => [e.canonical_entity_id, e.display_name]));
@@ -85,6 +93,7 @@ export const loadSupporterReach = cache(async (supabase: SupabaseClient): Promis
   const adj = new Map<string, Map<string, string | undefined>>();
   const link = (a: string, b: string, via?: string) => {
     if (!a || !b || a === b || !isPerson(a) || !isPerson(b)) return;
+    if (suppressions.isSuppressedPair(a, b)) return;
     if (!adj.has(a)) adj.set(a, new Map());
     if (!adj.has(b)) adj.set(b, new Map());
     if (!adj.get(a)!.has(b) || via) adj.get(a)!.set(b, via);
@@ -121,6 +130,7 @@ export const loadSupporterReach = cache(async (supabase: SupabaseClient): Promis
         id: sId, name: nameOf.get(sId)!, tier: si?.tier ?? null, funderSubType: si?.funder_sub_type ?? null,
         firstDegreeHnw: 0, firstDegreeWealth: 0, firstDegreeNames: [],
         totalReachWealth: 0, totalReachCount: 0, hnwNames: [],
+        secondDegreeCount: 0, hnwWithin2Hops: 0, reach2Wealth: 0,
       });
       continue;
     }
@@ -144,11 +154,28 @@ export const loadSupporterReach = cache(async (supabase: SupabaseClient): Promis
       if (nw > 0) fdNames.push(nameOf.get(nbId)!);
     }
 
+    // 2-hop scorecard: neighbours-of-neighbours (excluding self, supporters, and 1-hop)
+    const firstHop = new Set(neighbours.keys());
+    const secondHop = new Set<string>();
+    for (const nbId of firstHop) {
+      for (const nb2 of adj.get(nbId)?.keys() ?? []) {
+        if (nb2 === sId || firstHop.has(nb2) || supporterIds.has(nb2)) continue;
+        secondHop.add(nb2);
+      }
+    }
+    let hnw2 = hnwCount;
+    let wealth2 = totalWealth;
+    for (const id2 of secondHop) {
+      if (hnwIds.has(id2)) hnw2++;
+      wealth2 += netWorthOf(id2);
+    }
+
     const si = seedInfo(nameOf.get(sId)!);
     supporters.push({
       id: sId, name: nameOf.get(sId)!, tier: si?.tier ?? null, funderSubType: si?.funder_sub_type ?? null,
       firstDegreeHnw: hnwCount, firstDegreeWealth: totalWealth, firstDegreeNames: fdNames,
       totalReachWealth: totalWealth, totalReachCount: neighbours.size, hnwNames,
+      secondDegreeCount: secondHop.size, hnwWithin2Hops: hnw2, reach2Wealth: wealth2,
     });
   }
 

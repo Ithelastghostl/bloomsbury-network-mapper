@@ -1,5 +1,4 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ulid } from 'ulid';
 import { processImport, createBootstrapRun } from './bootstrap';
 import { reviewStagedEntities } from './staging';
 import { runCorpusCrossRef } from './corpus-crossref';

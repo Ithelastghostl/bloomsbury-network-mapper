@@ -1,7 +1,6 @@
 import * as XLSX from 'xlsx';
 import type { HnwTargetRow, SupporterRow, ParseResult } from '@/types/seed-import';
 
-const SALESFORCE_HEADER_ROWS = 11;
 const HEADER_ROW = 12;
 
 function normaliseString(val: unknown): string {

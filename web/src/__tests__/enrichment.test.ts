@@ -12,7 +12,6 @@ import {
   SOURCE_TIER,
 } from '@/lib/enrichment/types';
 import {
-  type EnrichmentLifecycleState,
   isValidTransition,
   getValidNextStates,
   transition,
@@ -36,7 +35,6 @@ import {
   extractRetryAfterMs,
   BACKOFF_DELAYS_MS,
   MAX_RETRIES,
-  type RetryResult,
 } from '@/lib/enrichment/retry';
 import {
   enrichCandidate,

@@ -37,7 +37,7 @@ export const POST = withIdempotency(async (
   try {
     const { candidate_id } = await params;
     const body = await request.json();
-    const { intro_type, intro_date, outcome, notes } = body;
+    const { intro_type: _intro_type, intro_date, outcome, notes } = body;
 
     if (!outcome || !VALID_OUTCOMES.includes(outcome as IntroOutcomeStatus)) {
       return apiError(

@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { requireAdminOrLocal } from '@/lib/crm/auth';
+import { logAudit } from '@/lib/crm/audit';
 
 export async function POST(request: Request, { params }: { params: Promise<{ canonical_entity_id: string }> }) {
+  const denied = await requireAdminOrLocal();
+  if (denied) return denied;
   const { canonical_entity_id } = await params;
   const body = await request.json();
   const supabase = getAdminClient();
 
   const { data: entity, error: fetchErr } = await supabase
     .from('canonical_entities')
-    .select('attributes')
+    .select('display_name, attributes')
     .eq('canonical_entity_id', canonical_entity_id)
     .single();
 
@@ -33,6 +37,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ can
     sector: body.sector,
     bio: body.bio,
     breakdown: body.breakdown,
+    // Frozen reasoning snapshot: why this lead, by what path, on which affinity.
+    explanations: body.explanations ?? null,
+    affinity_rationale: body.affinityRationale ?? null,
+    best_path_reason: body.bestPathReason ?? null,
+    via_orgs: body.viaOrgs ?? null,
+    ranking_method: body.rankingMethod ?? 'composite',
+    hops: body.hops ?? null,
   };
 
   const { error: updateErr } = await supabase
@@ -43,6 +54,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ can
   if (updateErr) {
     return NextResponse.json({ error: { code: 'UPDATE_FAILED', message: updateErr.message } }, { status: 500 });
   }
+
+  await logAudit(supabase, 'action_item.create', `entity:${canonical_entity_id}`, {
+    entity_id: canonical_entity_id,
+    entity_name: entity.display_name,
+    lead_score: body.compositeScore,
+    ranking_method: body.rankingMethod ?? 'composite',
+  });
 
   return NextResponse.json({ ok: true, entity_id: canonical_entity_id });
 }

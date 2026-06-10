@@ -8,7 +8,7 @@
  * - The reviewer can split or confirm groupings; both feed human_identity_decisions.
  */
 
-import type { CandidateRecommendation, HumanIdentityDecision } from '@/types/database';
+import type { CandidateRecommendation } from '@/types/database';
 
 /** Presentation merge threshold per Appendix A.4 */
 export const PRESENTATION_MERGE_THRESHOLD = 0.75;

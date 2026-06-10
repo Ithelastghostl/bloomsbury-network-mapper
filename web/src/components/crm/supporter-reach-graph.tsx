@@ -170,7 +170,7 @@ export function SupporterReachGraph({ data }: { data: SupporterReachData }) {
       svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
     }
 
-    return () => sim.stop();
+    return () => { sim.stop(); };
   }, [data, mode]);
 
   return (

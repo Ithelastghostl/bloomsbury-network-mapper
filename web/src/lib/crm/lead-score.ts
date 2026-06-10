@@ -1,5 +1,13 @@
 import { isHnwTarget } from './seed-reference';
 
+/**
+ * Version tag for the composite lead-scoring formula. Bump when weights or
+ * inputs change; persisted scores in app.lead_scores key on this so ranked
+ * lists are reproducible.
+ */
+export const SCORING_CONFIG_VERSION = 'crm-composite-v1';
+export const SCORING_WEIGHTS = { connectivity: 0.2, wealth: 0.3, paths: 0.3, affinity: 0.2 } as const;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Attrs = Record<string, any>;
 
@@ -41,8 +49,12 @@ export interface ScoredLead {
   employer: string | null;
   location: string | null;
   connectionCount: number;
+  charityOverlap: number;
   isHumanValidated: boolean;
   actionStatus: string | null;
+  /** Set when this "lead" is really a current donor from the original list
+   * (exact/variant name match) or was excluded by an analyst. */
+  existingDonor: { matchName: string; kind: 'exact' | 'variant' | 'excluded' } | null;
 }
 
 export function scoreLead(
@@ -116,7 +128,7 @@ export function scoreLead(
     explanations,
     bestPath: paths.length > 0 ? paths[0].path_names?.join(' → ') : (intro?.path?.join(' → ') ?? null),
     rootSupporter: paths.length > 0 ? paths[0].root_supporter : (intro?.root_supporter ?? null),
-    introPaths: paths.slice(0, 5) as IntroPathDetail[],
+    introPaths: paths.slice(0, 10) as IntroPathDetail[],
     wealthBand: band,
     estimatedNw: nw,
     wealthSource: attrs.wealth_source ?? null,
@@ -126,7 +138,9 @@ export function scoreLead(
     employer: attrs.employer ?? null,
     location: attrs.location ?? null,
     connectionCount,
+    charityOverlap,
     isHumanValidated: !!attrs.identity_confirmed,
     actionStatus: attrs.action_item?.status ?? null,
+    existingDonor: null,
   };
 }
