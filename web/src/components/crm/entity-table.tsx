@@ -5,10 +5,11 @@ import Link from 'next/link';
 import type { EnrichedEntity, WealthBand } from '@/lib/crm/types';
 import { WEALTH_BAND_ORDER } from '@/lib/crm/types';
 import { seedInfo } from '@/lib/crm/seed-reference';
+import { SignalChips, SignalList } from './signal-chips';
 import { StatusBadge } from './status-badge';
 import { WealthBadge } from './wealth-badge';
 
-type SortKey = 'name' | 'foundAs' | 'wealth' | 'connections' | 'evidence' | 'state' | 'completeness';
+type SortKey = 'name' | 'foundAs' | 'wealth' | 'connections' | 'evidence' | 'signals' | 'state' | 'completeness';
 
 /** Colour per funder sub-type — "Current donor" is the one that already gave money. */
 const SUBTYPE_CLS: Record<string, string> = {
@@ -116,6 +117,9 @@ export function EntityTable({
         case 'foundAs':
           cmp = (seedInfo(a.display_name)?.funder_sub_type ?? 'zz').localeCompare(seedInfo(b.display_name)?.funder_sub_type ?? 'zz');
           break;
+        case 'signals':
+          cmp = (b.signals?.signals.length ?? 0) - (a.signals?.signals.length ?? 0);
+          break;
         case 'wealth':
           cmp = wealthSortValue(a.wealth?.band) - wealthSortValue(b.wealth?.band);
           break;
@@ -220,7 +224,7 @@ export function EntityTable({
           <thead>
             <tr className="bg-deep-charcoal/70 border-b border-border-subtle">
               <th colSpan={4} className="text-left px-3 py-1.5 text-[9px] font-semibold tracking-widest uppercase text-gold/70 border-r border-border-subtle">Source data (spreadsheets)</th>
-              <th colSpan={6} className="text-left px-3 py-1.5 text-[9px] font-semibold tracking-widest uppercase text-teal-400/70">Augmented intelligence (pipeline)</th>
+              <th colSpan={7} className="text-left px-3 py-1.5 text-[9px] font-semibold tracking-widest uppercase text-teal-400/70">Augmented intelligence (pipeline)</th>
             </tr>
             <tr className="bg-deep-charcoal border-b border-border-subtle">
               <th className={TH} onClick={() => handleSort('name')}>Name{sortIcon('name')}</th>
@@ -229,6 +233,7 @@ export function EntityTable({
               <th className="text-left px-3 py-2 text-[10px] font-semibold tracking-widest uppercase text-text-muted border-r border-border-subtle">Affiliation / Introduced by</th>
               <th className={TH} onClick={() => handleSort('wealth')}>Wealth{sortIcon('wealth')}</th>
               <th className="text-left px-3 py-2 text-[10px] font-semibold tracking-widest uppercase text-text-muted">Role</th>
+              <th className={`text-left ${TH}`} onClick={() => handleSort('signals')}>Signals{sortIcon('signals')}</th>
               <th className={`text-center ${TH}`} onClick={() => handleSort('connections')}>Links{sortIcon('connections')}</th>
               <th className={`text-center ${TH}`} onClick={() => handleSort('evidence')}>Evidence{sortIcon('evidence')}</th>
               <th className="text-left px-3 py-2 text-[10px] font-semibold tracking-widest uppercase text-text-muted">Provenance</th>
@@ -249,7 +254,7 @@ export function EntityTable({
                   className={`transition-colors cursor-pointer ${isOpen ? 'bg-deep-charcoal' : 'hover:bg-deep-charcoal/80'}`}
                   onClick={() => setExpandedId(isOpen ? null : entity.canonical_entity_id)}
                 >
-                  <td className="px-3 py-2.5" colSpan={isOpen ? 10 : 1}>
+                  <td className="px-3 py-2.5" colSpan={isOpen ? 11 : 1}>
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/crm/entity/${entity.canonical_entity_id}`}
@@ -291,6 +296,16 @@ export function EntityTable({
                             </div>
                           </div>
                         </div>
+
+                        {/* Enrichment signals, grouped by category */}
+                        {entity.signals && entity.signals.signals.length > 0 && (
+                          <div className="max-w-4xl rounded border border-teal-400/20 bg-teal-400/[0.03] px-3 py-2">
+                            <p className="text-[9px] font-semibold tracking-widest uppercase text-teal-400/70 mb-1.5">
+                              Enrichment signals ({entity.signals.signals.length}){entity.signals.multiSource && <span className="text-green-400 ml-1.5">· multi-source</span>}
+                            </p>
+                            <SignalList signals={entity.signals} />
+                          </div>
+                        )}
 
                         {/* Evidence drawer with provenance + links */}
                         {entity.evidence.length > 0 && (
@@ -350,6 +365,9 @@ export function EntityTable({
                           {attrs?.current_role ?? '—'}
                         </span>
                       </td>
+                      <td className="px-3 py-2.5 max-w-[180px]">
+                        <SignalChips signals={entity.signals} max={4} />
+                      </td>
                       <td className="px-3 py-2.5 text-center">
                         <span className={`text-sm font-mono ${entity.connections.length > 0 ? 'text-text-secondary' : 'text-text-muted'}`}>
                           {entity.connections.length}
@@ -384,7 +402,7 @@ export function EntityTable({
             })}
             {paged.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-text-muted">
+                <td colSpan={11} className="px-4 py-8 text-center text-text-muted">
                   No records match your filters.
                 </td>
               </tr>
