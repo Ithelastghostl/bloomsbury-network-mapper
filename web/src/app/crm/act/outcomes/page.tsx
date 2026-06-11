@@ -14,6 +14,7 @@ interface ActionRow {
   status: string;
   method: string;
   supporter: string;
+  institution: string;
   category: string;
   band: string;
   hops: string;
@@ -102,12 +103,14 @@ export default async function OutcomesPage() {
     .map(p => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ai = (p.attributes as any).action_item;
+      const viaOrgs = Array.isArray(ai.via_orgs) ? ai.via_orgs : [];
       return {
         id: p.canonical_entity_id,
         name: p.display_name,
         status: ai.status as string,
         method: (ai.ranking_method as string) ?? 'composite',
         supporter: (ai.root_supporter as string) ?? 'No supporter route',
+        institution: (typeof viaOrgs[0] === 'string' && viaOrgs[0]) || 'No institution',
         category: ((ai.lead_category as string) ?? 'unknown').replace(/_/g, ' '),
         band: (ai.wealth_band as string)?.replace(/_/g, '–') ?? 'unknown',
         hops: ai.hops != null ? `${ai.hops}-hop` : 'no path',
@@ -122,9 +125,9 @@ export default async function OutcomesPage() {
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-text-primary uppercase tracking-wide">Outcomes</h2>
         <p className="text-sm text-text-muted mt-0.5 max-w-4xl">
-          Conversion by ranking method, supporter, category, wealth band, and hops. {rows.length} actions,
+          Conversion by ranking method, introducer, institution, category, wealth band, and hops. {rows.length} actions,
           {' '}{terminal} with a terminal outcome. As outcomes accumulate, these tables show which scoring
-          dimensions and introducers actually convert — the evidence for tuning weights.
+          dimensions, introducers, and channels actually convert — the evidence for tuning weights.
         </p>
       </div>
 
@@ -134,7 +137,10 @@ export default async function OutcomesPage() {
         <RateTable title="By category" rows={aggregate(rows, r => r.category)} />
         <RateTable title="By wealth band" rows={aggregate(rows, r => r.band)} />
         <div className="lg:col-span-2">
-          <RateTable title="By root supporter (introducer)" rows={aggregate(rows, r => r.supporter).slice(0, 25)} />
+          <RateTable title="By introducer (root supporter)" rows={aggregate(rows, r => r.supporter).slice(0, 25)} />
+        </div>
+        <div className="lg:col-span-2">
+          <RateTable title="By institution (channel)" rows={aggregate(rows, r => r.institution).slice(0, 25)} />
         </div>
       </div>
 

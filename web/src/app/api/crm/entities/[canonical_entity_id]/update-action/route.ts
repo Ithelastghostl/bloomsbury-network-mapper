@@ -73,14 +73,21 @@ export const POST = withIdempotency(async (request: Request, { params }: { param
 
   // Record an introduction outcome the first time the action reaches a terminal
   // contact status, so conversion can be reported per supporter / method later.
+  // Route-level attribution (IDEA 15): freeze the introducer (root supporter) and
+  // institution (first via org) from the action_item snapshot onto the outcome,
+  // so conversion can be grouped by introducer and by channel.
   if (body.status && OUTCOME_STATUSES.has(body.status) && body.status !== prevStatus) {
+    const ai = attrs.action_item;
+    const viaOrgs = Array.isArray(ai.via_orgs) ? ai.via_orgs : [];
     const { error: outcomeErr } = await supabase.from('intro_outcomes').insert({
       intro_outcome_id: generateId(),
       entity_id: canonical_entity_id,
       intro_status: body.status,
       converted: body.status === 'won' ? true : body.status === 'lost' ? false : null,
-      notes: attrs.action_item.notes || null,
-      recorded_by: attrs.action_item.assignee || 'analyst',
+      notes: ai.notes || null,
+      recorded_by: ai.assignee || 'analyst',
+      introducer_name: typeof ai.root_supporter === 'string' ? ai.root_supporter : null,
+      via_organisation: typeof viaOrgs[0] === 'string' ? viaOrgs[0] : null,
     });
     if (outcomeErr) console.error(`intro_outcomes insert failed: ${outcomeErr.message}`);
   }

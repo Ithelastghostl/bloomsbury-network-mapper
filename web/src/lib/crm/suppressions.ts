@@ -30,15 +30,34 @@ export function suppressionPairKey(a: string, b: string): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`;
 }
 
+/**
+ * Multiplier applied to a downweighted edge's tie-strength / path-score. A
+ * downweight says "this tie is real but weak or suspect": the edge is kept (so
+ * the graph stays connected) but its contribution is halved so warmer routes
+ * outrank it. 0.5 is a deliberately blunt single knob — there is no per-edge
+ * weight yet, and tuning is out of scope (no scoring change without approval).
+ */
+export const DOWNWEIGHT_FACTOR = 0.5;
+
 export class SuppressionSet {
   readonly connectionIds = new Set<string>();
   readonly coDirectorEdgeIds = new Set<string>();
   readonly pairs = new Set<string>();
+  /** Pairs an analyst marked "real but weak/suspect": kept, but down-scored. */
+  readonly downweightedPairs = new Set<string>();
   readonly rows: OverrideRow[];
 
   constructor(rows: OverrideRow[]) {
     this.rows = rows;
     for (const r of rows) {
+      if (r.action === 'downweight') {
+        // Downweights never suppress — they only flag the pair as weak. A pair
+        // suppressed by another row still wins (a removed edge is gone, period).
+        if (r.source_entity_id && r.connected_entity_id) {
+          this.downweightedPairs.add(suppressionPairKey(r.source_entity_id, r.connected_entity_id));
+        }
+        continue;
+      }
       if (r.action !== 'remove') continue;
       if (r.connection_id) this.connectionIds.add(r.connection_id);
       if (r.co_director_edge_id) this.coDirectorEdgeIds.add(r.co_director_edge_id);
@@ -55,6 +74,21 @@ export class SuppressionSet {
   isSuppressedPair(a: string | null | undefined, b: string | null | undefined): boolean {
     if (!a || !b) return false;
     return this.pairs.has(suppressionPairKey(a, b));
+  }
+
+  /** True when an analyst flagged this pair as a real-but-weak tie (downweight). */
+  isDownweightedPair(a: string | null | undefined, b: string | null | undefined): boolean {
+    if (!a || !b) return false;
+    return this.downweightedPairs.has(suppressionPairKey(a, b));
+  }
+
+  /**
+   * Tie-strength / path-score multiplier for a pair: DOWNWEIGHT_FACTOR when the
+   * analyst flagged it weak, otherwise 1 (no change). A suppressed pair never
+   * reaches here — those edges are filtered out before scoring.
+   */
+  downweightFactor(a: string | null | undefined, b: string | null | undefined): number {
+    return this.isDownweightedPair(a, b) ? DOWNWEIGHT_FACTOR : 1;
   }
 
   isSuppressedConnection(row: {

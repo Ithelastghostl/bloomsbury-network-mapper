@@ -9,14 +9,19 @@ import { SuppressionSet, pruneIntroPaths, type OverrideRow } from '@/lib/crm/sup
 /**
  * POST /api/crm/connections/suppress
  *
- * Records a human suppression of a connection (a "remove" override). The edge
- * is never hard-deleted: every loader filters against connection_overrides, so
- * the decision survives re-augmentation. Stored intro_paths that traverse the
- * suppressed pair are pruned immediately so Decide/Act views update without a
- * full recompute.
+ * Records a human override of a connection. The edge is never hard-deleted:
+ * every loader filters against connection_overrides, so the decision survives
+ * re-augmentation.
+ *
+ * action: 'remove' (default) — the edge is wrong; it is dropped everywhere, and
+ *   stored intro_paths that traverse the pair are pruned immediately so
+ *   Decide/Act views update without a full recompute.
+ * action: 'downweight' — the tie is real but weak/suspect; the edge stays but
+ *   its tie-strength / path-score is reduced (see SuppressionSet.downweightFactor).
+ *   No path pruning — downweighted routes survive, just ranked lower.
  *
  * Body: { connection_id?, co_director_edge_id?, source_entity_id?,
- *         connected_entity_id?, reason?, author? }
+ *         connected_entity_id?, action?, reason?, author? }
  * Requires either a row id or a full entity pair.
  *
  * Idempotent on the `Idempotency-Key` header — a double-submit returns the
@@ -68,13 +73,15 @@ export const POST = withIdempotency(async (request: Request) => {
     );
   }
 
+  const action: 'remove' | 'downweight' = body.action === 'downweight' ? 'downweight' : 'remove';
+
   const override: OverrideRow = {
     override_id: generateId(),
     connection_id: connectionId,
     co_director_edge_id: coDirectorEdgeId,
     source_entity_id: sourceId,
     connected_entity_id: connectedId,
-    action: 'remove',
+    action,
     reason: typeof body.reason === 'string' && body.reason.trim() ? body.reason.trim() : null,
     author: typeof body.author === 'string' && body.author.trim() ? body.author.trim() : 'analyst',
     created_at: new Date().toISOString(),
@@ -94,12 +101,13 @@ export const POST = withIdempotency(async (request: Request) => {
     return NextResponse.json({ error: { code: 'INSERT_FAILED', message: insertErr.message } }, { status: 500 });
   }
 
-  await logAudit(supabase, 'connection.suppress', `pair:${sourceId ?? '?'}|${connectedId ?? '?'}`, {
+  await logAudit(supabase, action === 'downweight' ? 'connection.downweight' : 'connection.suppress', `pair:${sourceId ?? '?'}|${connectedId ?? '?'}`, {
     override_id: override.override_id,
     connection_id: connectionId,
     co_director_edge_id: coDirectorEdgeId,
     source_entity_id: sourceId,
     connected_entity_id: connectedId,
+    action,
     reason: override.reason,
   }, override.author);
 
@@ -112,8 +120,10 @@ export const POST = withIdempotency(async (request: Request) => {
   // intro_paths population ever grows large enough that this scan dominates the
   // request, move it to a background job (there is no general job worker today;
   // pipeline_jobs is run-scoped, so it isn't the right home yet).
+  // Only 'remove' prunes paths. A downweight keeps the route — it is re-scored
+  // (lower) at read time via SuppressionSet.downweightFactor, never deleted.
   let pruned = 0;
-  if (sourceId && connectedId) {
+  if (action === 'remove' && sourceId && connectedId) {
     const sup = new SuppressionSet([override]);
     let offset = 0;
     for (;;) {

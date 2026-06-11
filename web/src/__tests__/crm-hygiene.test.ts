@@ -24,8 +24,11 @@ import {
   suppressionPairKey,
   pruneIntroPaths,
   EMPTY_SUPPRESSIONS,
+  DOWNWEIGHT_FACTOR,
   type OverrideRow,
 } from '@/lib/crm/suppressions';
+import { detectAttributeConflicts } from '@/lib/crm/attribute-conflicts';
+import type { EnrichedEntity, WealthBand } from '@/lib/crm/types';
 import { matchSupporter } from '@/lib/crm/supporter-dedup';
 import {
   scoreLead,
@@ -180,6 +183,19 @@ describe('SuppressionSet', () => {
   it('only action:remove rows count — a downweight pair is NOT suppressed', () => {
     expect(sup.isSuppressedPair('D1', 'D2')).toBe(false);
     expect(sup.isSuppressedConnection({ connection_id: 'conn_dw' })).toBe(false);
+  });
+
+  it('a downweight pair is flagged downweighted (both directions) and scaled', () => {
+    expect(sup.isDownweightedPair('D1', 'D2')).toBe(true);
+    expect(sup.isDownweightedPair('D2', 'D1')).toBe(true);
+    expect(sup.downweightFactor('D1', 'D2')).toBe(DOWNWEIGHT_FACTOR);
+  });
+
+  it('a removed pair is not downweighted, and an unrelated pair scales by 1', () => {
+    expect(sup.isDownweightedPair('E1', 'E2')).toBe(false);
+    expect(sup.downweightFactor('E1', 'E2')).toBe(1);
+    expect(sup.downweightFactor('X', 'Y')).toBe(1);
+    expect(sup.downweightFactor(null, 'D2')).toBe(1);
   });
 
   it('isSuppressedPair handles null/undefined ids', () => {
@@ -647,5 +663,94 @@ describe('scoreLead (PRD §18.1 priority + §18.2 confidence)', () => {
     expect(s.actionStatus).toBe('in_progress');
     expect(s.connectionCount).toBe(3);
     expect(s.charityOverlap).toBe(1);
+  });
+});
+
+// ===================================================================
+// detectAttributeConflicts (IDEA 13)
+// ===================================================================
+
+describe('detectAttributeConflicts', () => {
+  // Minimal EnrichedEntity — only the fields the detector reads matter.
+  function ent(
+    attributes: Record<string, unknown>,
+    wealth: Partial<EnrichedEntity['wealth']> | null = null,
+  ): EnrichedEntity {
+    return {
+      canonical_entity_id: 'E_test',
+      entity_type: 'person',
+      display_name: 'Test Person',
+      attributes,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      wealth: wealth as any,
+      evidence: [],
+      connections: [],
+      donations: [],
+      pipeline_state: 'Enriched',
+      lead_source: 'unknown',
+    };
+  }
+
+  it('returns [] when sources agree', () => {
+    const e = ent({ wealth_band: '5m_25m' }, { band: '5m_25m' as WealthBand, score: 0, confidence: 0 });
+    expect(detectAttributeConflicts(e)).toEqual([]);
+  });
+
+  it('flags an augmentation band that disagrees with the sweep band', () => {
+    const e = ent({ wealth_band: '100m_plus' }, { band: '1m_5m' as WealthBand, score: 0, confidence: 0 });
+    const c = detectAttributeConflicts(e);
+    expect(c).toHaveLength(1);
+    expect(c[0].field).toBe('wealth_band');
+    expect(c[0].values.map(v => v.source)).toEqual(['attributes (augmentation)', 'wealth_estimates (sweep)']);
+  });
+
+  it('does NOT flag wealth_band when one side is unknown', () => {
+    expect(detectAttributeConflicts(ent({ wealth_band: 'unknown' }, { band: '5m_25m' as WealthBand, score: 0, confidence: 0 }))).toEqual([]);
+    expect(detectAttributeConflicts(ent({ wealth_band: '5m_25m' }, { band: 'unknown' as WealthBand, score: 0, confidence: 0 }))).toEqual([]);
+  });
+
+  it('compares against the ORIGINAL automated band when a human override exists', () => {
+    // Override corrected band to 100m_plus, but the automated band was 1m_5m,
+    // which still disagrees with the augmentation band 1m_5m? No — set augmentation
+    // to 100m_plus so it matches the override but conflicts with the automated band.
+    const e = ent(
+      { wealth_band: '100m_plus' },
+      {
+        band: '100m_plus' as WealthBand, score: 0, confidence: 0,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        override: { band: '100m_plus', automated_band: '1m_5m', reason: null, author: 'analyst', created_at: '' } as any,
+      },
+    );
+    const c = detectAttributeConflicts(e);
+    expect(c).toHaveLength(1);
+    expect(c[0].detail).toContain('£1M–5M');
+  });
+
+  it('flags a net-worth figure implying a band >1 rank from the stated band', () => {
+    // stated 1m_5m (rank 1), £200M implies 100m_plus (rank 4) -> gap 3 > 1.
+    const e = ent({ wealth_band: '1m_5m', estimated_net_worth_gbp: 200_000_000 });
+    const c = detectAttributeConflicts(e);
+    expect(c.some(x => x.values.some(v => v.source === 'estimated_net_worth_gbp'))).toBe(true);
+  });
+
+  it('does NOT flag a net-worth figure only one band off (boundary noise)', () => {
+    // stated 5m_25m (rank 2), £30M implies 25m_100m (rank 3) -> gap 1, allowed.
+    const e = ent({ wealth_band: '5m_25m', estimated_net_worth_gbp: 30_000_000 });
+    expect(detectAttributeConflicts(e)).toEqual([]);
+  });
+
+  it('flags a sector recorded differently across sources (case-insensitive)', () => {
+    const e = ent({ sector: 'Technology', enrichment: { sector: 'Finance' } });
+    const c = detectAttributeConflicts(e);
+    expect(c).toHaveLength(1);
+    expect(c[0].field).toBe('sector');
+  });
+
+  it('does NOT flag sector when the two values match case-insensitively', () => {
+    expect(detectAttributeConflicts(ent({ sector: 'Technology', enrichment: { sector: 'technology' } }))).toEqual([]);
+  });
+
+  it('handles an entity with no wealth and no attributes', () => {
+    expect(detectAttributeConflicts(ent({}, null))).toEqual([]);
   });
 });
