@@ -79,6 +79,11 @@ export interface ScoredLead {
   charityOverlap: number;
   isHumanValidated: boolean;
   actionStatus: string | null;
+  /** Per-category signal counts (directorship/philanthropy/rich_list/…) for the
+   * Decide toggles and chips. Empty object when no signals. */
+  signalCategories: Record<string, number>;
+  /** Distinct source systems backing this lead (corroboration breadth). */
+  signalSources: number;
   /** Set when this "lead" is really one of our supporters (we already have
    * direct access — they belong in Introductions as an introducer, not here)
    * or was excluded by an analyst. `subType` carries their funder sub-type
@@ -102,7 +107,7 @@ export function scoreLead(
   attrs: Attrs,
   connectionCount: number,
   charityOverlap: number,
-  extra: { evidenceCount?: number; newestEvidenceAt?: string | null; directorshipCount?: number } = {},
+  extra: { evidenceCount?: number; newestEvidenceAt?: string | null; directorshipCount?: number; donationCount?: number; signalCategories?: Record<string, number>; signalSources?: number } = {},
 ): ScoredLead {
   const intro = attrs.introduction;
   const paths = Array.isArray(attrs.intro_paths) ? attrs.intro_paths : [];
@@ -117,6 +122,7 @@ export function scoreLead(
     evidenceCount: extra.evidenceCount ?? 0,
     newestEvidenceAt: extra.newestEvidenceAt ?? null,
     directorshipCount: extra.directorshipCount ?? 0,
+    donationCount: extra.donationCount ?? 0,
   };
 
   // §18.1 priority + §18.2 confidence (canonical formulae, reused verbatim).
@@ -148,7 +154,7 @@ export function scoreLead(
       : intro?.degree
         ? `Reachable at ${intro.degree} hop${intro.degree > 1 ? 's' : ''} from ${intro.root_supporter ?? 'a supporter'}, no scored path yet. Introability ${dimensions.introability}/100.`
         : `No introduction path from our supporters. Introability ${dimensions.introability}/100.`,
-    affinity: `${cat === 'charity_donor' ? 'Connected to charities we track. ' : cat === 'hnw_target' ? 'On our HNW target list. ' : cat === 'wealth_identified' ? 'Has identified wealth. ' : ''}${charityOverlap > 0 ? `Shares ${charityOverlap} charity connection${charityOverlap > 1 ? 's' : ''}. ` : ''}§18.1 affinity ${dimensions.affinity}/100 (weight 25%).`,
+    affinity: `${cat === 'charity_donor' ? 'Connected to charities we track. ' : cat === 'hnw_target' ? 'On our HNW target list. ' : cat === 'wealth_identified' ? 'Has identified wealth. ' : ''}${charityOverlap > 0 ? `Shares ${charityOverlap} charity connection${charityOverlap > 1 ? 's' : ''}. ` : ''}${signals.donationCount > 0 ? `${signals.donationCount} recorded gift${signals.donationCount > 1 ? 's' : ''}. ` : ''}§18.1 affinity ${dimensions.affinity}/100 (weight 25%).`,
     capacity: nw
       ? `Observable capacity from £${nw >= 1e9 ? (nw / 1e9).toFixed(1) + 'B' : nw >= 1e6 ? (nw / 1e6).toFixed(0) + 'M' : (nw / 1e3).toFixed(0) + 'K'} (band ${band ?? 'unknown'})${signals.directorshipCount ? ` + ${signals.directorshipCount} directorship${signals.directorshipCount > 1 ? 's' : ''}` : ''}. §18.3 capacity ${dimensions.capacity}/100 (weight 20%).`
       : band && band !== 'unknown'
@@ -186,6 +192,8 @@ export function scoreLead(
     charityOverlap,
     isHumanValidated: !!attrs.identity_confirmed,
     actionStatus: attrs.action_item?.status ?? null,
+    signalCategories: extra.signalCategories ?? {},
+    signalSources: extra.signalSources ?? 0,
     existingSupporter: null,
   };
 }

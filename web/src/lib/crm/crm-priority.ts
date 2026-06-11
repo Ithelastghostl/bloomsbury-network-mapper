@@ -51,6 +51,9 @@ export interface CrmSignals {
   newestEvidenceAt: string | null;
   /** Count of DIRECTOR_OF / trustee connections (capacity input, §18.3). */
   directorshipCount: number;
+  /** Count of recorded donation_events for the entity (affinity input). Demonstrated
+   * giving is the strongest affinity signal — an evidenced gift beats inferred overlap. */
+  donationCount: number;
 }
 
 /** Build the §18.1 priority inputs from CRM attributes + aggregate signals. */
@@ -67,11 +70,15 @@ export function toPriorityInput(attrs: Attrs, s: CrmSignals): PriorityInput {
   const hopFallback = introDegree === 1 ? 0.6 : introDegree === 2 ? 0.35 : 0;
   const introabilityScore = Math.max(bestPath, hopFallback);
 
-  // affinity: shared charities + donor category + philanthropy sector.
+  // affinity: shared charities + donor category + philanthropy sector + evidenced
+  // giving. A recorded donation is the strongest affinity signal — observed giving
+  // outranks inferred overlap — so even one donation_event lifts affinity hard, with
+  // diminishing returns above a few.
   const overlap = Math.min(0.5, s.charityOverlap * 0.15);
   const catBonus = cat === 'charity_donor' ? 0.4 : cat === 'hnw_target' ? 0.3 : cat === 'wealth_identified' ? 0.15 : 0;
   const sectorBonus = AFFINITY_PHILANTHROPY.test(String(attrs.sector ?? '')) ? 0.1 : 0;
-  const affinityScore = Math.min(1, overlap + catBonus + sectorBonus);
+  const givingBonus = s.donationCount > 0 ? Math.min(0.5, 0.3 + (s.donationCount - 1) * 0.1) : 0;
+  const affinityScore = Math.min(1, overlap + catBonus + sectorBonus + givingBonus);
 
   // capacity_signal (§18.3): observable wealth band + a directorship signal. An
   // explicit £ figure firms up the band toward its ceiling.

@@ -4,10 +4,43 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { ScoredLead, IntroPathDetail } from '@/lib/crm/lead-score';
 import type { EnrichedEntity } from '@/lib/crm/types';
+import { edgeDossier, WARMTH_META } from '@/lib/crm/edge-classify';
 import { ExportCsvButton } from './export-csv-button';
+
+/**
+ * Light warmth read for an intro path's primary (introducer→target) link.
+ * We don't have co-director dates here, so warmth comes from the edge TYPE we
+ * can infer from the connecting institution: a charity-named org reads as a
+ * co-trustee tie, any other named org as a shared board, none as inferred.
+ */
+function pathWarmth(path: IntroPathDetail): { label: string; cls: string; dot: string } {
+  const via = path.via_orgs[0] ?? '';
+  const connection_type = via ? 'DIRECTOR_OF' : 'INFERRED_CONFIRMED';
+  const { warmth } = edgeDossier({ connection_type, via_organisation: via || null });
+  return WARMTH_META[warmth];
+}
 
 type SortKey = 'priority' | 'confidence' | 'introability' | 'affinity' | 'capacity' | 'influence' | 'name' | 'hops';
 type CategoryFilter = 'all' | 'hnw_target' | 'wealth_identified' | 'charity_donor' | 'discovered';
+
+/** Signal-category chip colours + short labels, shared with the row strip. */
+const SIGNAL_CAT_CLS: Record<string, string> = {
+  directorship: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  co_director: 'text-blue-300 bg-blue-300/10 border-blue-300/20',
+  philanthropy: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
+  property: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
+  rich_list: 'text-gold bg-gold/10 border-gold/20',
+  fund_management: 'text-green-400 bg-green-400/10 border-green-400/20',
+  political: 'text-red-400 bg-red-400/10 border-red-400/20',
+  charity: 'text-teal-300 bg-teal-300/10 border-teal-300/20',
+  news: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
+  web: 'text-text-secondary bg-mid-charcoal border-border-subtle',
+  other: 'text-text-muted bg-mid-charcoal border-border-subtle',
+};
+const SIGNAL_CAT_SHORT: Record<string, string> = {
+  directorship: 'Dir', co_director: 'Co-dir', philanthropy: 'Phil', property: 'Prop',
+  rich_list: 'Press', fund_management: 'Fund', political: 'Pol', charity: 'Charity', news: 'News', web: 'Web', other: 'Other',
+};
 
 const CAT_LABELS: Record<string, string> = { hnw_target: 'HNW Target', wealth_identified: 'Wealth ID', charity_donor: 'Charity Donor', discovered: 'Discovered' };
 const CAT_COLORS: Record<string, string> = { hnw_target: 'text-orange-400 bg-orange-400/10', wealth_identified: 'text-gold bg-gold/10', charity_donor: 'text-teal-400 bg-teal-400/10', discovered: 'text-text-muted bg-mid-charcoal' };
@@ -163,6 +196,82 @@ function LeadEvidence({ entityId }: { entityId: string }) {
   );
 }
 
+/** The four qualification-gate checks (local analyst self-check, not persisted). */
+const GATE_CHECKS = ['Reason to give', 'Has the means (capacity)', 'Right timing', 'Receptive to contact'] as const;
+
+/**
+ * A tight "why this lead" card for the Decide expansion: the three strongest of
+ * the give-relevant pillars (introability / affinity / capacity) with their
+ * explanations, the best introducer to open the door, and a four-point
+ * qualification gate the analyst ticks off as a quick go/no-go self-check.
+ * Gate state is local UI only — a scratch check, deliberately not persisted.
+ */
+function WhyThisLeadCard({ lead }: { lead: ScoredLead }) {
+  const [checked, setChecked] = useState<boolean[]>([false, false, false, false]);
+
+  // Top-3 give-relevant pillars by score, strongest first.
+  const pillars = ([
+    ['Introability', lead.dimensions.introability, lead.explanations.introability],
+    ['Affinity', lead.dimensions.affinity, lead.explanations.affinity],
+    ['Capacity', lead.dimensions.capacity, lead.explanations.capacity],
+  ] as [string, number, string][]).sort((a, b) => b[1] - a[1]);
+
+  const checkedCount = checked.filter(Boolean).length;
+
+  return (
+    <div className="rounded border border-gold/20 bg-gold/[0.04] px-3 py-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-gold/90 mb-2">Why this lead</p>
+
+      {/* Strongest pillars */}
+      <div className="grid grid-cols-3 gap-2 mb-2.5">
+        {pillars.map(([label, score, explanation]) => (
+          <div key={label} className="rounded border border-border-subtle bg-mid-charcoal/30 px-2 py-1.5">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-medium text-text-secondary">{label}</span>
+              <ScoreBar value={score} />
+            </div>
+            <p className="text-[9px] text-text-muted leading-relaxed">{explanation}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Best introducer */}
+      <div className="rounded border border-border-subtle bg-mid-charcoal/20 px-2.5 py-1.5 mb-2.5">
+        <p className="text-[9px] font-semibold uppercase tracking-wider text-text-muted mb-0.5">Best introducer</p>
+        {lead.rootSupporter ? (
+          <p className="text-[11px] text-text-primary">
+            {lead.rootSupporter}
+            {lead.bestPath && <span className="text-[10px] text-text-muted"> &middot; {lead.bestPath}</span>}
+          </p>
+        ) : (
+          <p className="text-[10px] text-text-muted">No warm introducer mapped — cold approach or build a path first.</p>
+        )}
+      </div>
+
+      {/* Qualification gate */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">Qualification gate</p>
+          <span className={`text-[9px] font-mono ${checkedCount === 4 ? 'text-green-400' : 'text-text-muted'}`}>{checkedCount}/4</span>
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          {GATE_CHECKS.map((label, i) => (
+            <label key={label} className="flex items-center gap-2 text-[11px] text-text-secondary cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={checked[i]}
+                onChange={() => setChecked(prev => prev.map((v, j) => j === i ? !v : v))}
+                className="accent-gold"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: ScoredLead[]; method?: string }) {
   const cfg = METHODS[method] ?? METHODS.priority;
   const [search, setSearch] = useState('');
@@ -171,6 +280,8 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
   const [sectorFilter, setSectorFilter] = useState<string>('all');
   const [bandFilter, setBandFilter] = useState<string>('all');
   const [validatedFilter, setValidatedFilter] = useState<'all' | 'yes' | 'no'>('all');
+  const [signalFilter, setSignalFilter] = useState<string>('all');
+  const [multiSourceOnly, setMultiSourceOnly] = useState(false);
   const [showExisting, setShowExisting] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>(cfg.sortKey);
   const [sortAsc, setSortAsc] = useState(false);
@@ -214,8 +325,10 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
     if (sectorFilter !== 'all') list = list.filter(l => l.sector === sectorFilter);
     if (bandFilter !== 'all') list = list.filter(l => l.wealthBand === bandFilter);
     if (validatedFilter !== 'all') list = list.filter(l => validatedFilter === 'yes' ? l.isHumanValidated : !l.isHumanValidated);
+    if (signalFilter !== 'all') list = list.filter(l => (l.signalCategories[signalFilter] ?? 0) > 0);
+    if (multiSourceOnly) list = list.filter(l => l.signalSources >= 2);
     return list;
-  }, [effective, search, category, hopFilter, sectorFilter, bandFilter, validatedFilter, showExisting]);
+  }, [effective, search, category, hopFilter, sectorFilter, bandFilter, validatedFilter, signalFilter, multiSourceOnly, showExisting]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -349,6 +462,24 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
           <option value="yes">Human validated</option>
           <option value="no">Unvalidated</option>
         </select>
+        <select value={signalFilter} onChange={e => { setSignalFilter(e.target.value); setPage(0); }}
+          className="bg-mid-charcoal border border-border-subtle rounded-md px-2.5 py-1.5 text-xs text-text-primary focus:outline-none focus:border-gold/50"
+          title="Show only leads with a given enrichment signal">
+          <option value="all">Signal: Any</option>
+          <option value="directorship">Has directorships</option>
+          <option value="co_director">Has co-director network</option>
+          <option value="philanthropy">Has philanthropy</option>
+          <option value="rich_list">Has rich-list / press</option>
+          <option value="property">Has property</option>
+          <option value="fund_management">Has fund mgmt</option>
+          <option value="political">Has political donations</option>
+          <option value="charity">Has charity links</option>
+          <option value="news">Has news coverage</option>
+        </select>
+        <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer select-none">
+          <input type="checkbox" checked={multiSourceOnly} onChange={e => { setMultiSourceOnly(e.target.checked); setPage(0); }} className="accent-gold" />
+          Multi-source only
+        </label>
         <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer select-none">
           <input type="checkbox" checked={showExisting} onChange={e => { setShowExisting(e.target.checked); setPage(0); }} className="accent-gold" />
           Show our supporters &amp; excluded ({existingCount})
@@ -398,6 +529,14 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
                       )}
                       {!isOpen && l.bio && l.bio !== 'No public profile found.' && <span className="text-[10px] text-text-muted truncate max-w-[180px]">{l.bio}</span>}
                     </div>
+                    {!isOpen && Object.keys(l.signalCategories).length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                        {Object.entries(l.signalCategories).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([cat, n]) => (
+                          <span key={cat} className={`text-[8px] font-semibold uppercase tracking-wider px-1 py-0.5 rounded border ${SIGNAL_CAT_CLS[cat] ?? SIGNAL_CAT_CLS.other}`}>{SIGNAL_CAT_SHORT[cat] ?? cat} {n}</span>
+                        ))}
+                        {l.signalSources >= 2 && <span className="text-[8px] text-green-400">✓ multi-source</span>}
+                      </div>
+                    )}
 
                     {isOpen && (
                       <div className="mt-3 space-y-4" onClick={e => e.stopPropagation()}>
@@ -435,6 +574,9 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
                             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${CAT_COLORS[l.category] ?? ''}`}>{CAT_LABELS[l.category] ?? l.category}</span>
                           </div>
                         </div>
+
+                        {/* Why this lead — strongest pillars, best introducer, qualification gate */}
+                        <WhyThisLeadCard lead={l} />
 
                         {/* Score explainability */}
                         <div>
@@ -501,6 +643,11 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
                                         <div className="flex items-center gap-2">
                                           <span className="text-[10px] font-bold text-text-muted">#{p.rank}</span>
                                           <span className={`text-[10px] font-mono px-1 py-0.5 rounded ${p.score >= 70 ? 'text-green-400 bg-green-400/10' : p.score >= 45 ? 'text-gold bg-gold/10' : 'text-text-muted bg-mid-charcoal'}`}>{p.score}</span>
+                                          {(() => { const w = pathWarmth(p); return (
+                                            <span className={`inline-flex items-center gap-1 text-[9px] px-1 py-0.5 rounded border ${w.cls}`} title="Tie warmth of the connecting link">
+                                              <span className={`w-1.5 h-1.5 rounded-full ${w.dot}`} />{w.label}
+                                            </span>
+                                          ); })()}
                                           <span className="text-xs text-text-primary font-medium">{p.root_supporter}</span>
                                           {p.supporter_tier && <span className="text-[10px] text-text-muted">({p.supporter_tier === 'Priority / very important' ? 'Priority' : p.supporter_tier})</span>}
                                           {p.supporter_sub_type && <span className="text-[10px] text-gold">{p.supporter_sub_type}</span>}

@@ -32,7 +32,7 @@ async function pageAll<T>(supabase: SupabaseClient, table: string, columns: stri
  * source of warm paths, not in the lead list (we already have access to them).
  */
 export async function computeScoredLeads(supabase: SupabaseClient): Promise<ScoredLead[]> {
-  const [persons, allConns, suppressions, exclusions, evidence] = await Promise.all([
+  const [persons, allConns, suppressions, exclusions, evidence, donations] = await Promise.all([
     pageAll<{ canonical_entity_id: string; display_name: string; attributes: Record<string, unknown> }>(
       supabase, 'canonical_entities', 'canonical_entity_id, display_name, entity_type, attributes',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,9 +47,14 @@ export async function computeScoredLeads(supabase: SupabaseClient): Promise<Scor
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (q: any) => q.eq('exclude_as_candidate', true),
     ),
-    // Evidence aggregates feed §18.2 confidence (corroboration + freshness).
-    pageAll<{ entity_id: string; created_at: string }>(
-      supabase, 'enrichment_evidence', 'entity_id, created_at',
+    // Evidence aggregates feed §18.2 confidence (corroboration + freshness) and
+    // the Decide signal toggles (category + source breakdown).
+    pageAll<{ entity_id: string; created_at: string; source: string; evidence_text: string }>(
+      supabase, 'enrichment_evidence', 'entity_id, created_at, source, evidence_text',
+    ),
+    // Recorded giving (donation_events) is the strongest §18.1 affinity signal.
+    pageAll<{ donor_entity_id: string }>(
+      supabase, 'donation_events', 'donor_entity_id',
     ),
   ]);
 
@@ -77,10 +82,41 @@ export async function computeScoredLeads(supabase: SupabaseClient): Promise<Scor
 
   const evidenceCount = new Map<string, number>();
   const newestEvidence = new Map<string, string>();
+  // Signal categories + distinct sources per entity, for the Decide toggles.
+  const sigCats = new Map<string, Record<string, number>>();
+  const sigSources = new Map<string, Set<string>>();
+  const evCat = (source: string, text: string): string => {
+    const s = source.toLowerCase(), t = (text ?? '').toLowerCase();
+    if (s.includes('companies_house')) return /trustee|charit|foundation/.test(t) ? 'charity' : 'directorship';
+    if (s.includes('charity') || s.includes('360giving')) return 'charity';
+    if (s.includes('electoral')) return 'political';
+    if (s.includes('land')) return 'property';
+    if (s.includes('forbes') || s.includes('rich')) return 'rich_list';
+    if (s.includes('news') || s.includes('guardian') || s.includes('gdelt')) return 'news';
+    if (s.includes('web_search') || s.includes('wiki')) return 'web';
+    return 'other';
+  };
   for (const e of evidence) {
     evidenceCount.set(e.entity_id, (evidenceCount.get(e.entity_id) ?? 0) + 1);
     const cur = newestEvidence.get(e.entity_id);
     if (!cur || e.created_at > cur) newestEvidence.set(e.entity_id, e.created_at);
+    const cat = evCat(e.source, e.evidence_text);
+    const m = sigCats.get(e.entity_id) ?? {};
+    m[cat] = (m[cat] ?? 0) + 1;
+    sigCats.set(e.entity_id, m);
+    (sigSources.get(e.entity_id) ?? sigSources.set(e.entity_id, new Set()).get(e.entity_id)!).add(e.source);
+  }
+  // Recorded-giving counts per donor (affinity signal).
+  const donationCount = new Map<string, number>();
+  for (const d of donations) {
+    if (d.donor_entity_id) donationCount.set(d.donor_entity_id, (donationCount.get(d.donor_entity_id) ?? 0) + 1);
+  }
+
+  // Fold the directorship signal (from connections) into the categories.
+  for (const [id, n] of directorshipCount) {
+    const m = sigCats.get(id) ?? {};
+    m.directorship = Math.max(m.directorship ?? 0, n);
+    sigCats.set(id, m);
   }
 
   return persons
@@ -96,6 +132,9 @@ export async function computeScoredLeads(supabase: SupabaseClient): Promise<Scor
           evidenceCount: evidenceCount.get(p.canonical_entity_id) ?? 0,
           newestEvidenceAt: newestEvidence.get(p.canonical_entity_id) ?? null,
           directorshipCount: directorshipCount.get(p.canonical_entity_id) ?? 0,
+          donationCount: donationCount.get(p.canonical_entity_id) ?? 0,
+          signalCategories: sigCats.get(p.canonical_entity_id) ?? {},
+          signalSources: (sigSources.get(p.canonical_entity_id)?.size ?? 0),
         },
       );
       if (excludedIds.has(p.canonical_entity_id)) {
