@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data and provenance — Bloomsbury Network Mapper</title>
+<link rel="stylesheet" href="https://use.typekit.net/you7djq.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Oswald:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/guide-style.css">
+<style>
+  /* The doc H1 is rendered by the hero; in-body H1s (rare) read like section titles. */
+  h1.doc-h1 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; color: var(--black); margin: 40px 0 16px; }
+  .doc-switch { flex-wrap: wrap; }
+  .back-link { display: inline-block; margin: 0 0 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <p class="eyebrow">Bloomsbury Football Foundation</p>
+  <h1>Data and provenance</h1>
+  <p>This document is about trust. What data the platform holds, where it comes from, and the distinction that matters most for an intelligence tool: what is *evidenced*, what is *inferred*, and what is *estimated*. Read it before you put weight on any figure.</p>
+  <div class="meta">Bloomsbury Network Mapper · Onboarding & handoff</div>
+</header>
+
+<div class="wrap">
+<main>
+  <a class="back-link" href="/crm/decide">← Back to the app</a>
+  <div class="guide-switch doc-switch">
+    <a href="/docs/what-this-is.html">Overview</a>
+    <a href="/docs/user-guide.html">User guide</a>
+    <a href="/docs/scoring-and-tabs.html">Scoring &amp; tabs</a>
+    <a href="/docs/analyst-playbook.html">Playbook</a>
+    <a href="/docs/glossary.html">Glossary</a>
+    <a href="/docs/data-and-provenance.html" class="active">Data &amp; provenance</a>
+    <a href="/docs/admin-ops-runbook.html">Admin &amp; ops</a>
+  </div>
+
+<p>The governing principle is <strong>evidence-first</strong>: every entity, connection, score, and recommendation has provenance. Nothing exists without a recorded source. There is no orphan data. When you see a claim, you can trace it back.</p>
+<hr>
+<h2>What is in the system</h2>
+<p>As a rough sense of scale (live counts move as processing runs):</p>
+<ul>
+<li>About <strong>1,700 people</strong> and <strong>1,100 organisations</strong>.</li>
+<li>About <strong>3,700 connections</strong> between them.</li>
+<li>About <strong>530 wealth estimates</strong> and <strong>2,800 evidence items</strong>.</li>
+<li>A small number of <strong>recorded donations</strong> (this set is deliberately thin; see <a href="#giving-data-is-thin-on-purpose">Giving data</a>).</li>
+</ul>
+<p>These come from two original input lists (the supporters spreadsheet and the high-net-worth target spreadsheet) plus everything discovered by reading the corpus and researching the people in it.</p>
+<hr>
+<h2>Where the data comes from</h2>
+<p>There are exactly two external sources. Knowing which source a fact came from tells you how much to trust it.</p>
+<h3>1. Charity Commission filings (the corpus)</h3>
+<p>The backbone. About 20,000 public filings (trustee reports and financial statements) from the UK Charity Commission, covering 2019 to 2025, converted to text. These are official, public-record documents.</p>
+<p>What they give us:</p>
+<ul>
+<li>Who sits on which charity boards (trustees).</li>
+<li>Co-trusteeships and co-directorships (people who serve together).</li>
+<li>The organisations themselves.</li>
+</ul>
+<p>This is the strongest source. A trusteeship recorded in a filing is a matter of public record. It can still be out of date (someone may have since resigned), but it is not a guess.</p>
+<h3>2. Web research</h3>
+<p>To fill in what the filings do not cover (wealth, biography, current role, press), the system does web research on named individuals. This is how most wealth bands, net-worth figures, and biographical details are attached.</p>
+<p>This source is weaker than the filings. It is useful and often accurate, but it is research from public web sources, not official records. It is more prone to same-name confusion, staleness, and imprecision. Treat web-sourced wealth figures as informed estimates, not facts.</p>
+<div class="note"><strong>What "Companies House" means here.</strong> Some signals are labelled as coming from company-directorship records. In this build those come from the corpus and research, not from a live Companies House API. The label describes the *kind* of fact (a directorship), not a live external feed.</div>
+<hr>
+<h2>Evidenced vs inferred vs estimated</h2>
+<p>This is the distinction to internalise. The platform mixes three grades of data, and they do not deserve equal trust.</p>
+<h3>Evidenced</h3>
+<p>A fact with a specific source you can open: a named filing, a directorship record, a research finding with a link. Example: "Trustee of [charity], per their 2023 annual report." You can verify it.</p>
+<p>Most connections derived from the filings are evidenced. The evidence is attached and viewable on the dossier.</p>
+<p><strong>Trust it, but check the date.</strong> Evidence is real but can be stale. A directorship from 2020 may have ended.</p>
+<h3>Inferred</h3>
+<p>A relationship the system deduced rather than read directly. Example: two people who appear together in several filings are inferred to know each other (a "corpus mention" connection), even though no document states it outright.</p>
+<p>Inference is reasonable but it is a judgement the machine made, not a recorded fact. A shared board seat is evidenced; "they probably know each other because they keep appearing together" is inferred. The platform marks inferred connections with weaker edge types and lower tie strength precisely so you can tell them apart.</p>
+<p><strong>Verify before you rely on it.</strong> This is exactly what the Suggested Ties tab is for: predicted connections that a human confirms or dismisses.</p>
+<h3>Estimated</h3>
+<p>A modelled value, most often wealth. Example: a £5m–25m wealth band. Estimates are expressed as bands rather than precise numbers because the underlying data supports a range more honestly than a point figure.</p>
+<p>An estimate is the softest grade. It is a useful signal for ranking, but it is not a statement of fact about someone's finances.</p>
+<p><strong>Never present an estimate as a known figure.</strong> Internally the capacity score is built from *observable* signals (the band, plus a researched figure, plus directorships) rather than a bare estimate alone, specifically to avoid over-trusting a guessed number. Carry that same caution into any conversation.</p>
+<hr>
+<h2>The scores are summaries of evidence, not new facts</h2>
+<p>The priority and confidence scores (see <code>02_SCORING_AND_TABS.md</code>) are computed from the data above. They do not add information; they compress it. A high capacity score is a compression of "this person has a high wealth band and several directorships". If the underlying evidence is an estimate, the score inherits that softness.</p>
+<p>This is why the confidence score exists and sits next to priority: it tells you how solid the evidence behind the priority is. A high priority built on a single, stale, web-sourced estimate will carry a low confidence, and that low confidence is the system telling you to check before you act.</p>
+<hr>
+<h2>Why a human has to verify</h2>
+<p>Three failure modes are inherent to public-record and researched data, and none of them can be fully fixed by the machine:</p>
+<ol>
+<li><strong>Same-name ambiguity.</strong> "James Wright" in two filings may or may not be the same James Wright. The system makes a best guess at matching identities, but it cannot be certain. A human confirming the identity is the single most valuable check, which is why it is the heaviest input to the confidence score.</li>
+</ol>
+<ol>
+<li><strong>Staleness.</strong> Filings and research are snapshots. Roles change, boards turn over, fortunes move. The freshness score discounts old evidence, but only a person knows whether a three-year-old directorship still holds.</li>
+</ol>
+<ol>
+<li><strong>Inference error.</strong> A "probably knows" link can be wrong. Two people appearing in the same documents is suggestive, not conclusive.</li>
+</ol>
+<p>The platform's answer to all three is the human in the loop, with tools to correct the data permanently. See the next section.</p>
+<hr>
+<h2>How humans correct the data</h2>
+<p>Every correction an analyst makes wins over the automated logic, is recorded, and survives later re-processing. Human decisions always win. The tools:</p>
+<ul>
+<li><strong>Confirm or reject identity</strong> (Identity QA): settles the same-name question and lifts confidence.</li>
+<li><strong>Remove a connection</strong> (suppress): deletes a wrong edge from every view, permanently. It never resurfaces, even after the data is re-augmented.</li>
+<li><strong>Downweight a connection</strong>: keeps a real-but-weak tie at reduced strength rather than deleting it.</li>
+<li><strong>Override a wealth band</strong>: replaces an estimate with a human-corrected band when the analyst knows better.</li>
+<li><strong>Resolve a data conflict</strong>: when two sources disagree, records which value to trust.</li>
+<li><strong>Dismiss a suggested tie</strong>: tells the system a predicted connection is wrong; it does not come back.</li>
+<li><strong>Leave notes</strong>: records judgement that no score can capture.</li>
+</ul>
+<p>These are not edits to the source data (the filings are what they are). They are a layer of human decisions on top, applied every time the data is loaded. The source stays auditable; the human overlay governs what the analyst sees.</p>
+<hr>
+<h2>Giving data is thin on purpose</h2>
+<p>The recorded-donations set is small, and that is honest, not broken. The system only records a donation when it finds clear, citable evidence of one (specific giving language with a source). It does not infer donations from someone being described as a philanthropist, because "is a philanthropist" is a wealth/affinity signal, not evidence of a specific gift.</p>
+<p>So the donation records you see are real and cited. There are just not many of them in the current corpus, because the corpus is mostly board-membership filings rather than gift records. The plumbing to capture giving is in place and will fill in as richer giving data is ingested. The point is the discipline: a thin set of real records beats a thick set of fabricated ones. The platform never invents a financial figure to fill a gap.</p>
+<hr>
+<h2>The bottom line for an analyst</h2>
+<ul>
+<li>Open the evidence. The scores summarise it; the evidence is the truth.</li>
+<li>Know the grade. Evidenced beats inferred beats estimated. The dossier shows you which is which.</li>
+<li>Check the date on anything evidenced; verify anything inferred; never quote an estimate as a fact.</li>
+<li>Confirm identity before you trust a lead.</li>
+<li>When you find a mistake, correct it. Your correction is permanent and worth more than the automation.</li>
+</ul>
+
+</main>
+</div>
+
+<footer>
+  Bloomsbury Football Foundation · Network Mapper · <a href="/docs/what-this-is.html">Documentation home</a>
+</footer>
+
+</body>
+</html>

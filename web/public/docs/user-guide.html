@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User guide: from zero to running — Bloomsbury Network Mapper</title>
+<link rel="stylesheet" href="https://use.typekit.net/you7djq.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Oswald:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/guide-style.css">
+<style>
+  /* The doc H1 is rendered by the hero; in-body H1s (rare) read like section titles. */
+  h1.doc-h1 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; color: var(--black); margin: 40px 0 16px; }
+  .doc-switch { flex-wrap: wrap; }
+  .back-link { display: inline-block; margin: 0 0 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <p class="eyebrow">Bloomsbury Football Foundation</p>
+  <h1>User guide: from zero to running</h1>
+  <p>This walks you through setting the project up on a fresh machine, getting access to the database, pulling the code, configuring the environment, and running the app. Then it shows you the basics of using it. Follow it top to bottom the first time.</p>
+  <div class="meta">Bloomsbury Network Mapper · Onboarding & handoff</div>
+</header>
+
+<div class="wrap">
+<main>
+  <a class="back-link" href="/crm/decide">← Back to the app</a>
+  <div class="guide-switch doc-switch">
+    <a href="/docs/what-this-is.html">Overview</a>
+    <a href="/docs/user-guide.html" class="active">User guide</a>
+    <a href="/docs/scoring-and-tabs.html">Scoring &amp; tabs</a>
+    <a href="/docs/analyst-playbook.html">Playbook</a>
+    <a href="/docs/glossary.html">Glossary</a>
+    <a href="/docs/data-and-provenance.html">Data &amp; provenance</a>
+    <a href="/docs/admin-ops-runbook.html">Admin &amp; ops</a>
+  </div>
+
+<p>If you only want to *use* an instance someone already set up for you, skip to <a href="#using-the-platform">Using the platform</a>.</p>
+<hr>
+<h2>Part 1 — Setup</h2>
+<h3>What you need first</h3>
+<ul>
+<li>An editor in the VS Code family. The project is built for <a href="https://antigravity.google">Antigravity</a> but plain VS Code works too.</li>
+<li><a href="https://www.docker.com/products/docker-desktop/">Docker</a> running on your machine. The project runs inside a Dev Container, so you do not install Node, the database tools, or anything else by hand.</li>
+<li>A GitHub account with access to the <code>bloomsbury-network-mapper</code> repository.</li>
+<li>Access to the project's Supabase (the database). Ask the project owner to invite you, or get the connection keys from them. See <a href="#part-2--supabase-access">Part 2</a>.</li>
+</ul>
+<h3>Step 1: Get the code</h3>
+<p>You have two options.</p>
+<p><strong>Option A — clone first, then open in the container (recommended):</strong></p>
+<pre><code>git clone https://github.com/Ithelastghostl/bloomsbury-network-mapper.git
+cd bloomsbury-network-mapper</code></pre>
+<p>Then open that folder in your editor.</p>
+<p><strong>Option B — open the repo URL directly</strong> if your editor supports "Clone in Container Volume". Either is fine.</p>
+<h3>Step 2: Reopen in the container</h3>
+<p>When the editor detects the <code>.devcontainer/</code> folder it will prompt you to <strong>Reopen in Container</strong>. Accept.</p>
+<p>The first build takes several minutes. The post-create script installs Node 24, the Supabase CLI, the Vercel CLI, and the command-line AI tools, and starts <code>gh auth login</code> so you can connect your GitHub account. Let it finish.</p>
+<p>When it is done you have a fully provisioned environment. You did not have to install any of it on your own machine.</p>
+<h3>Step 3: Connect your accounts</h3>
+<p>Inside the container terminal:</p>
+<pre><code>supabase login     # opens a browser link to authorise the Supabase CLI
+vercel login       # only needed if you will deploy; skip otherwise</code></pre>
+<p><code>gh auth login</code> was started for you during the build. If it did not complete, run it again.</p>
+<hr>
+<h2>Part 2 — Supabase access</h2>
+<p>Supabase is the Postgres database that holds everything: the people, their connections, the evidence, the scores. The app reads and writes it. You need three values from it.</p>
+<h3>Getting the keys</h3>
+<p>Ask the project owner for access to the Supabase project, or for the keys directly. In the <a href="https://supabase.com/dashboard">Supabase dashboard</a> for the project:</p>
+<ol>
+<li>Go to <strong>Project Settings → API</strong>.</li>
+<li>Copy the <strong>Project URL</strong>.</li>
+<li>Copy the <strong>anon public</strong> key.</li>
+<li>Copy the <strong>service_role</strong> key. This one is secret and has full read/write access. Never commit it, never paste it anywhere public, never put it in client-side code.</li>
+</ol>
+<h3>Linking the CLI (only if you will run scripts or migrations)</h3>
+<p>If you are just using the app you can skip this. If you will run database migrations or the maintenance scripts, link the CLI to the project:</p>
+<pre><code>supabase link --project-ref &lt;the-project-ref&gt;</code></pre>
+<p>The project ref is the short ID in the project's dashboard URL. The current build is linked to a project ref the owner can give you.</p>
+<hr>
+<h2>Part 3 — Environment configuration</h2>
+<p>The app reads its secrets from a file called <code>web/.env.local</code>. It is not committed (it is in <code>.gitignore</code>), so you create it once.</p>
+<h3>Step 1: Copy the example</h3>
+<pre><code>cd web
+cp .env.local.example .env.local</code></pre>
+<h3>Step 2: Fill in the values</h3>
+<p>Open <code>web/.env.local</code> and set the three required values from Part 2:</p>
+<pre><code>NEXT_PUBLIC_SUPABASE_URL=https://&lt;your-project&gt;.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=&lt;your-anon-public-key&gt;
+SUPABASE_SERVICE_ROLE_KEY=&lt;your-service-role-key&gt;</code></pre>
+<p>What each one is for:</p>
+<table><thead><tr><th>Variable</th><th>What it is</th><th>Notes</th></tr></thead><tbody><tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td>The database's address</td><td>The <code>NEXT_PUBLIC_</code> prefix means it is sent to the browser. That is expected.</td></tr><tr><td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td><td>The public, restricted key</td><td>Safe for the browser. Row-level security limits what it can read.</td></tr><tr><td><code>SUPABASE_SERVICE_ROLE_KEY</code></td><td>The secret, full-access key</td><td>Server-side only. Bypasses row-level security. Keep it secret.</td></tr></tbody></table>
+<h3>Step 3 (optional): Local mode for development</h3>
+<p>There is one more variable you may want while developing locally:</p>
+<pre><code>CRM_LOCAL_MODE=true</code></pre>
+<p>This lets the analyst action buttons (such as "Augment &amp; Persist") work without a logged-in admin session, which is convenient on your own machine. It is ignored automatically when <code>NODE_ENV=production</code>, so it cannot weaken the deployed app. Leave it out unless you are doing local development and hit a permissions wall.</p>
+<hr>
+<h2>Part 4 — Running the app</h2>
+<p>From the <code>web/</code> folder:</p>
+<h3>Development mode (use this while working)</h3>
+<pre><code>npm install      # first time only, to install dependencies
+npm run dev</code></pre>
+<p>Open <code>http://localhost:3000</code>. The home page is the entry point; the platform itself lives under <code>/crm</code>.</p>
+<p>Development mode reloads automatically when you change code.</p>
+<div class="note"><strong>Running inside a container?</strong> Bind to all interfaces so your host browser can reach it: <code>npx next dev -H 0.0.0.0 -p 3000</code>, and make sure the container publishes port 3000 (the dev container does this for you). If the page will not load in your browser but <code>curl http://localhost:3000</code> works inside the container, the problem is port forwarding, not the app.</div>
+<h3>Production mode (what is deployed)</h3>
+<pre><code>npm run build    # compile an optimised build
+npm run start    # serve it</code></pre>
+<h3>The other commands</h3>
+<table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody><tr><td><code>npm run dev</code></td><td>Run with hot reload, for development.</td></tr><tr><td><code>npm run build</code></td><td>Compile a production build.</td></tr><tr><td><code>npm run start</code></td><td>Serve the production build.</td></tr><tr><td><code>npm run lint</code></td><td>Check code style. Run before committing.</td></tr><tr><td><code>npm run typecheck</code></td><td>Check types. Run before committing.</td></tr><tr><td><code>npm test</code></td><td>Run the test suite.</td></tr></tbody></table>
+<hr>
+<h2>Using the platform</h2>
+<p>Once the app is up, here is how to find your way around and do the core loop. For the deeper workflow, read <code>03_ANALYST_PLAYBOOK.md</code>.</p>
+<h3>The shape of the screen</h3>
+<p>The left sidebar is the whole app, grouped into five sections in order: <strong>Observe</strong>, <strong>Orient</strong>, <strong>Decide</strong>, <strong>Act</strong>, and <strong>Tools</strong>. This follows the OODA loop (see <code>00_WHAT_THIS_IS.md</code>). Work generally flows top to bottom and left to right: look at the data, understand the relationships, decide who to pursue, act on it.</p>
+<h3>The fastest path to value</h3>
+<p>If you do nothing else, do this:</p>
+<ol>
+<li><strong>Open Decide → Lead Generator.</strong> This is the ranked list of people worth approaching. The top of the list is where to look.</li>
+</ol>
+<ol>
+<li><strong>Read a row.</strong> Each lead shows its priority score, confidence score, category, and a strip of signal chips (what we know about them). Higher priority means more worth pursuing; higher confidence means we trust the data more.</li>
+</ol>
+<ol>
+<li><strong>Click the row to expand it.</strong> You get the "why this lead" card (the strongest reasons), the introduction paths (which supporter can reach them and how), and the score breakdown. This is the case for approaching them.</li>
+</ol>
+<ol>
+<li><strong>Open the full dossier.</strong> Click through to the person's page for the complete intelligence profile: every score with its explanation, all the evidence with sources, the connection list, suggested action, and space for your notes and tags.</li>
+</ol>
+<ol>
+<li><strong>Make a judgement.</strong> Confirm the identity if you are satisfied it is the right person. If a connection is wrong, remove it. If the lead is good, send it to the action backlog. Leave a note for whoever picks it up next.</li>
+</ol>
+<h3>Filtering to what matters</h3>
+<p>In the Lead Generator you can:</p>
+<ul>
+<li><strong>Filter by category</strong> (HNW target, wealth identified, charity donor, discovered).</li>
+<li><strong>Filter by signal</strong> (only people with directorships, only philanthropy signals, and so on).</li>
+<li><strong>Toggle "multi-source"</strong> to show only leads corroborated by more than one source, which are the most trustworthy.</li>
+<li><strong>Rank by a specific method</strong> using the Decide sub-tabs (By Influence, By Capacity, By Introability, By Affinity), or the main Lead Generator for the balanced overall priority.</li>
+</ul>
+<h3>A note on what you will and will not see</h3>
+<p>You will not see your own supporters in the leads list. That is deliberate: you already have direct access to them, so they are not "leads". Their value is the introductions they can make, which is why they appear as introducers on other people's paths. If you are looking for a supporter, they are under Observe → Supporters.</p>
+<h3>When you are stuck</h3>
+<ul>
+<li>A term you do not recognise: <code>04_GLOSSARY.md</code>.</li>
+<li>"Where does this number come from?": <code>02_SCORING_AND_TABS.md</code>.</li>
+<li>"Can I trust this figure?": <code>05_DATA_AND_PROVENANCE.md</code>.</li>
+</ul>
+
+</main>
+</div>
+
+<footer>
+  Bloomsbury Football Foundation · Network Mapper · <a href="/docs/what-this-is.html">Documentation home</a>
+</footer>
+
+</body>
+</html>

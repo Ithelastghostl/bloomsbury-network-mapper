@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What this is — Bloomsbury Network Mapper</title>
+<link rel="stylesheet" href="https://use.typekit.net/you7djq.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Oswald:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/guide-style.css">
+<style>
+  /* The doc H1 is rendered by the hero; in-body H1s (rare) read like section titles. */
+  h1.doc-h1 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; color: var(--black); margin: 40px 0 16px; }
+  .doc-switch { flex-wrap: wrap; }
+  .back-link { display: inline-block; margin: 0 0 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <p class="eyebrow">Bloomsbury Football Foundation</p>
+  <h1>What this is</h1>
+  <p>The Bloomsbury Network Mapper is an intelligence lead generator for fundraising. It takes the people Bloomsbury Football already knows (its supporters), maps who *they* know, and surfaces the most promising people to approach for support, along with a warm route to reach each one.</p>
+  <div class="meta">Bloomsbury Network Mapper · Onboarding & handoff</div>
+</header>
+
+<div class="wrap">
+<main>
+  <a class="back-link" href="/crm/decide">← Back to the app</a>
+  <div class="guide-switch doc-switch">
+    <a href="/docs/what-this-is.html" class="active">Overview</a>
+    <a href="/docs/user-guide.html">User guide</a>
+    <a href="/docs/scoring-and-tabs.html">Scoring &amp; tabs</a>
+    <a href="/docs/analyst-playbook.html">Playbook</a>
+    <a href="/docs/glossary.html">Glossary</a>
+    <a href="/docs/data-and-provenance.html">Data &amp; provenance</a>
+    <a href="/docs/admin-ops-runbook.html">Admin &amp; ops</a>
+  </div>
+
+<p>It does not decide who to contact. It does not send anything. It is a tool for a human analyst, who reads what it surfaces, judges it, and decides what to act on. The system finds and ranks; the person decides.</p>
+<h2>The problem it solves</h2>
+<p>Bloomsbury Football has a set of supporters: people who already give, introduce, or advise. Each of those people has their own network of board seats, co-directorships, charity trusteeships, and professional ties. Buried in those second-degree networks are people worth approaching for major support, who happen to be reachable through someone we already know.</p>
+<p>Finding those people by hand is slow. You would have to take each supporter, list everyone they sit on a board with, work out which of those people have giving capacity and an affinity for the cause, and then figure out the warmest path to each one. Across hundreds of supporters and thousands of connections, that is not feasible manually.</p>
+<p>This system does that legwork. It reads public filings, builds the connection graph, scores every candidate, and hands the analyst a ranked, evidence-backed shortlist with a suggested introduction route for each name.</p>
+<h2>What it produces</h2>
+<p>A <strong>lead</strong> is a person who is not already one of our supporters, who has some combination of giving capacity, affinity for the cause, and a reachable introduction path from someone we know. Each lead comes with:</p>
+<ul>
+<li>A <strong>priority score</strong> (how worth pursuing they are) and a <strong>confidence score</strong> (how much we trust the data behind that judgement).</li>
+<li>The <strong>introduction path</strong>: which supporter can reach them, through which shared institution, in how many hops.</li>
+<li>The <strong>evidence</strong>: the filings, directorships, and signals that the scores are built from, each with a source.</li>
+<li>A <strong>suggested action</strong>: a plain next step, such as which supporter to ask for a warm introduction.</li>
+</ul>
+<p>The analyst reads these, confirms or rejects them, leaves notes, and moves the good ones into an action list.</p>
+<h2>Why OODA</h2>
+<p>The platform is organised around the OODA loop: Observe, Orient, Decide, Act. It is a decision-making framework from military strategy, and it maps cleanly onto what a fundraising analyst actually does. The left-hand navigation is built in these four stages, in order.</p>
+<p><strong>Observe</strong> is the raw and enriched data. The supporters we started from, the people we discovered, the wealth and biography we attached to them. This stage answers "what do we have?"</p>
+<p><strong>Orient</strong> is the relationships between that data. Who connects to whom, which people are the key connectors in the network, which institutions act as bridges, who probably knows whom. This stage answers "how does it fit together?"</p>
+<p><strong>Decide</strong> is the ranked leads. The same pool of people, sorted by different scoring methods, so the analyst can choose who to pursue and see the strongest introduction routes to each. This stage answers "who is worth approaching, and how?"</p>
+<p><strong>Act</strong> is the chosen actions and their outcomes. The shortlist the analyst committed to, the introductions in flight, and which routes actually converted. This stage answers "what did we do, and did it work?"</p>
+<p>The loop is a loop on purpose. Outcomes in Act feed back into how the analyst reads the next batch of leads in Decide. A route that keeps converting is one to trust; a supporter whose introductions never land is one to rethink.</p>
+<h2>The human is required, not optional</h2>
+<p>This is the most important thing to understand about the platform, and it is built into how it works.</p>
+<p>The system surfaces and ranks. It never decides identity, never overrides a human judgement, and never contacts anyone. Every score is a starting point for a person to examine, not a verdict. The reasons:</p>
+<ul>
+<li><strong>The data is public-record and inferred.</strong> It comes from Charity Commission filings and web research. It is good enough to surface candidates and rank them, but it contains gaps, stale records, and same-name ambiguity. A person has to confirm that the "John Smith" in two filings is actually the same John Smith before the lead is trustworthy.</li>
+</ul>
+<ul>
+<li><strong>Fundraising is relationship work.</strong> Whether an introduction is appropriate, whether the timing is right, whether a supporter is willing to make the ask, are all judgement calls the data cannot make. The system can tell you a path exists. It cannot tell you it should be used.</li>
+</ul>
+<ul>
+<li><strong>The cost of a wrong approach is real.</strong> Approaching the wrong person, or the right person the wrong way, can damage a relationship the charity depends on. The system is deliberately built so that no outward action happens without a person choosing it.</li>
+</ul>
+<p>The platform therefore gives the analyst tools to *correct* it: confirm or reject an identity, remove a connection that is wrong, downweight one that is weak, override a wealth band, dismiss a suggested tie, leave notes for the next person. These human decisions always win over the automated logic, permanently, and survive any later re-processing.</p>
+<p>The right mental model is an analyst with a very fast research assistant. The assistant reads everything, does the maths, and brings you a ranked stack of dossiers with its reasoning shown. You are still the one who reads the room and makes the call.</p>
+<h2>What success looks like</h2>
+<p>The platform is doing its job when an analyst can sit down, open the ranked leads, and within a few minutes have a short list of people worth approaching, each with a warm route and the evidence to back the approach, that they would not have found on their own. The value is in surfacing real, reachable, well-evidenced opportunities from a pool too large to search by hand, and in keeping a human firmly in control of every decision that leaves the building.</p>
+<h2>Where to go next</h2>
+<ul>
+<li>New analyst, want to use it: read <code>01_USER_GUIDE.md</code> then <code>03_ANALYST_PLAYBOOK.md</code>.</li>
+<li>Want to understand the scores and every tab: <code>02_SCORING_AND_TABS.md</code>.</li>
+<li>Confused by a term: <code>04_GLOSSARY.md</code>.</li>
+<li>Need to trust the data: <code>05_DATA_AND_PROVENANCE.md</code>.</li>
+<li>Running or maintaining the system: <code>06_ADMIN_OPS_RUNBOOK.md</code>.</li>
+</ul>
+
+</main>
+</div>
+
+<footer>
+  Bloomsbury Football Foundation · Network Mapper · <a href="/docs/what-this-is.html">Documentation home</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analyst playbook — Bloomsbury Network Mapper</title>
+<link rel="stylesheet" href="https://use.typekit.net/you7djq.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Oswald:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/guide-style.css">
+<style>
+  /* The doc H1 is rendered by the hero; in-body H1s (rare) read like section titles. */
+  h1.doc-h1 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; color: var(--black); margin: 40px 0 16px; }
+  .doc-switch { flex-wrap: wrap; }
+  .back-link { display: inline-block; margin: 0 0 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <p class="eyebrow">Bloomsbury Football Foundation</p>
+  <h1>Analyst playbook</h1>
+  <p>This is the day-to-day. How to sit down at the platform and turn it into approached, qualified leads. It assumes you have read `00_WHAT_THIS_IS.md` and `01_USER_GUIDE.md`.</p>
+  <div class="meta">Bloomsbury Network Mapper · Onboarding & handoff</div>
+</header>
+
+<div class="wrap">
+<main>
+  <a class="back-link" href="/crm/decide">← Back to the app</a>
+  <div class="guide-switch doc-switch">
+    <a href="/docs/what-this-is.html">Overview</a>
+    <a href="/docs/user-guide.html">User guide</a>
+    <a href="/docs/scoring-and-tabs.html">Scoring &amp; tabs</a>
+    <a href="/docs/analyst-playbook.html" class="active">Playbook</a>
+    <a href="/docs/glossary.html">Glossary</a>
+    <a href="/docs/data-and-provenance.html">Data &amp; provenance</a>
+    <a href="/docs/admin-ops-runbook.html">Admin &amp; ops</a>
+  </div>
+
+<p>The short version: the platform finds and ranks; you judge and decide. Your job is not to trust the list, it is to interrogate it, correct it, and pull the real opportunities out of it.</p>
+<hr>
+<h2>The core loop</h2>
+<p>Every session is a pass through OODA. You do not have to do all four stages every time, but you should know which stage you are in.</p>
+<ol>
+<li><strong>Observe</strong> — glance at what is new since last time.</li>
+<li><strong>Orient</strong> — understand the relationships if you are working a new area.</li>
+<li><strong>Decide</strong> — work the ranked leads. This is where most of your time goes.</li>
+<li><strong>Act</strong> — commit the good ones and check what converted.</li>
+</ol>
+<hr>
+<h2>A session, start to finish</h2>
+<h3>1. Start with what changed</h3>
+<p>Open <strong>Observe → What's New</strong>. If a processing run happened since you were last here, this is where new people and new evidence show up. Skim it. You are looking for anything notable that just entered the pool.</p>
+<p>Then open <strong>Act → Outcomes</strong> for a moment. Did anything you sent out convert or fail? Outcomes is the memory of the system. A route that just converted is one to lean on; a supporter whose introductions keep failing is one to rethink. Carry that into how you read today's leads.</p>
+<h3>2. Work the ranked leads</h3>
+<p>Open <strong>Decide → Lead Generator</strong>. This is the main event.</p>
+<p>The list is sorted by overall priority, best first. Do not just read top to bottom and stop. Use it deliberately:</p>
+<ul>
+<li><strong>Set your filters first.</strong> If today's job is "who can we reach easily", switch to <strong>By Introability</strong> or filter to high-introability leads. If it is "who has serious capacity", use <strong>By Capacity</strong>. If you want only the most trustworthy candidates, turn on the <strong>multi-source</strong> toggle so you see leads backed by more than one source. Filter to the question you are actually asking.</li>
+</ul>
+<ul>
+<li><strong>Read a row before you open it.</strong> Priority, confidence, category, and the signal chips tell you most of what you need to triage. A high-priority, high-confidence, multi-signal row is worth a close look. A high-priority, low-confidence row is worth a look *and* some verification work.</li>
+</ul>
+<ul>
+<li><strong>Expand the promising ones.</strong> The expanded row gives you the "why this lead" card (the three strongest reasons), the introduction paths, and the score breakdown. Read the reasons. Ask yourself: does this hold up? Is the affinity real or is it a thin sector match? Is the route warm or is it a two-hop guess?</li>
+</ul>
+<h3>3. Open the dossier on a real candidate</h3>
+<p>When a lead looks worth pursuing, click into the full <strong>dossier</strong>. This is where you do the actual analytical work. Go through it in this order:</p>
+<ol>
+<li><strong>Check the identity.</strong> Is this definitely the right person? Read the evidence. Same-name confusion is the single most common data problem. If you are satisfied, confirm the identity in <strong>Tools → Identity QA</strong> or on the dossier. That confirmation is the biggest single lift to the confidence score, and it is a decision only you can make.</li>
+</ol>
+<ol>
+<li><strong>Read the evidence, not just the scores.</strong> Every signal has a source. Open a couple. Does the capacity claim rest on something real? Is the directorship current or did they resign years ago? The scores are a summary; the evidence is the truth.</li>
+</ol>
+<ol>
+<li><strong>Check the route.</strong> Look at the introduction paths. Which supporter can reach them, through which institution, in how many hops? Is that supporter someone who would actually make the introduction? A path the system scores highly is still only a suggestion that a route exists.</li>
+</ol>
+<ol>
+<li><strong>Clean as you go.</strong> This is important and easy to skip. If a connection is plainly wrong, remove it. If it is real but weak or suspect, downweight it. If the wealth band is wrong and you know better, set a human override. If two sources conflict, resolve the conflict. Every correction you make is permanent, wins over the automated logic, and makes the lead better for the next person. You are not just reading the data, you are improving it.</li>
+</ol>
+<ol>
+<li><strong>Write down your judgement.</strong> Leave a note. Tag the lead. The next analyst (or you in three weeks) needs to know what you concluded and why. "Confirmed identity, capacity solid, best route is via [supporter] through [board], waiting for the right moment" is worth more than any score.</li>
+</ol>
+<h3>4. Commit and move on</h3>
+<p>If the lead is good, send it to the <strong>Act → Action Backlog</strong> with the suggested action. It is now a live opportunity with a status you can track. If it belongs with a group of related leads, add it to a <strong>Cohort</strong> so they can be worked as a set.</p>
+<p>Then go back to the list and do the next one.</p>
+<hr>
+<h2>What good looks like</h2>
+<p>A well-worked lead, by the time you are done with it, has:</p>
+<ul>
+<li>A <strong>confirmed identity</strong> (or an explicit note that it could not be confirmed and why).</li>
+<li><strong>Read evidence</strong>, not just trusted scores.</li>
+<li>A <strong>chosen route</strong> with a named introducer and a reason it is the right one.</li>
+<li><strong>Cleaned connections</strong>: the wrong ones gone, the weak ones downweighted.</li>
+<li>A <strong>note</strong> capturing your conclusion.</li>
+<li>A <strong>decision</strong>: into the backlog, into a cohort, or parked with a reason.</li>
+</ul>
+<p>A good *session* ends with a handful of these, plus a cleaner dataset than you started with.</p>
+<hr>
+<h2>Common mistakes</h2>
+<p><strong>Trusting the ranking.</strong> The list is a starting point, not an answer. A high score means "look here first", not "approach this person". The whole point of the platform is to put a human between the score and the action.</p>
+<p><strong>Reading scores but not evidence.</strong> The score is a compression of the evidence. If you only read the number you are trusting the compression. Open the sources, especially on capacity and identity, before you commit.</p>
+<p><strong>Skipping identity confirmation.</strong> This is the most consequential check and the easiest to defer. An unconfirmed lead is built on the assumption that the public records all refer to the same person. Sometimes they do not. Confirm it.</p>
+<p><strong>Not cleaning the data.</strong> When you spot a wrong connection or a bad wealth band and move on without fixing it, you leave the mistake for the next person, and it keeps inflating scores. Fixing it takes seconds and compounds. The platform is built to let you correct it precisely because your corrections are more valuable than the automation.</p>
+<p><strong>Approaching your own supporters as leads.</strong> Supporters are filtered out of the leads list on purpose. You already have access to them. If you find yourself treating a supporter as a lead, you have the relationship backwards: their value is the introductions they make to *other* people.</p>
+<p><strong>Leaving no note.</strong> A decision with no recorded reasoning is invisible to everyone else. The system remembers data; only you can record judgement. Write it down.</p>
+<p><strong>Chasing high priority while ignoring low confidence.</strong> A high-priority, low-confidence lead is not ready to approach, it is ready to *verify*. Do the verification, raise the confidence, then approach. The "Needs Review" queue exists precisely to surface these.</p>
+<hr>
+<h2>Using the supporting tools well</h2>
+<ul>
+<li><strong>Needs Review</strong> (Tools): when you have review time but no specific target, this is the most efficient place to spend it. It ranks the cases that most need a human by uncertainty, so you fix the highest-leverage ambiguities first.</li>
+</ul>
+<ul>
+<li><strong>Suggested Ties</strong> (Orient): periodically confirm or dismiss the predicted connections here. Each confirmation grows the graph and can open new routes; each dismissal keeps the graph honest. Dismissed pairs do not come back.</li>
+</ul>
+<ul>
+<li><strong>Evidence Coverage</strong> (Orient): when you want to direct enrichment, this shows which promising leads are thinly evidenced. That is where more research pays off most.</li>
+</ul>
+<ul>
+<li><strong>Cohorts</strong> (Act): when several leads share a context (a sector, an event, an institution), group them. It is easier to plan outreach for a set than for scattered individuals.</li>
+</ul>
+<hr>
+<h2>The mindset</h2>
+<p>You are an analyst with a fast research assistant, not an operator running a machine. The assistant has read every filing, done the maths, and brought you a ranked stack of dossiers with its reasoning shown. It is good at finding and ranking. It is not good at judging whether an approach is appropriate, whether a record is really the right person, or whether now is the time. That is your part, and it is the part that matters.</p>
+
+</main>
+</div>
+
+<footer>
+  Bloomsbury Football Foundation · Network Mapper · <a href="/docs/what-this-is.html">Documentation home</a>
+</footer>
+
+</body>
+</html>

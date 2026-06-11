@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin and operations runbook — Bloomsbury Network Mapper</title>
+<link rel="stylesheet" href="https://use.typekit.net/you7djq.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Oswald:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/guide-style.css">
+<style>
+  /* The doc H1 is rendered by the hero; in-body H1s (rare) read like section titles. */
+  h1.doc-h1 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; color: var(--black); margin: 40px 0 16px; }
+  .doc-switch { flex-wrap: wrap; }
+  .back-link { display: inline-block; margin: 0 0 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <p class="eyebrow">Bloomsbury Football Foundation</p>
+  <h1>Admin and operations runbook</h1>
+  <p>For the person who keeps the system running, not the analyst who uses it. Covers database migrations, the data-processing scripts, re-scoring, the development flags, and deployment. Assumes you have the setup from `01_USER_GUIDE.md` working, the Supabase CLI linked, and `web/.env.local` populated.</p>
+  <div class="meta">Bloomsbury Network Mapper · Onboarding & handoff</div>
+</header>
+
+<div class="wrap">
+<main>
+  <a class="back-link" href="/crm/decide">← Back to the app</a>
+  <div class="guide-switch doc-switch">
+    <a href="/docs/what-this-is.html">Overview</a>
+    <a href="/docs/user-guide.html">User guide</a>
+    <a href="/docs/scoring-and-tabs.html">Scoring &amp; tabs</a>
+    <a href="/docs/analyst-playbook.html">Playbook</a>
+    <a href="/docs/glossary.html">Glossary</a>
+    <a href="/docs/data-and-provenance.html">Data &amp; provenance</a>
+    <a href="/docs/admin-ops-runbook.html" class="active">Admin &amp; ops</a>
+  </div>
+
+<p>A few standing rules for this project, from <code>CLAUDE.md</code>:</p>
+<ul>
+<li>The <strong>PRD is the source of truth</strong> for the data model (section 11.1), the API contracts (section 20), and the scoring formulas (sections 15 to 18 and Appendix A). Do not change a column, a route, or a weight without tracing it to the PRD and getting approval.</li>
+<li>The <strong>database is the source of truth</strong> for data; any spreadsheet is a handoff surface only.</li>
+<li><strong>Human decisions always win</strong> and must survive re-processing. Any script that rebuilds data must replay the human overrides (suppressions, identity confirmations, wealth overrides), never wipe them.</li>
+</ul>
+<hr>
+<h2>The stack at a glance</h2>
+<table><thead><tr><th>Layer</th><th>What</th><th>Where</th></tr></thead><tbody><tr><td>Database</td><td>Supabase Postgres, schema <code>app</code></td><td>Supabase project (linked via CLI)</td></tr><tr><td>App</td><td>Next.js (App Router), runs the CRM under <code>/crm</code></td><td><code>web/</code></td></tr><tr><td>Migrations</td><td>SQL files, applied in order</td><td><code>supabase/migrations/</code></td></tr><tr><td>Scripts</td><td>One-off and batch maintenance jobs (tsx)</td><td><code>web/scripts/</code></td></tr><tr><td>Deploy</td><td>Vercel</td><td>connected to the GitHub repo</td></tr></tbody></table>
+<p>The app reads the database through two clients: a public one (anon key, restricted by row-level security) and a service-role one (full access, server-side only). The service-role key must never reach the browser.</p>
+<hr>
+<h2>Database migrations</h2>
+<p>Schema changes live as numbered SQL files in <code>supabase/migrations/</code> (for example <code>00016_human_overrides.sql</code>). They are applied in order and tracked, so the local set and the remote set stay in sync.</p>
+<h3>Check what is applied</h3>
+<pre><code>supabase migration list --linked</code></pre>
+<p>This prints local vs remote. Files present locally but not remotely are pending.</p>
+<h3>Apply pending migrations</h3>
+<pre><code>supabase db push --linked</code></pre>
+<p>This applies every pending migration to the linked project. Before running it:</p>
+<ul>
+<li>Read each pending migration. Confirm it is additive (new tables, nullable columns, new policies) or that you understand any change to existing structures.</li>
+<li>Confirm the local and remote histories agree up to the pending files (no drift). <code>migration list</code> shows this.</li>
+<li>Migrations are forward-only here. There is no down-migration. To reverse one, write a new migration.</li>
+</ul>
+<h3>Writing a new migration</h3>
+<ul>
+<li>Name it with the next free number and a short description: <code>00017_my_change.sql</code>.</li>
+<li>Match the house style of the existing files: explain *why* at the top, enable row-level security on any new table, and add the same admin-CRUD plus authenticated-select policies the other tables use (<code>app.user_role()</code>).</li>
+<li>Never rename or drop a column the app reads without updating the app in the same change.</li>
+<li>Place migrations in <code>supabase/migrations/</code>, not <code>web/supabase/</code>. The latter is a mistake that has happened before; the CLI reads the top-level folder.</li>
+</ul>
+<hr>
+<h2>The data-processing scripts</h2>
+<p>These live in <code>web/scripts/</code> and run with <code>npx tsx scripts/&lt;name&gt;.ts</code>. They read <code>SUPABASE_URL</code> (or <code>NEXT_PUBLIC_SUPABASE_URL</code>) and <code>SUPABASE_SERVICE_ROLE_KEY</code> from <code>web/.env.local</code>. Most support <code>--dry-run</code>. <strong>Always dry-run first.</strong></p>
+<p>They fall into a rough pipeline order: ingest data, enrich it, deduplicate, score, then compute routes.</p>
+<h3>Ingest</h3>
+<table><thead><tr><th>Script</th><th>What it does</th></tr></thead><tbody><tr><td><code>batch-ingest.ts</code></td><td>Parses enrichment transcript files and persists the entities, connections, and evidence to the database. The main way discovered people enter the system.</td></tr><tr><td><code>ingest-donations.ts</code></td><td>Scans the evidence for clear, citable giving language and records donation events. Evidence-first: it parses an amount or year only when explicitly present, never fabricates a figure, and skips claims with no citable source. Run after evidence is ingested.</td></tr></tbody></table>
+<h3>Enrich</h3>
+<table><thead><tr><th>Script</th><th>What it does</th></tr></thead><tbody><tr><td><code>wealth-augment.ts</code></td><td>Wealth augmentation. Run with <code>--select</code> to pick who to research (writes a target list), do the research through the Claude Code agents, then run with <code>--import</code> to store the results. The research uses web search on the local session, not an API key.</td></tr><tr><td><code>score-network-position.ts</code></td><td>Estimates wealth for people who have no wealth estimate yet, from their network position and evidence alone (directorships, co-director degree). Reads the database only, no web research, no fabrication.</td></tr><tr><td><code>classify-orgs.ts</code></td><td>Classifies organisations as charity or company and flags confirmed BFF funders/partners.</td></tr><tr><td><code>promote-supporter-fields.ts</code>, <code>promote-contact-fields.ts</code>, <code>backfill-seed-rows.ts</code>, <code>derive-pipeline-context.ts</code></td><td>Backfill and promote specific fields onto entities. Targeted maintenance jobs.</td></tr></tbody></table>
+<h3>Deduplicate</h3>
+<table><thead><tr><th>Script</th><th>What it does</th></tr></thead><tbody><tr><td><code>merge-duplicate-entities.ts</code></td><td>Batch ingest can create the same person twice across runs. This finds exact-name duplicate people, keeps the richest record, repoints all connections, evidence, and wealth onto it, and deletes the empties, recording the merged aliases for provenance. Run after a batch ingest. Use <code>--dry-run</code> and <code>--persons-only</code> to scope it.</td></tr></tbody></table>
+<h3>Score and route</h3>
+<table><thead><tr><th>Script</th><th>What it does</th></tr></thead><tbody><tr><td><code>compute-multi-paths.ts</code></td><td>Computes up to 10 distinct introduction paths from supporters to every reachable high-value person, scored by hops, shared organisations, introducer reach, and supporter tier. This populates the introduction paths the Lead Generator shows.</td></tr><tr><td><code>compute-warm-paths.ts</code></td><td>Computes the single shortest route back to a supporter for each lead (the "who can introduce us" path).</td></tr><tr><td><code>compute-introductions.ts</code>, <code>introduced-by-edges.ts</code></td><td>Build and store introduction edges and the introduced-by relationships.</td></tr><tr><td><code>dossier-retry.ts</code></td><td>Re-runs dossier assembly for entities that need it.</td></tr></tbody></table>
+<div class="note">The headline priority and confidence scores are computed <strong>at request time</strong> in the app (<code>web/src/lib/crm/lead-score.ts</code> and <code>crm-priority.ts</code>), not by a batch script. The scripts above produce the *inputs* (wealth, paths, connections); the app blends them into scores live. The Orient analytics (connectors, communities, suggested ties, coverage) are also computed live from the graph when you open the page. There is nothing to "re-run" to refresh scores; they reflect the current database on every load.</div>
+<h3>Typical sequence after new data arrives</h3>
+<ol>
+<li><code>batch-ingest.ts &lt;dir&gt;</code> — bring the new entities in.</li>
+<li><code>merge-duplicate-entities.ts</code> — clean cross-run duplicates.</li>
+<li><code>wealth-augment.ts</code> / <code>score-network-position.ts</code> — attach wealth.</li>
+<li><code>classify-orgs.ts</code> — classify the new organisations.</li>
+<li><code>ingest-donations.ts</code> — capture any citable giving.</li>
+<li><code>compute-multi-paths.ts</code> and <code>compute-warm-paths.ts</code> — refresh the routes.</li>
+</ol>
+<p>Dry-run each step, then run for real. The scores in the app update on their own once the inputs change.</p>
+<h3>Larger orchestrations</h3>
+<p>Two multi-step enrichment flows live in <code>.claude/workflows/</code> (<code>augment-people.js</code>, <code>characterize-connections.js</code>). These coordinate per-person enrichment through the agents. They are heavier runs; understand what they touch before launching.</p>
+<hr>
+<h2>Development flags</h2>
+<h3><code>CRM_LOCAL_MODE</code></h3>
+<p>Set <code>CRM_LOCAL_MODE=true</code> in <code>web/.env.local</code> to let the analyst action buttons work without a logged-in admin session, which is convenient for local development. It is <strong>ignored when <code>NODE_ENV=production</code></strong>, so it cannot weaken the deployed app. Do not rely on it in any deployed environment; real authorisation there comes from Supabase Auth and row-level security.</p>
+<hr>
+<h2>Authorisation model</h2>
+<ul>
+<li>The app uses Supabase Auth (email link and Google SSO).</li>
+<li>Row-level security on the <code>app</code> schema restricts what the public (anon) key can read, by role (<code>app.user_role()</code>).</li>
+<li>Mutating API routes check <code>requireAdminOrLocal</code> before acting, write to an audit log, and return errors in the shape <code>{ error: { code, message, details } }</code>.</li>
+<li>The service-role client bypasses row-level security and is used only in server-side code (page loads and scripts). It must never be exposed to the client.</li>
+</ul>
+<p>When you add a table, add its row-level-security policies in the same migration. When you add a mutating route, gate it and audit it like the existing ones.</p>
+<hr>
+<h2>Quality gates and CI</h2>
+<p>Before committing, from <code>web/</code>:</p>
+<pre><code>npm run typecheck   # tsc --noEmit
+npm run lint        # eslint, runs over the WHOLE project including scripts/
+npm test            # vitest</code></pre>
+<p>CI runs the same three gates on every push. One thing to know: <code>npm run lint</code> is bare <code>eslint</code> and lints <code>web/scripts/</code> too. A targeted local lint (for example, only <code>src/</code>) can pass while CI fails on a scripts file. Run the bare <code>npm run lint</code> before declaring a change clean. The convention for the unavoidable loose Supabase client type in scripts is a single <code>// eslint-disable-next-line @typescript-eslint/no-explicit-any</code> above the type alias; the existing scripts show the pattern.</p>
+<hr>
+<h2>Deployment</h2>
+<p>The app deploys to Vercel from the GitHub repository.</p>
+<ul>
+<li>Pushing to the <code>main</code> branch triggers a build and deploy.</li>
+<li>The same three environment variables (<code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code>) must be set in the Vercel project settings, not in a committed file.</li>
+<li>Do <strong>not</strong> set <code>CRM_LOCAL_MODE</code> in production; it is ignored there anyway, but do not rely on it.</li>
+<li>Apply database migrations (<code>supabase db push --linked</code>) as a separate, deliberate step. A deploy does not run them. Coordinate schema changes with the code that depends on them so the app is never live against a schema it does not expect.</li>
+</ul>
+<h3>Running it yourself (without Vercel)</h3>
+<pre><code>cd web
+npm run build
+npm run start            # serves on port 3000</code></pre>
+<p>Inside a container, bind to all interfaces and publish the port so a host browser can reach it:</p>
+<pre><code>npx next start -H 0.0.0.0 -p 3000</code></pre>
+<p>If the page loads via <code>curl</code> inside the container but not in your browser, the issue is the container's port publishing, not the app. Make sure the container was started with the port mapped (for example <code>-p 3000:3000</code>).</p>
+<hr>
+<h2>Backups and safety</h2>
+<ul>
+<li>Supabase provides managed backups at the project level; configure and verify them in the Supabase dashboard. The database is the source of truth, so its backup is the one that matters.</li>
+<li>This project's working convention is to <strong>avoid destructive shell commands in the repo</strong>. When a file needs removing during development, move it to a <code>Bin/</code> folder rather than deleting it, and clear <code>Bin/</code> only after review. (<code>Bin/</code> is git-ignored.)</li>
+<li>Before any irreversible action (dropping a table, force-pushing, deleting a branch, bulk-deleting rows), stop and confirm. Human overrides and audited decisions are not recoverable if you wipe them.</li>
+</ul>
+<hr>
+<h2>Where the source of truth lives</h2>
+<ul>
+<li>Product requirements, data model, API contracts, scoring formulas: <code>PRD.md</code>.</li>
+<li>Build order and progress: <code>BACKLOG_PHASE_1.md</code>.</li>
+<li>These onboarding documents: <code>docs/onboarding/</code>.</li>
+<li>The scoring code that this runbook refers to: <code>web/src/lib/ranking/</code> and <code>web/src/lib/crm/</code>.</li>
+</ul>
+<p>If this runbook and the code ever disagree, the code is what runs, but the PRD is what was agreed. Reconcile deliberately, do not silently drift.</p>
+
+</main>
+</div>
+
+<footer>
+  Bloomsbury Football Foundation · Network Mapper · <a href="/docs/what-this-is.html">Documentation home</a>
+</footer>
+
+</body>
+</html>

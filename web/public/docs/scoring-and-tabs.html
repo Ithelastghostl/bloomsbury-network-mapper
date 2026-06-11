@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scoring and tabs reference — Bloomsbury Network Mapper</title>
+<link rel="stylesheet" href="https://use.typekit.net/you7djq.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Oswald:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/guide-style.css">
+<style>
+  /* The doc H1 is rendered by the hero; in-body H1s (rare) read like section titles. */
+  h1.doc-h1 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; color: var(--black); margin: 40px 0 16px; }
+  .doc-switch { flex-wrap: wrap; }
+  .back-link { display: inline-block; margin: 0 0 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <p class="eyebrow">Bloomsbury Football Foundation</p>
+  <h1>Scoring and tabs reference</h1>
+  <p>Two parts. First, how every score is calculated and why it is built that way, in plain language. Second, what each tab is, what it means, and what it is for.</p>
+  <div class="meta">Bloomsbury Network Mapper · Onboarding & handoff</div>
+</header>
+
+<div class="wrap">
+<main>
+  <a class="back-link" href="/crm/decide">← Back to the app</a>
+  <div class="guide-switch doc-switch">
+    <a href="/docs/what-this-is.html">Overview</a>
+    <a href="/docs/user-guide.html">User guide</a>
+    <a href="/docs/scoring-and-tabs.html" class="active">Scoring &amp; tabs</a>
+    <a href="/docs/analyst-playbook.html">Playbook</a>
+    <a href="/docs/glossary.html">Glossary</a>
+    <a href="/docs/data-and-provenance.html">Data &amp; provenance</a>
+    <a href="/docs/admin-ops-runbook.html">Admin &amp; ops</a>
+  </div>
+
+<p>The scoring rules here match the code (<code>web/src/lib/ranking/</code> and <code>web/src/lib/crm/crm-priority.ts</code>) and trace to PRD sections 18.1, 18.2, and 18.3. If you change a weight in the code, update this document.</p>
+<hr>
+<h1 class="doc-h1">Part 1: The scores</h1>
+<p>Every lead carries two headline scores, each from 0 to 100:</p>
+<ul>
+<li><strong>Priority</strong> — how worth pursuing this person is.</li>
+<li><strong>Confidence</strong> — how much we trust the data behind that priority.</li>
+</ul>
+<p>They are separate on purpose. A person can be high priority and low confidence (looks very promising, but the data is thin and needs checking), or high confidence and modest priority (we are sure about them, they are just not a standout). You read both together: priority tells you *who*, confidence tells you *how much to trust it*.</p>
+<p>Both are weighted averages of smaller scores, each measuring one thing. Showing the breakdown, rather than a single black-box number, is deliberate. The analyst can see *why* a person ranks where they do and challenge it.</p>
+<h2>The priority score</h2>
+<p>Priority is a weighted blend of five dimensions. The weights are fixed and sum to 100%:</p>
+<table><thead><tr><th>Dimension</th><th>Weight</th><th>The question it answers</th></tr></thead><tbody><tr><td>Introability</td><td>30%</td><td>Can we reach them warmly, and how easily?</td></tr><tr><td>Affinity</td><td>25%</td><td>Is there a reason they would give to *this* cause?</td></tr><tr><td>Capacity</td><td>20%</td><td>Do they have the means to give meaningfully?</td></tr><tr><td>Influence</td><td>15%</td><td>How central are they in the network?</td></tr><tr><td>Strategic fit</td><td>10%</td><td>Do they align with what the charity is about?</td></tr></tbody></table>
+<p><strong>Why these weights.</strong> Introability is the largest because a warm route is what makes a lead actionable at all. The wealthiest person in the world is not a useful lead if there is no way to reach them; a reachable person with moderate capacity is. Affinity comes next because giving follows interest, then capacity because means matter once interest and access exist. Influence and strategic fit are real but secondary tie-breakers.</p>
+<p>Each dimension is scored 0 to 1 internally, then the weighted sum is multiplied by 100 for display. Here is how each one is built.</p>
+<h3>Introability (30%)</h3>
+<p>Measures how easily a supporter can introduce us to this person.</p>
+<ul>
+<li>If the system has computed a scored <strong>introduction path</strong> to them, the best path's score (0 to 100) maps straight in. A path is scored higher when it is shorter, goes through a shared institution, comes from a well-connected introducer, and starts from a high-tier supporter.</li>
+<li>If there is no fully scored path but we know the <strong>hop distance</strong> from a supporter, we use that as a fallback: one hop away scores 0.6, two hops scores 0.35.</li>
+<li>No path from any supporter scores 0.</li>
+</ul>
+<p><strong>Why.</strong> A direct, one-hop, institution-backed route from a strong supporter is the gold standard, so it scores near the top. The fallback rewards being close in the graph even before a full path is scored, so genuinely reachable people are not buried.</p>
+<h3>Affinity (25%)</h3>
+<p>Measures whether there is a reason this person would support this particular cause. It adds up several signals, capped at 1.0:</p>
+<ul>
+<li><strong>Shared charity connections</strong>: each charity they share with our network adds 0.15, up to 0.5.</li>
+<li><strong>Donor category</strong>: if they are already a charity donor, +0.4; on the HNW target list, +0.3; wealth-identified, +0.15.</li>
+<li><strong>Philanthropy sector</strong>: if their sector or role mentions philanthropy, charity, a foundation or a trust, +0.1.</li>
+<li><strong>Recorded giving</strong>: if we have an actual evidenced donation on record, +0.3 for the first, +0.1 each beyond that, up to 0.5.</li>
+</ul>
+<p><strong>Why.</strong> Demonstrated giving is the strongest affinity signal there is, so a single recorded gift lifts the score hard. An evidenced donation beats an inferred overlap, because one is a fact and the other is a guess. Shared charities and a philanthropic sector are softer signals of alignment, so they add less.</p>
+<h3>Capacity (20%)</h3>
+<p>Measures observable ability to give. Note the word *observable*. This is built from signals we can point to, not from a guessed net-worth number on its own (that distinction is PRD 18.3, and it matters for honesty).</p>
+<ul>
+<li><strong>Wealth band</strong> sets the base: £100m+ scores 1.0, £25m–100m scores 0.8, £5m–25m scores 0.6, £1m–5m scores 0.4, unknown scores 0.</li>
+<li><strong>An explicit money figure</strong> that backs the band adds 0.1 (it firms up the estimate).</li>
+<li><strong>Directorships</strong>: each one adds 0.05, up to 0.2, as a corroborating signal of standing.</li>
+</ul>
+<p>The total is capped at 1.0.</p>
+<p><strong>Why.</strong> Capacity is built from observable signals so the score stays defensible. A wealth band tied to a directorship and a researched figure is something you can stand behind in front of a colleague. A bare estimate with nothing behind it is not, so on its own it scores low. The directorship boost rewards corroboration, not wealth twice over, which is why it is small.</p>
+<h3>Influence (15%)</h3>
+<p>Measures how central the person is in the mapped network, by their number of connections. It scales linearly and saturates at 20 connections (so 10 connections scores 0.5, 20 or more scores 1.0).</p>
+<p><strong>Why.</strong> A well-connected person is more valuable: they are easier to reach through multiple routes, and they can open doors themselves. It saturates because beyond a point, more connections do not make someone meaningfully more influential for our purposes.</p>
+<h3>Strategic fit (10%)</h3>
+<p>Measures alignment with the cause (Bloomsbury Football: sport, youth, education, wellbeing, social mobility, community).</p>
+<ul>
+<li>If their sector matches one of those themes, 0.7.</li>
+<li>Otherwise a neutral 0.3.</li>
+<li>Being on the HNW target list lifts it to at least 0.6.</li>
+</ul>
+<p><strong>Why.</strong> Someone whose own work is in youth or education is a more natural fit for a football-and-young-people cause, and is more likely to engage. It is the smallest weight because fit is a nice-to-have on top of access, interest, and means, not a substitute for them.</p>
+<h2>The confidence score</h2>
+<p>Confidence is a weighted blend of four dimensions, weights fixed and summing to 100%:</p>
+<table><thead><tr><th>Dimension</th><th>Weight</th><th>The question it answers</th></tr></thead><tbody><tr><td>Identity</td><td>35%</td><td>Are we sure this is the right person?</td></tr><tr><td>Relationship</td><td>30%</td><td>How solid is the connection evidence?</td></tr><tr><td>Corroboration</td><td>20%</td><td>How many independent sources agree?</td></tr><tr><td>Freshness</td><td>15%</td><td>How recent is the evidence?</td></tr></tbody></table>
+<p><strong>Why these weights.</strong> Identity is the largest because if we have the wrong person, nothing else matters: the capacity, the connections, the affinity all belong to someone else. Relationship strength is next because a lead's whole value is the route to them, and a route built on a weak inference is a weak lead. Corroboration and freshness adjust how much to trust the rest.</p>
+<p>Here is how each is built.</p>
+<h3>Identity (35%)</h3>
+<ul>
+<li>If a human has confirmed this is the right person, 1.0.</li>
+<li>Otherwise a neutral prior of 0.6 (the data exists, but no person has verified it).</li>
+</ul>
+<p><strong>Why.</strong> Public records have same-name collisions. The system cannot be certain on its own that two "J. Smith" filings are the same individual, so it sits at a cautious-but-not-dismissive 0.6 until a person checks. A human confirmation is the strongest possible signal, so it goes to the top. This is the single biggest reason the human in the loop matters.</p>
+<h3>Relationship (30%)</h3>
+<p>Reads the strongest introduction path and scores trust by how the connection was established:</p>
+<ul>
+<li>Direct (one hop) and backed by a shared organisation: 0.85.</li>
+<li>Direct but with no organisation behind it: 0.7.</li>
+<li>Two hops, organisation-backed: 0.7.</li>
+<li>Two hops, nothing behind it: 0.55.</li>
+<li>No path at all: a neutral 0.5.</li>
+</ul>
+<p><strong>Why.</strong> A connection grounded in a shared institution (they sat on the same board) is far more trustworthy than a bare "these two are near each other in the graph". Shorter, declared, institution-backed connections score higher because they are harder to be wrong about.</p>
+<h3>Corroboration (20%)</h3>
+<p>Counts distinct evidence items:</p>
+<ul>
+<li>Three or more sources: 1.0.</li>
+<li>Two: 0.7.</li>
+<li>One: 0.4.</li>
+<li>None: 0.1.</li>
+</ul>
+<p><strong>Why.</strong> One source could be a mistake or an outdated record. Several independent sources telling the same story is what makes a claim solid. This is the standard "do not trust a single source" principle turned into a number.</p>
+<h3>Freshness (15%)</h3>
+<p>Scores the age of the most recent evidence:</p>
+<ul>
+<li>30 days or newer: 1.0.</li>
+<li>Within 90 days: 0.85.</li>
+<li>Within 180 days: 0.7.</li>
+<li>Within a year: 0.5.</li>
+<li>Older than a year: 0.3.</li>
+</ul>
+<p><strong>Why.</strong> People change roles, leave boards, and move. A directorship confirmed last month is more reliable than one from three years ago. Old evidence is not worthless, so it never drops to zero, but it is discounted.</p>
+<h2>The introduction path score</h2>
+<p>Separate from the two headline scores, each *route* to a person is scored so the analyst can pick the best one. A path score rewards:</p>
+<ul>
+<li><strong>Fewer hops</strong> — a direct introduction beats a friend-of-a-friend.</li>
+<li><strong>A shared institution</strong> — a route through a board both people sit on is concrete.</li>
+<li><strong>A well-connected introducer</strong> — someone with reach can actually make the introduction land.</li>
+<li><strong>A higher-tier supporter</strong> — a route that starts from a close, committed supporter is warmer.</li>
+</ul>
+<p>The best path's score feeds the introability dimension above, which is why introability and "is there a good route" move together.</p>
+<h2>How to read the scores together</h2>
+<ul>
+<li><strong>High priority, high confidence</strong>: a strong, well-evidenced lead. Act on it.</li>
+<li><strong>High priority, low confidence</strong>: promising but unproven. Worth the analyst's time to verify identity and chase corroboration before approaching. These are exactly what the "Needs Review" queue surfaces.</li>
+<li><strong>Low priority, high confidence</strong>: we are sure about them, they are simply not a standout. Fine to deprioritise.</li>
+<li><strong>Low on both</strong>: park it.</li>
+</ul>
+<p>The scores rank the pool so a human looks at the right people first. They are not a decision. Read the breakdown, read the evidence, and make the call.</p>
+<hr>
+<h1 class="doc-h1">Part 2: The tabs</h1>
+<p>The sidebar has five sections following the OODA loop. Here is every tab, what it shows, and why it is useful.</p>
+<h2>Observe — what we have</h2>
+<p>The raw and enriched base data. Start here to understand the inputs.</p>
+<table><thead><tr><th>Tab</th><th>What it is</th><th>Why it is useful</th></tr></thead><tbody><tr><td><strong>What's New</strong></td><td>Recently added or changed entities</td><td>A quick read on what the last processing run surfaced.</td></tr><tr><td><strong>Supporters Sheet</strong></td><td>The original supporters spreadsheet, as imported</td><td>The untouched source of truth for who we started from.</td></tr><tr><td><strong>HNW Sheet</strong></td><td>The original high-net-worth target spreadsheet</td><td>The untouched source list of priority targets.</td></tr><tr><td><strong>Supporters (enriched)</strong></td><td>Our supporters after enrichment</td><td>The people we already have access to, with wealth and bio attached. Their value is the introductions they enable.</td></tr><tr><td><strong>HNW Targets (enriched)</strong></td><td>The priority targets after enrichment</td><td>The named high-value people, now with evidence and paths.</td></tr><tr><td><strong>Leads</strong></td><td>The discovered people, enriched</td><td>The pool of candidates found through the network, the raw material for the ranked Lead Generator.</td></tr><tr><td><strong>All Entities</strong></td><td>Everything: people and organisations</td><td>The complete table when you need to find anything.</td></tr><tr><td><strong>Pipeline</strong></td><td>The processing pipeline status</td><td>What the system has run and where data came from.</td></tr></tbody></table>
+<h2>Orient — how it fits together</h2>
+<p>The relationships between the data. This is where the network becomes legible.</p>
+<table><thead><tr><th>Tab</th><th>What it is</th><th>Why it is useful</th></tr></thead><tbody><tr><td><strong>Orbit</strong></td><td>The interactive network graph</td><td>See the shape of the network: clusters, hubs, who sits near whom.</td></tr><tr><td><strong>Supporter Reach</strong></td><td>How far each supporter's network extends</td><td>Find which supporters open the most doors.</td></tr><tr><td><strong>Key Connectors</strong></td><td>People ranked by network centrality and brokerage</td><td>The individuals who bridge otherwise separate groups. Reaching one connector can unlock a whole cluster.</td></tr><tr><td><strong>Signal Landscape</strong></td><td>Coverage of enrichment signals across the pool</td><td>See at a glance who has directorships, philanthropy, property, and press signals, and where the gaps are.</td></tr><tr><td><strong>Evidence Coverage</strong></td><td>How well-evidenced the pool is</td><td>Shows which promising leads are thinly evidenced, so you know where research should go next.</td></tr><tr><td><strong>Dimension Matrix</strong></td><td>Leads laid out across the score dimensions</td><td>Compare candidates dimension by dimension instead of by a single number.</td></tr><tr><td><strong>Institution Brokerage</strong></td><td>Institutions that bridge groups</td><td>Which boards and organisations act as connection hubs.</td></tr><tr><td><strong>Institutions</strong></td><td>The organisations in the network</td><td>Browse companies, charities, and boards as entities.</td></tr><tr><td><strong>Charities</strong></td><td>The charities specifically</td><td>The charity layer, central to affinity.</td></tr><tr><td><strong>Introduction Graph</strong></td><td>The graph of who can introduce whom</td><td>The routes through the network, visualised.</td></tr><tr><td><strong>Introduction Routes</strong></td><td>Routes laid out as a list</td><td>The same routing information in a readable table.</td></tr><tr><td><strong>Suggested Ties</strong></td><td>People who probably know each other but are not yet linked</td><td>Link prediction. Suggests likely connections for a human to confirm or dismiss, growing the graph.</td></tr><tr><td><strong>Communities</strong></td><td>Auto-detected clusters in the network</td><td>Natural groupings, useful for spotting a cohort to work as a set.</td></tr></tbody></table>
+<h2>Decide — who to pursue, and how</h2>
+<p>The ranked leads. The core of the analyst's work.</p>
+<table><thead><tr><th>Tab</th><th>What it is</th><th>Why it is useful</th></tr></thead><tbody><tr><td><strong>Lead Generator</strong></td><td>All leads ranked by the balanced overall priority</td><td>The main shortlist. Start here. Filter by category and signal, expand a row for the case and the routes.</td></tr><tr><td><strong>By Influence</strong></td><td>Leads ranked by network centrality only</td><td>When you want the most connected people first.</td></tr><tr><td><strong>By Capacity</strong></td><td>Leads ranked by observable giving capacity only</td><td>When capacity is the priority for a particular campaign.</td></tr><tr><td><strong>By Introability</strong></td><td>Leads ranked by how reachable they are only</td><td>When you want the warmest, easiest introductions first.</td></tr><tr><td><strong>By Affinity</strong></td><td>Leads ranked by cause alignment only</td><td>When fit to the cause matters most.</td></tr></tbody></table>
+<p>The "By X" tabs are the same pool sorted by a single dimension instead of the blended priority. They let you ask focused questions ("who can we reach most easily right now?") without the other dimensions diluting the answer.</p>
+<h2>Act — what we did and whether it worked</h2>
+<p>The chosen actions and their outcomes, closing the loop.</p>
+<table><thead><tr><th>Tab</th><th>What it is</th><th>Why it is useful</th></tr></thead><tbody><tr><td><strong>Action Backlog</strong></td><td>The leads the analyst committed to pursue</td><td>The working list of live opportunities, with status and the suggested next step.</td></tr><tr><td><strong>Cohorts</strong></td><td>Named groups of leads curated for outreach</td><td>Work a set of related leads together (for example, an event guest list or a sector group).</td></tr><tr><td><strong>Outcomes</strong></td><td>Conversion reporting by method, introducer, and channel</td><td>The feedback loop. Which scoring methods, which supporters, and which institutions actually convert. This tells you which routes to trust next time.</td></tr></tbody></table>
+<h2>Tools — supporting workflows</h2>
+<table><thead><tr><th>Tab</th><th>What it is</th><th>Why it is useful</th></tr></thead><tbody><tr><td><strong>Identity QA</strong></td><td>The identity-confirmation workflow</td><td>Where you confirm or reject that a record is the right person. Directly feeds the confidence score's identity dimension.</td></tr><tr><td><strong>Needs Review</strong></td><td>A queue of leads ranked by uncertainty</td><td>Surfaces the cases most in need of a human: high priority but low confidence, single-source wealth, possible duplicate supporters, unvalidated high-value leads. The most efficient place to spend review time.</td></tr><tr><td><strong>Augment Queue</strong></td><td>Leads awaiting enrichment</td><td>The people the system can still learn more about.</td></tr><tr><td><strong>Review Queue</strong></td><td>The formal reviewer workflow (PRD 18.6)</td><td>Structured review states for a more formal sign-off process.</td></tr><tr><td><strong>Admin</strong></td><td>Administrative controls</td><td>System administration.</td></tr></tbody></table>
+<h2>The dossier (every lead's own page)</h2>
+<p>Clicking any lead opens its full intelligence profile. It is not a sidebar tab but it is where the deepest work happens. It pulls everything about one person into a single page:</p>
+<ul>
+<li><strong>Priority and confidence</strong>, every dimension with its plain-language explanation.</li>
+<li><strong>Enrichment signals</strong>, the full list of what we know, grouped and sourced.</li>
+<li><strong>Introduction paths</strong>, the ranked routes with the supporter, the institution, and the hop count.</li>
+<li><strong>Suggested action</strong>, a model-suggested next step (clearly labelled as a suggestion to verify, not an instruction).</li>
+<li><strong>Giving history</strong>, any recorded donations.</li>
+<li><strong>Network connections</strong>, each with its edge type and tie strength, where you can remove or downweight a wrong or weak link.</li>
+<li><strong>Data conflicts</strong>, flagged when sources disagree, with a way to resolve them.</li>
+<li><strong>Wealth profile</strong>, with a human-override control so an analyst's corrected wealth band wins over the automated one.</li>
+<li><strong>Notes and tags</strong>, your space to record judgement for the next person.</li>
+</ul>
+<p>The dossier is where a lead stops being a row in a table and becomes a decision a human can make and defend.</p>
+
+</main>
+</div>
+
+<footer>
+  Bloomsbury Football Foundation · Network Mapper · <a href="/docs/what-this-is.html">Documentation home</a>
+</footer>
+
+</body>
+</html>
