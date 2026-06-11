@@ -8,8 +8,8 @@
  *   EMPTY_SUPPRESSIONS, pruneIntroPaths (the human "this edge is wrong"
  *   decisions that every graph/path replay must honour). loadSuppressions is
  *   skipped here: it needs a live Supabase client.
- * - lib/crm/donor-dedup.ts   — matchExistingDonor (don't re-pitch a current
- *   donor as a fresh lead; HNW targets stay rankable).
+ * - lib/crm/supporter-dedup.ts — matchSupporter (our supporters aren't leads;
+ *   we already have access, so they're excluded; HNW targets stay rankable).
  * - lib/crm/lead-score.ts    — scoreLead (the composite priority blend).
  *
  * Real supporter / HNW-target names are pulled from the seed JSON so the tests
@@ -26,7 +26,7 @@ import {
   EMPTY_SUPPRESSIONS,
   type OverrideRow,
 } from '@/lib/crm/suppressions';
-import { matchExistingDonor } from '@/lib/crm/donor-dedup';
+import { matchSupporter } from '@/lib/crm/supporter-dedup';
 import {
   scoreLead,
   SCORING_CONFIG_VERSION,
@@ -373,12 +373,12 @@ describe('pruneIntroPaths', () => {
 });
 
 // ===================================================================
-// matchExistingDonor
+// matchSupporter
 // ===================================================================
 
-describe('matchExistingDonor', () => {
+describe('matchSupporter', () => {
   it('exact-matches a known supporter name', () => {
-    const m = matchExistingDonor(SUPPORTER.name);
+    const m = matchSupporter(SUPPORTER.name);
     expect(m).not.toBeNull();
     expect(m!.kind).toBe('exact');
     expect(m!.matchName).toBe(SUPPORTER.name);
@@ -388,18 +388,18 @@ describe('matchExistingDonor', () => {
   it('returns null for an HNW-target name (targets are not donors)', () => {
     // Sanity-check the fixture really is an HNW target, then assert no match.
     expect(isHnwTarget(HNW_TARGET.name)).toBe(true);
-    expect(matchExistingDonor(HNW_TARGET.name)).toBeNull();
+    expect(matchSupporter(HNW_TARGET.name)).toBeNull();
   });
 
   it('returns null for a completely unknown name', () => {
-    expect(matchExistingDonor('Zzqx Notarealperson')).toBeNull();
+    expect(matchSupporter('Zzqx Notarealperson')).toBeNull();
   });
 
   it('variant-matches a middle-initial form of a supporter', () => {
     const variant = middleInitialVariant(SUPPORTER.name); // "Grant A. Gordon"
     // Guard: the variant itself must not be a seed (else it would be exact).
     expect(seedInfo(variant)).toBeNull();
-    const m = matchExistingDonor(variant);
+    const m = matchSupporter(variant);
     expect(m).not.toBeNull();
     expect(m!.kind).toBe('variant');
     expect(m!.matchName).toBe(SUPPORTER.name);
@@ -408,30 +408,30 @@ describe('matchExistingDonor', () => {
 
   it('variant-matches a full middle-name form too', () => {
     const [first, ...rest] = SUPPORTER.name.split(' ');
-    const m = matchExistingDonor(`${first} Alexander ${rest.join(' ')}`);
+    const m = matchSupporter(`${first} Alexander ${rest.join(' ')}`);
     expect(m).not.toBeNull();
     expect(m!.kind).toBe('variant');
     expect(m!.matchName).toBe(SUPPORTER.name);
   });
 
   it('returns null for a single-token name (cannot variant-match)', () => {
-    expect(matchExistingDonor('Cher')).toBeNull();
+    expect(matchSupporter('Cher')).toBeNull();
     // Even the first token of a real supporter alone must not match.
-    expect(matchExistingDonor(SUPPORTER.name.split(' ')[0])).toBeNull();
+    expect(matchSupporter(SUPPORTER.name.split(' ')[0])).toBeNull();
   });
 
   it('normalises case and surrounding/internal whitespace on exact match', () => {
     const [first, last] = SUPPORTER.name.split(' ');
-    expect(matchExistingDonor(SUPPORTER.name.toUpperCase())?.kind).toBe('exact');
-    expect(matchExistingDonor(`  ${SUPPORTER.name}  `)?.kind).toBe('exact');
-    expect(matchExistingDonor(`${first}   ${last}`)?.kind).toBe('exact');
+    expect(matchSupporter(SUPPORTER.name.toUpperCase())?.kind).toBe('exact');
+    expect(matchSupporter(`  ${SUPPORTER.name}  `)?.kind).toBe('exact');
+    expect(matchSupporter(`${first}   ${last}`)?.kind).toBe('exact');
   });
 
   it('strips a leading honorific when it starts the string', () => {
     // normaliseSeedName anchors honorific-stripping to the start of the string.
     expect(normaliseSeedName(`Sir ${SUPPORTER.name}`)).toBe(normaliseSeedName(SUPPORTER.name));
-    expect(matchExistingDonor(`Sir ${SUPPORTER.name}`)?.kind).toBe('exact');
-    expect(matchExistingDonor(`Dr ${SUPPORTER.name}`)?.kind).toBe('exact');
+    expect(matchSupporter(`Sir ${SUPPORTER.name}`)?.kind).toBe('exact');
+    expect(matchSupporter(`Dr ${SUPPORTER.name}`)?.kind).toBe('exact');
   });
 
   it('does NOT strip an honorific preceded by whitespace (source anchors on ^)', () => {
@@ -440,7 +440,7 @@ describe('matchExistingDonor', () => {
     // normalised name is "sir grant gordon" and no donor match is found.
     const padded = `  SIR ${SUPPORTER.name}  `;
     expect(normaliseSeedName(padded)).toBe(`sir ${normaliseSeedName(SUPPORTER.name)}`);
-    expect(matchExistingDonor(padded)).toBeNull();
+    expect(matchSupporter(padded)).toBeNull();
   });
 });
 
@@ -474,7 +474,7 @@ describe('scoreLead (PRD §18.1 priority + §18.2 confidence)', () => {
     expect(s.bestPath).toBeNull();
     expect(s.rootSupporter).toBeNull();
     expect(s.introPaths).toEqual([]);
-    expect(s.existingDonor).toBeNull();
+    expect(s.existingSupporter).toBeNull();
     expect(s.category).toBe('discovered');
   });
 
@@ -612,8 +612,8 @@ describe('scoreLead (PRD §18.1 priority + §18.2 confidence)', () => {
     expect(s.pathCount).toBe(15); // pathCount reflects the true total
   });
 
-  it('defaults existingDonor to null', () => {
-    expect(scoreLead('i', 'n', { intro_paths: [introPath({})] }, 5, 1).existingDonor).toBeNull();
+  it('defaults existingSupporter to null', () => {
+    expect(scoreLead('i', 'n', { intro_paths: [introPath({})] }, 5, 1).existingSupporter).toBeNull();
   });
 
   it('defaults the category from the name when target_category is absent', () => {

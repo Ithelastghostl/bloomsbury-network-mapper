@@ -2,22 +2,30 @@ import { normaliseSeedName, seedInfo, type SeedPerson } from './seed-reference';
 import seedPeople from './data/seed-people.json';
 
 /**
- * Existing-donor deduplication for generated leads.
+ * Supporter exclusion for generated leads.
  *
- * A generated lead that is really one of our current donors (the supporters
- * in the original list) must not be ranked as a fresh lead. Matching is:
+ * Our supporters are people we ALREADY have direct access to (current donors,
+ * key introducers, strategic contacts). They are not leads — the value of the
+ * platform is the *introductions* they can give us to people we DON'T yet have
+ * access to. So a generated lead that is really one of our supporters is
+ * excluded from the lead list (it belongs in Supporter Reach / Introductions,
+ * as a source of warm paths, not as a prospect).
+ *
+ * Matching:
  *   - exact:   normalised display name equals a supporter's name
  *   - variant: first + last name tokens match a supporter (catches middle
  *              names/initials the augmentation pipeline introduces, e.g.
  *              "John A. Smith" vs supporter "John Smith")
  *
- * HNW targets from the original list are NOT donors — they are the people we
- * want to reach — so they stay rankable and are never matched here.
+ * HNW targets are NOT supporters — they are exactly the people we want to reach
+ * — so they stay rankable as leads and are never matched here.
  */
 
-export interface DonorMatch {
+export interface SupporterMatch {
   matchName: string;
   kind: 'exact' | 'variant';
+  /** Funder sub-type from the supporters sheet: "Current donor", "Key introducer", "Strategic contact". */
+  subType: string | null;
   tier: string | null;
 }
 
@@ -36,11 +44,11 @@ for (const s of SUPPORTERS) {
   if (key && !SUPPORTER_BY_FIRST_LAST.has(key)) SUPPORTER_BY_FIRST_LAST.set(key, s);
 }
 
-/** Match a display name against the current-donor (supporters) list. */
-export function matchExistingDonor(displayName: string): DonorMatch | null {
+/** Match a display name against our supporters (the people we already have access to). */
+export function matchSupporter(displayName: string): SupporterMatch | null {
   const info = seedInfo(displayName);
   if (info?.source === 'supporters') {
-    return { matchName: info.name, kind: 'exact', tier: info.tier };
+    return { matchName: info.name, kind: 'exact', subType: info.funder_sub_type, tier: info.tier };
   }
   // Variant match only when the exact form does not resolve to any seed person
   // (an HNW target with a supporter's first+last would be a false positive).
@@ -49,7 +57,7 @@ export function matchExistingDonor(displayName: string): DonorMatch | null {
     if (key) {
       const supporter = SUPPORTER_BY_FIRST_LAST.get(key);
       if (supporter && normaliseSeedName(supporter.name) !== normaliseSeedName(displayName)) {
-        return { matchName: supporter.name, kind: 'variant', tier: supporter.tier };
+        return { matchName: supporter.name, kind: 'variant', subType: supporter.funder_sub_type, tier: supporter.tier };
       }
     }
   }

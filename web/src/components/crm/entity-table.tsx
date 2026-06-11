@@ -8,7 +8,15 @@ import { seedInfo } from '@/lib/crm/seed-reference';
 import { StatusBadge } from './status-badge';
 import { WealthBadge } from './wealth-badge';
 
-type SortKey = 'name' | 'wealth' | 'connections' | 'evidence' | 'state' | 'completeness';
+type SortKey = 'name' | 'foundAs' | 'wealth' | 'connections' | 'evidence' | 'state' | 'completeness';
+
+/** Colour per funder sub-type — "Current donor" is the one that already gave money. */
+const SUBTYPE_CLS: Record<string, string> = {
+  'Current donor': 'text-green-400 bg-green-400/10 border-green-400/30',
+  'Key introducer': 'text-gold bg-gold/10 border-gold/20',
+  'Strategic contact': 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  'Target donor': 'text-orange-400 bg-orange-400/10 border-orange-400/20',
+};
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) return `£${(value / 1_000_000_000).toFixed(1)}B`;
@@ -104,6 +112,9 @@ export function EntityTable({
       switch (sortKey) {
         case 'name':
           cmp = a.display_name.localeCompare(b.display_name);
+          break;
+        case 'foundAs':
+          cmp = (seedInfo(a.display_name)?.funder_sub_type ?? 'zz').localeCompare(seedInfo(b.display_name)?.funder_sub_type ?? 'zz');
           break;
         case 'wealth':
           cmp = wealthSortValue(a.wealth?.band) - wealthSortValue(b.wealth?.band);
@@ -208,11 +219,12 @@ export function EntityTable({
         <table className="w-full text-sm min-w-[1080px]">
           <thead>
             <tr className="bg-deep-charcoal/70 border-b border-border-subtle">
-              <th colSpan={3} className="text-left px-3 py-1.5 text-[9px] font-semibold tracking-widest uppercase text-gold/70 border-r border-border-subtle">Source data (spreadsheets)</th>
+              <th colSpan={4} className="text-left px-3 py-1.5 text-[9px] font-semibold tracking-widest uppercase text-gold/70 border-r border-border-subtle">Source data (spreadsheets)</th>
               <th colSpan={6} className="text-left px-3 py-1.5 text-[9px] font-semibold tracking-widest uppercase text-teal-400/70">Augmented intelligence (pipeline)</th>
             </tr>
             <tr className="bg-deep-charcoal border-b border-border-subtle">
               <th className={TH} onClick={() => handleSort('name')}>Name{sortIcon('name')}</th>
+              <th className={TH} onClick={() => handleSort('foundAs')}>Found as{sortIcon('foundAs')}</th>
               <th className="text-left px-3 py-2 text-[10px] font-semibold tracking-widest uppercase text-text-muted">Tier</th>
               <th className="text-left px-3 py-2 text-[10px] font-semibold tracking-widest uppercase text-text-muted border-r border-border-subtle">Affiliation / Introduced by</th>
               <th className={TH} onClick={() => handleSort('wealth')}>Wealth{sortIcon('wealth')}</th>
@@ -237,7 +249,7 @@ export function EntityTable({
                   className={`transition-colors cursor-pointer ${isOpen ? 'bg-deep-charcoal' : 'hover:bg-deep-charcoal/80'}`}
                   onClick={() => setExpandedId(isOpen ? null : entity.canonical_entity_id)}
                 >
-                  <td className="px-3 py-2.5" colSpan={isOpen ? 9 : 1}>
+                  <td className="px-3 py-2.5" colSpan={isOpen ? 10 : 1}>
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/crm/entity/${entity.canonical_entity_id}`}
@@ -305,6 +317,13 @@ export function EntityTable({
                   {!isOpen && (
                     <>
                       <td className="px-3 py-2.5">
+                        {seed?.funder_sub_type ? (
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${SUBTYPE_CLS[seed.funder_sub_type] ?? 'text-text-secondary bg-mid-charcoal border-border-subtle'}`}>
+                            {seed.funder_sub_type}
+                          </span>
+                        ) : <span className="text-[10px] text-text-muted">—</span>}
+                      </td>
+                      <td className="px-3 py-2.5">
                         <span className={`text-[11px] ${seed?.tier === 'Priority / very important' ? 'text-gold' : 'text-text-muted'}`}>
                           {seed?.tier === 'Priority / very important' ? 'Priority' : seed?.tier ?? '—'}
                         </span>
@@ -365,7 +384,7 @@ export function EntityTable({
             })}
             {paged.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-text-muted">
+                <td colSpan={10} className="px-4 py-8 text-center text-text-muted">
                   No records match your filters.
                 </td>
               </tr>

@@ -79,8 +79,8 @@ export function DimensionMatrix({ leads }: { leads: ScoredLead[] }) {
   const [page, setPage] = useState(0);
   const pageSize = 50;
 
-  // Matrix considers real candidates only — existing donors aren't targets.
-  const pool = useMemo(() => leads.filter(l => !l.existingDonor), [leads]);
+  // Matrix considers real candidates only — our own supporters aren't targets.
+  const pool = useMemo(() => leads.filter(l => !l.existingSupporter), [leads]);
 
   const filtered = useMemo(() => {
     let list = pool;

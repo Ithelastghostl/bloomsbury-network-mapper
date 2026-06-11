@@ -79,9 +79,11 @@ export interface ScoredLead {
   charityOverlap: number;
   isHumanValidated: boolean;
   actionStatus: string | null;
-  /** Set when this "lead" is really a current donor from the original list
-   * (exact/variant name match) or was excluded by an analyst. */
-  existingDonor: { matchName: string; kind: 'exact' | 'variant' | 'excluded' } | null;
+  /** Set when this "lead" is really one of our supporters (we already have
+   * direct access — they belong in Introductions as an introducer, not here)
+   * or was excluded by an analyst. `subType` carries their funder sub-type
+   * (Current donor / Key introducer / Strategic contact) when known. */
+  existingSupporter: { matchName: string; kind: 'exact' | 'variant' | 'excluded'; subType: string | null } | null;
 }
 
 /** Human label for the strategic-fit explanation. */
@@ -184,7 +186,7 @@ export function scoreLead(
     charityOverlap,
     isHumanValidated: !!attrs.identity_confirmed,
     actionStatus: attrs.action_item?.status ?? null,
-    existingDonor: null,
+    existingSupporter: null,
   };
 }
 

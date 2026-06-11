@@ -177,14 +177,14 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
   const [page, setPage] = useState(0);
   const [sending, setSending] = useState<string | null>(null);
   const [excluding, setExcluding] = useState<string | null>(null);
-  const [overrides, setOverrides] = useState<Map<string, ScoredLead['existingDonor']>>(new Map());
+  const [overrides, setOverrides] = useState<Map<string, ScoredLead['existingSupporter']>>(new Map());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const pageSize = 40;
 
   // Apply optimistic exclude/restore overrides on top of the server data.
-  const effective = useMemo(() => leads.map(l => overrides.has(l.id) ? { ...l, existingDonor: overrides.get(l.id) ?? null } : l), [leads, overrides]);
+  const effective = useMemo(() => leads.map(l => overrides.has(l.id) ? { ...l, existingSupporter: overrides.get(l.id) ?? null } : l), [leads, overrides]);
 
-  const existingCount = useMemo(() => effective.filter(l => l.existingDonor).length, [effective]);
+  const existingCount = useMemo(() => effective.filter(l => l.existingSupporter).length, [effective]);
 
   const catCounts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -201,7 +201,7 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
 
   const filtered = useMemo(() => {
     let list = effective;
-    if (!showExisting) list = list.filter(l => !l.existingDonor);
+    if (!showExisting) list = list.filter(l => !l.existingSupporter);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(l => l.name.toLowerCase().includes(q) || (l.rootSupporter ?? '').toLowerCase().includes(q) || (l.sector ?? '').toLowerCase().includes(q));
@@ -282,7 +282,7 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ source: 'analyst_exclusion' }),
       });
-      if (res.ok) setOverrides(prev => new Map(prev).set(lead.id, { matchName: lead.name, kind: 'excluded' }));
+      if (res.ok) setOverrides(prev => new Map(prev).set(lead.id, { matchName: lead.name, kind: 'excluded', subType: null }));
     } catch { /* ignore */ }
     setExcluding(null);
   }
@@ -297,9 +297,9 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
     setExcluding(null);
   }
 
-  const DONOR_BADGE: Record<string, { label: string; cls: string }> = {
-    exact: { label: 'Existing donor', cls: 'text-amber-400 bg-amber-400/10 border-amber-400/30' },
-    variant: { label: 'Donor name match?', cls: 'text-amber-300 bg-amber-300/10 border-amber-300/30' },
+  const SUPPORTER_BADGE: Record<string, { label: string; cls: string }> = {
+    exact: { label: 'Our supporter', cls: 'text-amber-400 bg-amber-400/10 border-amber-400/30' },
+    variant: { label: 'Supporter name match?', cls: 'text-amber-300 bg-amber-300/10 border-amber-300/30' },
     excluded: { label: 'Excluded', cls: 'text-red-400 bg-red-400/10 border-red-400/30' },
   };
 
@@ -351,7 +351,7 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
         </select>
         <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer select-none">
           <input type="checkbox" checked={showExisting} onChange={e => { setShowExisting(e.target.checked); setPage(0); }} className="accent-gold" />
-          Show existing donors &amp; excluded ({existingCount})
+          Show our supporters &amp; excluded ({existingCount})
         </label>
         <span className="text-xs text-text-muted ml-auto">{sorted.length} results</span>
       </div>
@@ -384,16 +384,16 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
             {paged.map((l, i) => {
               const isOpen = expandedId === l.id;
               const colCount = 12 + cfg.subColumns.length;
-              const donorBadge = l.existingDonor ? DONOR_BADGE[l.existingDonor.kind] : null;
+              const supporterBadge = l.existingSupporter ? SUPPORTER_BADGE[l.existingSupporter.kind] : null;
               return (
-                <tr key={l.id} className={`transition-colors cursor-pointer ${isOpen ? 'bg-deep-charcoal' : 'hover:bg-deep-charcoal/60'} ${l.existingDonor ? 'opacity-75' : ''}`} onClick={() => setExpandedId(isOpen ? null : l.id)}>
+                <tr key={l.id} className={`transition-colors cursor-pointer ${isOpen ? 'bg-deep-charcoal' : 'hover:bg-deep-charcoal/60'} ${l.existingSupporter ? 'opacity-75' : ''}`} onClick={() => setExpandedId(isOpen ? null : l.id)}>
                   <td className="px-3 py-2.5 text-[10px] text-text-muted font-mono align-top">{page * pageSize + i + 1}</td>
                   <td className="px-3 py-2.5 align-top" colSpan={isOpen ? colCount - 1 : 1}>
                     <div className="flex items-center gap-2">
                       <Link href={`/crm/entity/${l.id}`} className="text-text-primary hover:text-gold font-medium transition-colors text-[13px]" onClick={e => e.stopPropagation()}>{l.name}</Link>
-                      {donorBadge && (
-                        <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border ${donorBadge.cls}`} title={l.existingDonor!.kind === 'variant' ? `Possible match: ${l.existingDonor!.matchName}` : l.existingDonor!.matchName}>
-                          {donorBadge.label}
+                      {supporterBadge && (
+                        <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border ${supporterBadge.cls}`} title={l.existingSupporter!.kind === 'variant' ? `Possible match: ${l.existingSupporter!.matchName}` : `${l.existingSupporter!.matchName}${l.existingSupporter!.subType ? ` · ${l.existingSupporter!.subType}` : ''}`}>
+                          {supporterBadge.label}
                         </span>
                       )}
                       {!isOpen && l.bio && l.bio !== 'No public profile found.' && <span className="text-[10px] text-text-muted truncate max-w-[180px]">{l.bio}</span>}
@@ -401,12 +401,12 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
 
                     {isOpen && (
                       <div className="mt-3 space-y-4" onClick={e => e.stopPropagation()}>
-                        {l.existingDonor && (
+                        {l.existingSupporter && (
                           <div className="rounded border border-amber-400/30 bg-amber-400/[0.05] px-3 py-2 max-w-3xl">
                             <p className="text-[11px] text-amber-300">
-                              {l.existingDonor.kind === 'exact' && <>Already a current donor in the original supporters list — not a new lead.</>}
-                              {l.existingDonor.kind === 'variant' && <>Possible match with current donor <span className="font-semibold">{l.existingDonor.matchName}</span> (name variant). Verify before outreach — if it is the same person, exclude this entry.</>}
-                              {l.existingDonor.kind === 'excluded' && <>Excluded from lead generation by an analyst.</>}
+                              {l.existingSupporter.kind === 'exact' && <>One of our supporters{l.existingSupporter.subType ? ` (${l.existingSupporter.subType})` : ''} — we already have direct access. Not a lead; use them as an introducer (see Supporter Reach / Introductions).</>}
+                              {l.existingSupporter.kind === 'variant' && <>Possible match with our supporter <span className="font-semibold">{l.existingSupporter.matchName}</span>{l.existingSupporter.subType ? ` (${l.existingSupporter.subType})` : ''} (name variant). Verify — if it is the same person, exclude this entry.</>}
+                              {l.existingSupporter.kind === 'excluded' && <>Excluded from lead generation by an analyst.</>}
                             </p>
                           </div>
                         )}
@@ -533,7 +533,7 @@ export function LeadGeneratorTable({ leads, method = 'priority' }: { leads: Scor
                           >
                             {l.actionStatus ? `Status: ${l.actionStatus}` : sending === l.id ? 'Sending...' : 'Send to Action Backlog'}
                           </button>
-                          {l.existingDonor?.kind === 'excluded' ? (
+                          {l.existingSupporter?.kind === 'excluded' ? (
                             <button
                               onClick={() => restoreLead(l)}
                               disabled={excluding === l.id}

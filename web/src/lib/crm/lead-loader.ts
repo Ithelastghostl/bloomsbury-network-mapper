@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import { scoreLead, type ScoredLead } from './lead-score';
-import { matchExistingDonor } from './donor-dedup';
+import { matchSupporter } from './supporter-dedup';
 import { loadSuppressions } from './suppressions';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,10 +25,11 @@ async function pageAll<T>(supabase: SupabaseClient, table: string, columns: stri
  * Load and score every person as a lead — the single source for the Decide
  * views, the CSV export, and the score-persistence script.
  *
- * Current donors are not silently dropped: they are scored and flagged via
- * `existingDonor` (exact/variant name match against the supporters list, or
- * an analyst exclusion in known_contacts). The UI hides flagged rows by
- * default behind a "show existing donors" toggle.
+ * Our own supporters are not silently dropped: they are scored and flagged via
+ * `existingSupporter` (exact/variant name match against the supporters list, or
+ * an analyst exclusion in known_contacts). The UI hides flagged rows by default
+ * behind a "show our supporters" toggle — they belong in Introductions as a
+ * source of warm paths, not in the lead list (we already have access to them).
  */
 export async function computeScoredLeads(supabase: SupabaseClient): Promise<ScoredLead[]> {
   const [persons, allConns, suppressions, exclusions, evidence] = await Promise.all([
@@ -98,10 +99,10 @@ export async function computeScoredLeads(supabase: SupabaseClient): Promise<Scor
         },
       );
       if (excludedIds.has(p.canonical_entity_id)) {
-        lead.existingDonor = { matchName: p.display_name, kind: 'excluded' };
+        lead.existingSupporter = { matchName: p.display_name, kind: 'excluded', subType: null };
       } else {
-        const donor = matchExistingDonor(p.display_name);
-        if (donor) lead.existingDonor = { matchName: donor.matchName, kind: donor.kind };
+        const sup = matchSupporter(p.display_name);
+        if (sup) lead.existingSupporter = { matchName: sup.matchName, kind: sup.kind, subType: sup.subType };
       }
       return lead;
     })

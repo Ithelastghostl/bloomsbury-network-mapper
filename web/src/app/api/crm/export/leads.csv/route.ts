@@ -9,7 +9,7 @@ import { requireAdminOrLocal } from '@/lib/crm/auth';
  *
  * Handoff export of ranked leads with scores, best path, and action status.
  * `scope=actions` limits to leads already sent to the Action Backlog.
- * Existing donors / excluded entries are omitted unless includeExisting=1.
+ * Existing supporters / excluded entries are omitted unless includeExisting=1.
  */
 
 // PRD §18.1 priority + §18.2 confidence model.
@@ -18,7 +18,7 @@ const COLUMNS = [
   'Introability', 'Affinity', 'Capacity', 'Influence', 'Strategic Fit',
   'Min Hops', 'Path Count', 'Best Route', 'Root Supporter', 'Via Organisations',
   'Wealth Band', 'Estimated Net Worth GBP', 'Sector', 'Affinity Rationale',
-  'Existing Donor Flag', 'Action Status',
+  'Existing Supporter Flag', 'Action Status',
 ] as const;
 
 function escapeCSV(value: string): string {
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     const includeExisting = url.searchParams.get('includeExisting') === '1';
 
     let leads = await computeScoredLeads(getAdminClient());
-    if (!includeExisting) leads = leads.filter(l => !l.existingDonor);
+    if (!includeExisting) leads = leads.filter(l => !l.existingSupporter);
     if (scope === 'actions') leads = leads.filter(l => l.actionStatus);
 
     leads.sort((a, b) => rankingValue(b, method) - rankingValue(a, method));
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
         l.estimatedNw != null ? String(l.estimatedNw) : '',
         l.sector ?? '',
         l.explanations.affinity,
-        l.existingDonor ? `${l.existingDonor.kind}: ${l.existingDonor.matchName}` : '',
+        l.existingSupporter ? `${l.existingSupporter.kind}${l.existingSupporter.subType ? ` (${l.existingSupporter.subType})` : ''}: ${l.existingSupporter.matchName}` : '',
         l.actionStatus ?? '',
       ].map(escapeCSV).join(','));
     });
