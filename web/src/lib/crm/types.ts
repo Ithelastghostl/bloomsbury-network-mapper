@@ -18,6 +18,16 @@ export interface WealthData {
     contribution: number;
     source_layer: string;
   }>;
+  /** Human wealth-band correction (wealth_overrides). When present, `band` is the
+   * analyst's band (human decisions win); `automated_band` keeps the original for
+   * display. See app/api/crm/entities/[id]/wealth-override. */
+  override?: {
+    band: WealthBand;
+    automated_band: WealthBand;
+    reason: string | null;
+    author: string;
+    created_at: string;
+  };
 }
 
 export interface EvidenceEntry {
@@ -30,6 +40,17 @@ export interface EvidenceEntry {
   created_at: string;
 }
 
+export interface DonationEntry {
+  donation_event_id: string;
+  recipient_name: string | null;
+  amount: number | null;
+  currency: string | null;
+  year: number | null;
+  source: string | null;
+  evidence_url: string | null;
+  detail: string | null;
+}
+
 export interface ConnectionEntry {
   connection_id: string;
   connected_entity_id: string;
@@ -38,6 +59,17 @@ export interface ConnectionEntry {
   via_organisation?: string;
   priority: number;
   evidence: Record<string, unknown>;
+  /** Analyst flagged this tie "real but weak/suspect" (connection_overrides
+   * action='downweight'). The edge is kept but its tie-strength is reduced by
+   * DOWNWEIGHT_FACTOR in the UI (see entity-detail ConnectionRow). */
+  downweighted?: boolean;
+  /** Companies House co-director appointment dates, when this edge maps to a
+   * co_director_edges row. Drives tie-strength freshness (see edge-classify). */
+  co_director?: {
+    appointed_on?: string | null;
+    resigned_on?: string | null;
+    company_name?: string | null;
+  };
 }
 
 export interface EnrichedEntity {
@@ -49,8 +81,14 @@ export interface EnrichedEntity {
   wealth: WealthData | null;
   evidence: EvidenceEntry[];
   connections: ConnectionEntry[];
+  /** Recorded giving (donation_events) for this entity, newest first. Empty when
+   * none is evidenced (see lib/crm/queries.ts). */
+  donations: DonationEntry[];
   pipeline_state: string;
   lead_source: LeadSource;
+  /** Normalised enrichment-signal summary (see lib/crm/signals.ts). Optional —
+   * populated by enrichEntities; absent on cheaper loads. */
+  signals?: import('./signals').EntitySignals;
 }
 
 export interface CrmStats {

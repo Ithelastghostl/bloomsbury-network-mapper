@@ -1,6 +1,7 @@
 import { cache } from 'react';
-import type { EnrichedEntity, WealthData, EvidenceEntry, ConnectionEntry, CrmStats, WealthBand } from './types';
+import type { EnrichedEntity, WealthData, EvidenceEntry, ConnectionEntry, DonationEntry, CrmStats, WealthBand } from './types';
 import { loadSuppressions } from './suppressions';
+import { buildEntitySignalsFromRows } from './signals';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any;
@@ -84,13 +85,26 @@ export async function enrichEntities(
   // Chunk every .in() — a single large IN list is an ~80x latency cliff on
   // PostgREST. Per-chunk .order() is dropped; ordering is reconstructed in JS
   // below where it matters (latest wealth estimate per entity).
-  const [wealthRows, evidenceRows, outboundRows, inboundRowsRaw, suppressions] = await Promise.all([
+  const [wealthRows, evidenceRows, outboundRows, inboundRowsRaw, coDirOut, coDirIn, donationRows, overrideRows, suppressions] = await Promise.all([
     chunkedIn(supabase, 'wealth_estimates', '*', 'entity_id', ids),
     chunkedIn(supabase, 'enrichment_evidence', '*', 'entity_id', ids),
     chunkedIn(supabase, 'network_connections', '*', 'source_entity_id', ids),
     chunkedIn(supabase, 'network_connections', '*', 'connected_entity_id', ids),
+    // Co-director edges carry appointment/resignation dates — the freshness
+    // signal for tie strength. Fetched both directions like network_connections.
+    chunkedIn(supabase, 'co_director_edges', '*', 'seed_entity_id', ids),
+    chunkedIn(supabase, 'co_director_edges', '*', 'co_director_entity_id', ids),
+    // Recorded giving (donation_events) — the Giving-history dossier card.
+    chunkedIn(supabase, 'donation_events', '*', 'donor_entity_id', ids),
+    // Human wealth-band corrections (wealth_overrides) — human decisions win.
+    // Tolerate the table being absent (migration 00016 not yet applied) so the
+    // whole CRM doesn't 500 before the override feature is migrated in.
+    chunkedIn(supabase, 'wealth_overrides', '*', 'entity_id', ids).catch(() => [] as Record<string, unknown>[]),
     loadSuppressions(supabase),
   ]);
+
+  const overrideMap = new Map<string, Record<string, unknown>>();
+  for (const o of overrideRows) overrideMap.set(o.entity_id as string, o);
 
   // Human suppressions win: overridden connections never reach the UI.
   const isSup = (c: Record<string, unknown>) => suppressions.isSuppressedConnection(c as { connection_id: string; source_entity_id: string; connected_entity_id: string | null });
@@ -156,15 +170,69 @@ export async function enrichEntities(
     connectionMap.set(c.connected_entity_id as string, list);
   }
 
+  // Co-director edges: normalise both directions to (owner = one of our ids,
+  // other = the co-director) so we can attach dates and fill any gaps.
+  const coDirNorm = [
+    ...coDirOut.map(d => ({ owner: d.seed_entity_id as string, other: d.co_director_entity_id as string, row: d })),
+    ...coDirIn.map(d => ({ owner: d.co_director_entity_id as string, other: d.seed_entity_id as string, row: d })),
+  ];
+  for (const { owner, other, row } of coDirNorm) {
+    if (!owner || !other || owner === other) continue;
+    if (suppressions.isSuppressedPair(owner, other)) continue;
+    const meta = {
+      appointed_on: (row.appointed_on as string | null) ?? null,
+      resigned_on: (row.resigned_on as string | null) ?? null,
+      company_name: (row.company_name as string | null) ?? null,
+    };
+    const list = connectionMap.get(owner) ?? [];
+    // Attach dates to an existing edge to the same person, else add a co-director edge.
+    const existing = list.find(x => x.connected_entity_id === other);
+    if (existing) {
+      if (!existing.co_director) existing.co_director = meta;
+      if (!existing.via_organisation && meta.company_name) existing.via_organisation = meta.company_name;
+    } else {
+      list.push({
+        connection_id: (row.co_director_edge_id as string) ?? `codir_${owner}_${other}`,
+        connected_entity_id: other,
+        connection_type: 'CO_DIRECTOR_OF',
+        via_organisation: meta.company_name ?? undefined,
+        priority: 0,
+        evidence: { company_name: meta.company_name, appointed_on: meta.appointed_on, resigned_on: meta.resigned_on },
+        co_director: meta,
+      });
+    }
+    connectionMap.set(owner, list);
+  }
+
   // Restore the priority ordering the per-query .order() used to provide.
   for (const list of connectionMap.values()) {
     list.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+  }
+
+  // Flag downweighted ties (analyst said "real but weak"). The map key is the
+  // owning entity, so the pair is (owner, connected). Kept, not removed — the UI
+  // shows the reduced tie strength.
+  for (const [ownerId, list] of connectionMap) {
+    for (const c of list) {
+      if (suppressions.isDownweightedPair(ownerId, c.connected_entity_id)) c.downweighted = true;
+    }
+  }
+
+  // Recorded giving per donor (newest year first). Recipient ids are folded into
+  // the name-resolution set below so the card can show the charity's name.
+  const donationMap = new Map<string, Array<Record<string, unknown>>>();
+  for (const d of donationRows) {
+    const donor = d.donor_entity_id as string;
+    (donationMap.get(donor) ?? donationMap.set(donor, []).get(donor)!).push(d);
   }
 
   // Resolve connected entity names (chunked — this set scales with the graph).
   const connectedIds = new Set<string>();
   for (const list of connectionMap.values()) {
     for (const c of list) connectedIds.add(c.connected_entity_id);
+  }
+  for (const d of donationRows) {
+    if (d.recipient_entity_id) connectedIds.add(d.recipient_entity_id as string);
   }
   const nameMap = new Map<string, string>();
   if (connectedIds.size > 0) {
@@ -183,9 +251,51 @@ export async function enrichEntities(
 
   return entities.map(e => {
     const id = e.canonical_entity_id;
-    const wealth = mergeWealth(wealthMap.get(id) ?? null, e.attributes ?? {});
+    const wealthRow = wealthMap.get(id) ?? null;
+    let wealth = mergeWealth(wealthRow, e.attributes ?? {});
+    // Human wealth-band correction wins over the automated band, but we keep the
+    // original on `automated_band` so the UI can show what was overridden. When
+    // there is no automated estimate at all, the override synthesises a minimal
+    // WealthData so the corrected band still surfaces.
+    const overrideRow = overrideMap.get(id);
+    if (overrideRow) {
+      const overrideBand = overrideRow.band as WealthBand;
+      wealth = wealth ?? { band: 'unknown' as WealthBand, score: 0, confidence: 0, evidence: [] };
+      wealth.override = {
+        band: overrideBand,
+        automated_band: wealth.band,
+        reason: (overrideRow.reason as string | null) ?? null,
+        author: (overrideRow.author as string) ?? 'analyst',
+        created_at: (overrideRow.created_at as string) ?? '',
+      };
+      wealth.band = overrideBand;
+    }
     const evidence = evidenceMap.get(id) ?? [];
     const connections = connectionMap.get(id) ?? [];
+
+    const donations: DonationEntry[] = (donationMap.get(id) ?? [])
+      .map(d => ({
+        donation_event_id: d.donation_event_id as string,
+        recipient_name: d.recipient_entity_id ? (nameMap.get(d.recipient_entity_id as string) ?? null) : null,
+        amount: (d.amount as number | null) ?? null,
+        currency: (d.currency as string | null) ?? null,
+        year: (d.year as number | null) ?? null,
+        source: (d.source as string | null) ?? null,
+        evidence_url: (d.evidence_url as string | null) ?? null,
+        detail: (d.detail as string | null) ?? null,
+      }))
+      .sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+
+    // Build the enrichment-signal summary from rows already in hand (no extra query).
+    const wealthEvidence = wealthRow && Array.isArray(wealthRow.evidence)
+      ? wealthRow.evidence as Array<{ signal?: string; detail?: string; contribution?: number; source_layer?: string }>
+      : null;
+    const signals = buildEntitySignalsFromRows(
+      id,
+      wealthEvidence,
+      (wealthRow?.assessed_at as string) ?? null,
+      evidence.map(ev => ({ source: ev.source, source_layer: ev.source_layer, evidence_text: ev.evidence_text, evidence_url: ev.evidence_url, confidence: ev.confidence, created_at: ev.created_at })),
+    );
 
     return {
       canonical_entity_id: id,
@@ -196,8 +306,10 @@ export async function enrichEntities(
       wealth,
       evidence,
       connections,
+      donations,
       pipeline_state: inferState(!!wealth, evidence.length > 0),
       lead_source: 'unknown' as const,
+      signals,
     };
   });
 }

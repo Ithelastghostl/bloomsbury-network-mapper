@@ -17,12 +17,17 @@ const OBSERVE = [
 const ORIENT = [
   { href: '/crm/graph', label: 'Orbit', icon: '⊛' },
   { href: '/crm/graph/reach', label: 'Supporter Reach', icon: '◉' },
+  { href: '/crm/orient/connectors', label: 'Key Connectors', icon: '◈' },
+  { href: '/crm/orient/signals', label: 'Signal Landscape', icon: '◇' },
+  { href: '/crm/orient/coverage', label: 'Evidence Coverage', icon: '▒' },
   { href: '/crm/orient/dimensions', label: 'Dimension Matrix', icon: '▦' },
   { href: '/crm/orient/brokerage', label: 'Institution Brokerage', icon: '⬡' },
   { href: '/crm/graph/institutions', label: 'Institutions', icon: '⬡' },
   { href: '/crm/graph/charities', label: 'Charities', icon: '♦' },
   { href: '/crm/introductions', label: 'Introduction Graph', icon: '⊙' },
   { href: '/crm/intro-routes', label: 'Introduction Routes', icon: '⇄' },
+  { href: '/crm/orient/suggested-ties', label: 'Suggested Ties', icon: '⟿' },
+  { href: '/crm/orient/communities', label: 'Communities', icon: '◍' },
 ];
 
 const DECIDE = [
@@ -35,11 +40,13 @@ const DECIDE = [
 
 const ACT = [
   { href: '/crm/act', label: 'Action Backlog', icon: '▶' },
+  { href: '/crm/cohorts', label: 'Cohorts', icon: '⊞' },
   { href: '/crm/act/outcomes', label: 'Outcomes', icon: '✓' },
 ];
 
 const TOOLS = [
   { href: '/crm/identity', label: 'Identity QA' },
+  { href: '/crm/review-queue', label: 'Needs Review' },
   { href: '/crm/augment-queue', label: 'Augment Queue' },
   { href: '/review', label: 'Review Queue' },
   { href: '/admin', label: 'Admin' },
