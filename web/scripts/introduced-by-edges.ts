@@ -30,6 +30,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { generateId } from '../src/lib/ulid';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabase = SupabaseClient<any, any, any>;
 
 const SENTINEL_COMPANY_NUMBER = 'INTRODUCED_BY';
