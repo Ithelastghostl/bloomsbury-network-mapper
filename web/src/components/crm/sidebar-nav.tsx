@@ -1,7 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
+/** Documentation lives as static HTML in public/docs/ (built from docs/onboarding/
+ *  by scripts/build-onboarding-docs.ts). External hrefs open the rendered guides. */
+const DOCUMENTATION = [
+  { href: '/docs/what-this-is.html', label: 'Overview', icon: '✦' },
+  { href: '/docs/user-guide.html', label: 'User Guide', icon: '◷' },
+  { href: '/docs/scoring-and-tabs.html', label: 'Scoring & Tabs', icon: '▤' },
+  { href: '/docs/analyst-playbook.html', label: 'Analyst Playbook', icon: '◇' },
+  { href: '/docs/glossary.html', label: 'Glossary', icon: '✎' },
+  { href: '/docs/data-and-provenance.html', label: 'Data & Provenance', icon: '▦' },
+  { href: '/docs/admin-ops-runbook.html', label: 'Admin & Ops', icon: '⚙' },
+];
 
 const OBSERVE = [
   { href: '/crm/whats-new', label: "What's New", icon: '✦' },
@@ -52,7 +65,11 @@ const TOOLS = [
   { href: '/admin', label: 'Admin' },
 ];
 
-const SECTIONS = [
+type Tab = { href: string; label: string; icon?: string };
+type Section = { title: string; tabs: Tab[]; external?: boolean };
+
+const SECTIONS: Section[] = [
+  { title: 'Documentation', tabs: DOCUMENTATION, external: true },
   { title: 'Observe', tabs: OBSERVE },
   { title: 'Orient', tabs: ORIENT },
   { title: 'Decide', tabs: DECIDE },
@@ -60,12 +77,20 @@ const SECTIONS = [
   { title: 'Tools', tabs: TOOLS },
 ];
 
+/** Only Decide is expanded on first load; the rest collapse to keep the rail short. */
+const DEFAULT_OPEN: Record<string, boolean> = { Decide: true };
+
 export function SidebarNav() {
   const pathname = usePathname();
+  const [open, setOpen] = useState<Record<string, boolean>>(DEFAULT_OPEN);
 
   function isActive(href: string) {
     if (href === '/crm' || href === '/crm/graph' || href === '/crm/decide' || href === '/crm/act') return pathname === href;
     return pathname === href || pathname.startsWith(href + '/');
+  }
+
+  function toggle(title: string) {
+    setOpen(prev => ({ ...prev, [title]: !prev[title] }));
   }
 
   return (
@@ -78,30 +103,54 @@ export function SidebarNav() {
       </div>
 
       <div className="flex-1 py-3 overflow-y-auto">
-        {SECTIONS.map(section => (
-          <div key={section.title}>
-            <div className="px-3 mt-4 mb-2 first:mt-0">
-              <span className="text-[10px] font-semibold tracking-widest uppercase text-text-muted">{section.title}</span>
+        {SECTIONS.map(section => {
+          const isOpen = open[section.title] ?? false;
+          // A section is highlighted while collapsed if the current page lives inside it.
+          const hasActive = !section.external && section.tabs.some(t => isActive(t.href));
+          return (
+            <div key={section.title}>
+              <button
+                type="button"
+                onClick={() => toggle(section.title)}
+                aria-expanded={isOpen}
+                className="w-full flex items-center justify-between px-3 mt-4 mb-2 first:mt-0 group"
+              >
+                <span className={`text-[10px] font-semibold tracking-widest uppercase ${hasActive && !isOpen ? 'text-gold' : 'text-text-muted group-hover:text-text-secondary'}`}>
+                  {section.title}
+                </span>
+                <span className={`text-[9px] mr-1 transition-transform ${isOpen ? 'rotate-90' : ''} ${hasActive && !isOpen ? 'text-gold' : 'text-text-muted'}`}>
+                  ▸
+                </span>
+              </button>
+
+              {isOpen && section.tabs.map(tab => {
+                const active = !section.external && isActive(tab.href);
+                const className = `flex items-center gap-2.5 px-4 py-1.5 text-[13px] transition-colors ${
+                  active
+                    ? 'bg-gold/10 text-gold border-r-2 border-gold'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-deep-charcoal'
+                }`;
+                const inner = (
+                  <>
+                    {'icon' in tab && tab.icon && <span className="text-xs">{tab.icon}</span>}
+                    {tab.label}
+                  </>
+                );
+                // Documentation pages are static HTML outside the app router; open
+                // them in a new tab with a plain anchor rather than a router Link.
+                return section.external ? (
+                  <a key={tab.href} href={tab.href} target="_blank" rel="noopener noreferrer" className={className}>
+                    {inner}
+                  </a>
+                ) : (
+                  <Link key={tab.href} href={tab.href} className={className}>
+                    {inner}
+                  </Link>
+                );
+              })}
             </div>
-            {section.tabs.map(tab => {
-              const active = isActive(tab.href);
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  className={`flex items-center gap-2.5 px-4 py-1.5 text-[13px] transition-colors ${
-                    active
-                      ? 'bg-gold/10 text-gold border-r-2 border-gold'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-deep-charcoal'
-                  }`}
-                >
-                  {'icon' in tab && <span className="text-xs">{(tab as { icon: string }).icon}</span>}
-                  {tab.label}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="p-4 border-t border-border-subtle">
