@@ -3,6 +3,8 @@
  * PRD ref: §22.1 — dashboards built as Next.js routes in /admin.
  */
 
+import { requireUser } from '@/lib/crm/auth';
+
 const NAV_ITEMS = [
   { href: '/admin/runs', label: 'Pipeline Runs' },
   { href: '/admin/quarantine', label: 'Quarantine' },
@@ -17,11 +19,12 @@ const NAV_ITEMS = [
   { href: '/admin/monitoring', label: 'Monitoring' },
 ];
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await requireUser();
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <nav className="w-56 shrink-0 border-r border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">

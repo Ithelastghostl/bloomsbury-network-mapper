@@ -2,12 +2,15 @@ import { createClient } from '@/lib/supabase/server';
 import { apiError, forbidden, serverError } from '@/lib/api-error';
 import { withIdempotency } from '@/lib/with-idempotency';
 import { runSeedAugmentation, type OrchestratorConfig } from '@/lib/augmentation/orchestrator';
+import { augmentationDisabled, augmentationGone } from '@/lib/augmentation-guard';
 
 export const POST = withIdempotency(async (
   request: Request,
   { params }: { params: Promise<{ run_id: string }> },
 ) => {
   try {
+    if (augmentationDisabled()) return augmentationGone();
+
     const { run_id: runId } = await params;
     const supabase = await createClient();
 

@@ -1,5 +1,6 @@
 import { getAdminClient } from '@/lib/supabase/admin';
 import { fetchStats } from '@/lib/crm/queries';
+import { requireUser } from '@/lib/crm/auth';
 import { SidebarNav } from '@/components/crm/sidebar-nav';
 import { StatsBar } from '@/components/crm/stats-bar';
 import { GlobalSearch } from '@/components/crm/global-search';
@@ -17,13 +18,14 @@ const EMPTY_STATS: CrmStats = {
 };
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
+  const user = await requireUser();
   const supabase = getAdminClient();
   // Never let a transient DB hiccup crash every CRM page — degrade to empty stats.
   const stats = await fetchStats(supabase).catch(() => EMPTY_STATS);
 
   return (
     <div className="flex h-screen bg-pitch-black text-text-primary overflow-hidden">
-      <SidebarNav />
+      <SidebarNav userEmail={user.email ?? null} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between border-b border-border-subtle">
           <StatsBar stats={stats} />

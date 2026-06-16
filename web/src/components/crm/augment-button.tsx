@@ -17,11 +17,23 @@ export function AugmentButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Read-only analysis deployment: never render the trigger or fire requests.
+  // NEXT_PUBLIC_* is inlined at build time, so this is safe at render scope.
+  const augmentationDisabled = process.env.NEXT_PUBLIC_DISABLE_AUGMENTATION === 'true';
+
   if (state === 'augmented') {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-gold">
         <span className="w-1.5 h-1.5 rounded-full bg-gold" />
         Augmented
+      </span>
+    );
+  }
+
+  if (augmentationDisabled) {
+    return (
+      <span className="text-[10px] uppercase tracking-wide text-text-muted">
+        Augmentation disabled
       </span>
     );
   }

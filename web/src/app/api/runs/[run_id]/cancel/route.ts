@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { apiError, notFound, serverError } from '@/lib/api-error';
 import { withIdempotency } from '@/lib/with-idempotency';
+import { augmentationDisabled, augmentationGone } from '@/lib/augmentation-guard';
 
 // POST /api/runs/:run_id/cancel -- cancel a run
 export const POST = withIdempotency(async (
@@ -8,6 +9,8 @@ export const POST = withIdempotency(async (
   { params }: { params: Promise<{ run_id: string }> },
 ) => {
   try {
+    if (augmentationDisabled()) return augmentationGone();
+
     const { run_id } = await params;
     const supabase = await createClient();
 

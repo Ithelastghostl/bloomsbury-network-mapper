@@ -19,6 +19,7 @@ import { generateReasonCodes } from '@/lib/discovery/reason-codes';
 import { checkEligibility, applyQueueLimit, type ExclusionContext } from '@/lib/discovery/eligibility';
 import { calculateSeedQuality, type SeedQualityInput } from '@/lib/discovery/seed-quality';
 import type { CandidateRecommendation } from '@/types/database';
+import { augmentationDisabled, augmentationGone } from '@/lib/augmentation-guard';
 
 interface DiscoveryRequest {
   seed_ids: string[];
@@ -28,6 +29,8 @@ interface DiscoveryRequest {
 
 export const POST = withIdempotency(async (request: Request) => {
   try {
+    if (augmentationDisabled()) return augmentationGone();
+
     const body: DiscoveryRequest = await request.json();
 
     if (!body.seed_ids || !Array.isArray(body.seed_ids) || body.seed_ids.length === 0) {

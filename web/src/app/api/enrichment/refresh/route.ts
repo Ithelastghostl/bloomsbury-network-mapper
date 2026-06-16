@@ -10,6 +10,7 @@ import { apiError, forbidden, serverError } from '@/lib/api-error';
 import { generateId } from '@/lib/ulid';
 import { withIdempotency } from '@/lib/with-idempotency';
 import type { EnrichmentSource } from '@/lib/enrichment/types';
+import { augmentationDisabled, augmentationGone } from '@/lib/augmentation-guard';
 
 const VALID_SOURCES: EnrichmentSource[] = [
   'companies_house',
@@ -20,6 +21,8 @@ const VALID_SOURCES: EnrichmentSource[] = [
 
 export const POST = withIdempotency(async (request: Request) => {
   try {
+    if (augmentationDisabled()) return augmentationGone();
+
     const supabase = await createClient();
 
     // Auth check

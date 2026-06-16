@@ -3,6 +3,7 @@ import { apiError, serverError } from '@/lib/api-error';
 import { withIdempotency } from '@/lib/with-idempotency';
 import { requireAdminOrLocal } from '@/lib/crm/auth';
 import { storeWealthResult, type WealthResearchResult } from '@/lib/crm/wealth-persist';
+import { augmentationDisabled, augmentationGone } from '@/lib/augmentation-guard';
 
 // POST /api/entities/:canonical_entity_id/augment
 // Persists a wealth research result (produced by the local tethered Claude Code
@@ -13,6 +14,8 @@ export const POST = withIdempotency(async (
   { params }: { params: Promise<{ canonical_entity_id: string }> },
 ) => {
   try {
+    if (augmentationDisabled()) return augmentationGone();
+
     const { canonical_entity_id } = await params;
 
     const denied = await requireAdminOrLocal();

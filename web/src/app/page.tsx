@@ -1,5 +1,6 @@
 import { getAdminClient } from '@/lib/supabase/admin';
 import { fetchStats } from '@/lib/crm/queries';
+import { requireUser } from '@/lib/crm/auth';
 import type { CrmStats } from '@/lib/crm/types';
 import Link from 'next/link';
 
@@ -13,6 +14,7 @@ const EMPTY_STATS: CrmStats = {
 };
 
 export default async function Home() {
+  await requireUser();
   const supabase = getAdminClient();
   const stats = await fetchStats(supabase).catch(() => EMPTY_STATS);
 

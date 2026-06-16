@@ -11,17 +11,31 @@
  */
 
 import type { Dossier, PriorityScoreBreakdown, ConfidenceScoreBreakdown, DossierPath, DossierEvidence, DossierRole, DossierEnrichmentSignal, DossierIdentityNotes, DossierDecision, DossierIntroAngle } from '@/lib/dossier/types';
+import { requireUser } from '@/lib/crm/auth';
+import { headers, cookies } from 'next/headers';
 
 // ---------------------------------------------------------------
 // Server data fetching
 // ---------------------------------------------------------------
 
 async function fetchDossier(candidateId: string): Promise<Dossier | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
-  const res = await fetch(
-    `${baseUrl}/api/candidates/${candidateId}/dossier`,
-    { cache: 'no-store' },
-  );
+  // This is a server-to-server call to our own API, which the Proxy gates like
+  // any other request. Forward the caller's session cookie so the internal
+  // fetch is authenticated, and derive the origin from the incoming request so
+  // it resolves correctly on Vercel (where there is no fixed localhost).
+  const h = await headers();
+  const host = h.get('x-forwarded-host') ?? h.get('host');
+  const proto = h.get('x-forwarded-proto') ?? 'http';
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ?? (host ? `${proto}://${host}` : 'http://localhost:3000');
+
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join('; ');
+
+  const res = await fetch(`${baseUrl}/api/candidates/${candidateId}/dossier`, {
+    cache: 'no-store',
+    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+  });
   if (!res.ok) return null;
   return res.json();
 }
@@ -35,6 +49,7 @@ export default async function DossierPage({
 }: {
   params: Promise<{ candidate_id: string }>;
 }) {
+  await requireUser();
   const { candidate_id } = await params;
   const dossier = await fetchDossier(candidate_id);
 

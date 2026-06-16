@@ -57,12 +57,11 @@ const ACT = [
   { href: '/crm/act/outcomes', label: 'Outcomes', icon: '✓' },
 ];
 
+// Read-only analysis deployment: agent/pipeline operations consoles
+// (Augment Queue, Review Queue, Admin) are intentionally not surfaced here.
 const TOOLS = [
   { href: '/crm/identity', label: 'Identity QA' },
   { href: '/crm/review-queue', label: 'Needs Review' },
-  { href: '/crm/augment-queue', label: 'Augment Queue' },
-  { href: '/review', label: 'Review Queue' },
-  { href: '/admin', label: 'Admin' },
 ];
 
 type Tab = { href: string; label: string; icon?: string };
@@ -80,7 +79,7 @@ const SECTIONS: Section[] = [
 /** Only Decide is expanded on first load; the rest collapse to keep the rail short. */
 const DEFAULT_OPEN: Record<string, boolean> = { Decide: true };
 
-export function SidebarNav() {
+export function SidebarNav({ userEmail }: { userEmail?: string | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState<Record<string, boolean>>(DEFAULT_OPEN);
 
@@ -153,7 +152,20 @@ export function SidebarNav() {
         })}
       </div>
 
-      <div className="p-4 border-t border-border-subtle">
+      <div className="p-4 border-t border-border-subtle space-y-2">
+        {userEmail && (
+          <p className="text-[11px] text-text-secondary truncate" title={userEmail}>
+            {userEmail}
+          </p>
+        )}
+        <form action="/auth/signout" method="post">
+          <button
+            type="submit"
+            className="w-full text-left text-[11px] text-text-muted hover:text-gold transition-colors"
+          >
+            Sign out
+          </button>
+        </form>
         <p className="text-[10px] text-text-muted">BFF Intelligence Platform</p>
       </div>
     </nav>

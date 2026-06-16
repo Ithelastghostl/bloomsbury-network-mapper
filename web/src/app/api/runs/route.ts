@@ -3,10 +3,13 @@ import { createClient } from '@/lib/supabase/server';
 import { generateId } from '@/lib/ulid';
 import { apiError, serverError } from '@/lib/api-error';
 import { withIdempotency } from '@/lib/with-idempotency';
+import { augmentationDisabled, augmentationGone } from '@/lib/augmentation-guard';
 
 // POST /api/runs -- create a new run
 export const POST = withIdempotency(async (request: Request) => {
   try {
+    if (augmentationDisabled()) return augmentationGone();
+
     const body = await request.json();
     const { corpus_version, scoring_config_version, icp_id, seed_ids } = body;
 

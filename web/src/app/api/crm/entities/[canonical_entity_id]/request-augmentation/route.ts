@@ -2,6 +2,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { apiError, notFound, serverError } from '@/lib/api-error';
 import { withIdempotency } from '@/lib/with-idempotency';
 import { requireAdminOrLocal } from '@/lib/crm/auth';
+import { augmentationDisabled, augmentationGone } from '@/lib/augmentation-guard';
 
 // POST /api/crm/entities/:canonical_entity_id/request-augmentation
 // Marks a lead for wealth augmentation by setting attributes.augmentation_requested.
@@ -12,6 +13,8 @@ export const POST = withIdempotency(async (
   { params }: { params: Promise<{ canonical_entity_id: string }> },
 ) => {
   try {
+    if (augmentationDisabled()) return augmentationGone();
+
     const { canonical_entity_id } = await params;
 
     const denied = await requireAdminOrLocal();

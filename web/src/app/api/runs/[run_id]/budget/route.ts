@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound, serverError, apiError } from '@/lib/api-error';
 import { estimateCost, checkBudgetGate } from '@/lib/pipeline/budget';
 import { withIdempotency } from '@/lib/with-idempotency';
+import { augmentationDisabled, augmentationGone } from '@/lib/augmentation-guard';
 
 // GET /api/runs/:run_id/budget → cost estimate for the run
 export async function GET(
@@ -65,6 +66,8 @@ export const POST = withIdempotency(async (
   { params }: { params: Promise<{ run_id: string }> },
 ) => {
   try {
+    if (augmentationDisabled()) return augmentationGone();
+
     const { run_id } = await params;
     const body = await request.json();
     const { approved_by, threshold } = body;

@@ -11,6 +11,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/crm/auth';
 import { ReviewTable } from './review-table';
 
 interface SearchParams {
@@ -30,6 +31,7 @@ export default async function ReviewPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  await requireUser();
   const params = await searchParams;
   const supabase = await createClient();
 

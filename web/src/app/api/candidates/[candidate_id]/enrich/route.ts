@@ -10,6 +10,7 @@ import { apiError, forbidden, notFound, serverError } from '@/lib/api-error';
 import { generateId } from '@/lib/ulid';
 import { withIdempotency } from '@/lib/with-idempotency';
 import type { EnrichmentSource } from '@/lib/enrichment/types';
+import { augmentationDisabled, augmentationGone } from '@/lib/augmentation-guard';
 
 const VALID_SOURCES: EnrichmentSource[] = [
   'companies_house',
@@ -23,6 +24,8 @@ export const POST = withIdempotency(async (
   { params }: { params: Promise<{ candidate_id: string }> },
 ) => {
   try {
+    if (augmentationDisabled()) return augmentationGone();
+
     const { candidate_id } = await params;
     const supabase = await createClient();
 

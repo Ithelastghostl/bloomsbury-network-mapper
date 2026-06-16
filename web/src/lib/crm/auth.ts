@@ -1,5 +1,27 @@
 import { createClient } from '@/lib/supabase/server';
 import { forbidden } from '@/lib/api-error';
+import { redirect } from 'next/navigation';
+import type { User } from '@supabase/supabase-js';
+
+// Roles permitted to use the platform (kept in sync with src/proxy.ts).
+const ALLOWED_ROLES = new Set(['admin', 'engineering_admin']);
+
+/**
+ * Page/layout-level auth guard. The Proxy already blocks unauthenticated traffic
+ * at the edge, but Next's docs warn Proxy may not cover every Server Function /
+ * render path — so data-bearing pages re-verify here as defense in depth.
+ * Redirects to /login when there is no authorized user; otherwise returns it.
+ */
+export async function requireUser(): Promise<User> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+  const role = user.app_metadata?.role as string | undefined;
+  if (!role || !ALLOWED_ROLES.has(role)) {
+    redirect('/login?error=not_authorized');
+  }
+  return user;
+}
 
 /**
  * Local-mode bypass for the CRM augment routes.
