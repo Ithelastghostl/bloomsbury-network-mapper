@@ -1,0 +1,13 @@
+// Cloudflare D1 schema for bloomsbury-network-mapper (schema port only; no Worker yet).
+// Run from this folder: wrangler d1 migrations apply bloomsbury-db --local | --remote
+{
+  "account_id": "1e61b4ffa9ac77b0085d0588094943db",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bloomsbury-db",
+      "database_id": "4ccc2abd-19a4-45f1-b07e-a8f9b811dd17",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
